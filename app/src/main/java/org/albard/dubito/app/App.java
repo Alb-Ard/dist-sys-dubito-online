@@ -3,8 +3,53 @@
  */
 package org.albard.dubito.app;
 
+import java.io.IOException;
+import java.util.Scanner;
+import java.util.function.Supplier;
+
 public class App {
-    public static void main(String[] args) {
-        System.out.println("Hello, World!");
+    public static void main(final String[] args) {
+        final String bindAddress = getArgOrDefault(args, 0, () -> "0.0.0.0");
+        final int bindPort = Integer.parseInt(getArgOrDefault(args, 1, () -> "9000"));
+        final UserConnectionRepository userRepository = UserConnectionRepository.createEmpty();
+        try (final UserConnectionReceiver connectionReceiver = UserConnectionReceiver.createBound(userRepository,
+                bindAddress, bindPort)) {
+            final Scanner inputScanner = new Scanner(System.in);
+            final String remoteAddress = getArgOrDefault(args, 2,
+                    () -> requestInput(inputScanner, "Insert remote peer hostname: "));
+            final int remotePort = parseIntOrDefault(
+                    getArgOrDefault(args, 3,
+                            () -> requestInput(inputScanner, "Insert remote peer port (or empty for default): ")),
+                    () -> 9000);
+            try (final UserConnectionSender sender = UserConnectionSender.create()) {
+                sender.connect(remoteAddress, remotePort);
+                System.out.println("Connected! Press any key to exit...");
+                inputScanner.nextLine();
+            } catch (final Exception ex) {
+                ex.printStackTrace();
+            }
+        } catch (final IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private static int parseIntOrDefault(final String value, Supplier<Integer> defaultValueProvider) {
+        try {
+            return Integer.parseInt(value);
+        } catch (final Exception ex) {
+            return defaultValueProvider.get();
+        }
+    }
+
+    private static String requestInput(final Scanner scanner, final String prompt) {
+        System.out.println(prompt);
+        return scanner.nextLine();
+    }
+
+    private static String getArgOrDefault(String[] args, int index, Supplier<String> defaultValueProvider) {
+        if (args.length <= index) {
+            return defaultValueProvider.get();
+        }
+        return args[index];
     }
 }
