@@ -6,6 +6,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.time.Duration;
 
+import org.albard.dubito.app.connection.UserConnectionReceiver;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

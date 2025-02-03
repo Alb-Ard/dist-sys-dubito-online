@@ -3,9 +3,9 @@ package org.albard.dubito.app;
 import java.io.Closeable;
 import java.io.IOException;
 
-public interface UserConnectionSender extends Closeable {
-    static UserConnectionSender create() {
-        return new TcpUserConnectionSender();
+public interface UserConnection extends Closeable {
+    static UserConnection create() {
+        return new TcpUserConnection();
     }
 
     void connect(String remoteAddress, int remotePort) throws IOException;
