@@ -4,10 +4,14 @@ import java.net.InetSocketAddress;
 
 public interface UserConnectionRepository {
     public static UserConnectionRepository create() {
-        return new UniqueUserConnectionRepository();
+        return new SetUserConnectionRepository();
     }
 
     public boolean addUser(InetSocketAddress remoteEndPoint);
 
     public boolean removeUser(InetSocketAddress remoteEndPoint);
+
+    public int getUserCount();
+
+    public void clear();
 }
