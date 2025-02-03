@@ -1,11 +1,11 @@
 package org.albard.dubito.app;
 
-import java.net.Socket;
+import java.net.InetSocketAddress;
 
 public interface UserConnectionRepository {
     public static UserConnectionRepository create() {
         return new UniqueUserConnectionRepository();
     }
 
-    public boolean addUser(Socket userSocket);
+    public boolean addUser(InetSocketAddress remoteEndPoint);
 }
