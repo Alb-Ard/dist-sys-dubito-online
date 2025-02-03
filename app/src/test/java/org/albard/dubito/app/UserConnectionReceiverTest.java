@@ -38,6 +38,29 @@ public final class UserConnectionReceiverTest {
     }
 
     @Test
+    void testStartAgain() throws IOException {
+        final UserConnectionRepository repository = UserConnectionRepository.create();
+        try (final UserConnectionReceiver receiver = UserConnectionReceiver.createAndBind(repository, "127.0.0.1",
+                9000)) {
+            receiver.start();
+            Assertions.assertThrows(Exception.class, () -> receiver.start());
+        }
+    }
+
+    @Test
+    void testCloseWhenNotStarted() throws UnknownHostException, IOException {
+        final UserConnectionRepository repository = UserConnectionRepository.create();
+        UserConnectionReceiver receiver = null;
+        try {
+            receiver = UserConnectionReceiver.createAndBind(repository, "127.0.0.1", 9000);
+            receiver.close();
+        } finally {
+            Assertions.assertFalse(receiver.isListening());
+            Assertions.assertEquals(receiver.getUserCount(), 0);
+        }
+    }
+
+    @Test
     void testCloses() throws IOException {
         final UserConnectionRepository repository = UserConnectionRepository.create();
         UserConnectionReceiver receiver = null;
@@ -48,6 +71,20 @@ public final class UserConnectionReceiverTest {
         } finally {
             Assertions.assertFalse(receiver.isListening());
             Assertions.assertEquals(receiver.getUserCount(), 0);
+        }
+    }
+
+    @Test
+    void testCloseAgain() throws IOException {
+        final UserConnectionRepository repository = UserConnectionRepository.create();
+        UserConnectionReceiver receiver = null;
+        try {
+            receiver = UserConnectionReceiver.createAndBind(repository, "127.0.0.1", 9000);
+            receiver.start();
+            receiver.close();
+            Assertions.assertDoesNotThrow(receiver::close);
+        } finally {
+
         }
     }
 

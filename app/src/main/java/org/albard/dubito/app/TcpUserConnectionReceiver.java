@@ -31,9 +31,15 @@ public final class TcpUserConnectionReceiver implements UserConnectionReceiver {
     }
 
     @Override
-    public void close() throws IOException {
-        this.listeningSocket.close();
-        this.userRepository.clear();
+    public void close() {
+        try {
+            this.listeningSocket.close();
+            this.listeningThread.join();
+        } catch (final IOException | InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            this.userRepository.clear();
+        }
     }
 
     @Override
