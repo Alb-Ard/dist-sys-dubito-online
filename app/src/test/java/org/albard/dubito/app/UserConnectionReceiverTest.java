@@ -12,15 +12,14 @@ import org.junit.jupiter.api.Test;
 public final class UserConnectionReceiverTest {
     @Test
     void testBindsCorrectly() {
-        final UserConnectionRepository repository = UserConnectionRepository.create();
-        Assertions
-                .assertDoesNotThrow(() -> UserConnectionReceiver.createAndBind(repository, "127.0.0.1", 9000).close());
+        final UserConnectionRepository repository = UserConnectionRepository.createEmpty();
+        Assertions.assertDoesNotThrow(() -> UserConnectionReceiver.createBound(repository, "127.0.0.1", 9000).close());
     }
 
     @Test
     void testBindsIdle() throws UnknownHostException, IOException {
-        final UserConnectionRepository repository = UserConnectionRepository.create();
-        try (final UserConnectionReceiver receiver = UserConnectionReceiver.createAndBind(repository, "127.0.0.1",
+        final UserConnectionRepository repository = UserConnectionRepository.createEmpty();
+        try (final UserConnectionReceiver receiver = UserConnectionReceiver.createBound(repository, "127.0.0.1",
                 9000)) {
             Assertions.assertFalse(receiver.isListening());
             Assertions.assertEquals(receiver.getUserCount(), 0);
@@ -29,8 +28,8 @@ public final class UserConnectionReceiverTest {
 
     @Test
     void testStartReceiving() throws UnknownHostException, IOException {
-        final UserConnectionRepository repository = UserConnectionRepository.create();
-        try (final UserConnectionReceiver receiver = UserConnectionReceiver.createAndBind(repository, "127.0.0.1",
+        final UserConnectionRepository repository = UserConnectionRepository.createEmpty();
+        try (final UserConnectionReceiver receiver = UserConnectionReceiver.createBound(repository, "127.0.0.1",
                 9000)) {
             Assertions.assertDoesNotThrow(() -> receiver.start());
             Assertions.assertTrue(receiver.isListening());
@@ -39,8 +38,8 @@ public final class UserConnectionReceiverTest {
 
     @Test
     void testStartAgain() throws IOException {
-        final UserConnectionRepository repository = UserConnectionRepository.create();
-        try (final UserConnectionReceiver receiver = UserConnectionReceiver.createAndBind(repository, "127.0.0.1",
+        final UserConnectionRepository repository = UserConnectionRepository.createEmpty();
+        try (final UserConnectionReceiver receiver = UserConnectionReceiver.createBound(repository, "127.0.0.1",
                 9000)) {
             receiver.start();
             Assertions.assertThrows(Exception.class, () -> receiver.start());
@@ -49,10 +48,10 @@ public final class UserConnectionReceiverTest {
 
     @Test
     void testCloseWhenNotStarted() throws UnknownHostException, IOException {
-        final UserConnectionRepository repository = UserConnectionRepository.create();
+        final UserConnectionRepository repository = UserConnectionRepository.createEmpty();
         UserConnectionReceiver receiver = null;
         try {
-            receiver = UserConnectionReceiver.createAndBind(repository, "127.0.0.1", 9000);
+            receiver = UserConnectionReceiver.createBound(repository, "127.0.0.1", 9000);
             receiver.close();
         } finally {
             Assertions.assertFalse(receiver.isListening());
@@ -62,10 +61,10 @@ public final class UserConnectionReceiverTest {
 
     @Test
     void testCloses() throws IOException {
-        final UserConnectionRepository repository = UserConnectionRepository.create();
+        final UserConnectionRepository repository = UserConnectionRepository.createEmpty();
         UserConnectionReceiver receiver = null;
         try {
-            receiver = UserConnectionReceiver.createAndBind(repository, "127.0.0.1", 9000);
+            receiver = UserConnectionReceiver.createBound(repository, "127.0.0.1", 9000);
             receiver.start();
             receiver.close();
         } finally {
@@ -76,10 +75,10 @@ public final class UserConnectionReceiverTest {
 
     @Test
     void testCloseAgain() throws IOException {
-        final UserConnectionRepository repository = UserConnectionRepository.create();
+        final UserConnectionRepository repository = UserConnectionRepository.createEmpty();
         UserConnectionReceiver receiver = null;
         try {
-            receiver = UserConnectionReceiver.createAndBind(repository, "127.0.0.1", 9000);
+            receiver = UserConnectionReceiver.createBound(repository, "127.0.0.1", 9000);
             receiver.start();
             receiver.close();
             Assertions.assertDoesNotThrow(receiver::close);
@@ -90,9 +89,9 @@ public final class UserConnectionReceiverTest {
 
     @Test
     void testConnectClient() throws IOException, InterruptedException {
-        final UserConnectionRepository repository = UserConnectionRepository.create();
-        try (final UserConnectionReceiver receiver = UserConnectionReceiver.createAndBind(repository, "127.0.0.1",
-                9000); final Socket userSocket = new Socket()) {
+        final UserConnectionRepository repository = UserConnectionRepository.createEmpty();
+        try (final UserConnectionReceiver receiver = UserConnectionReceiver.createBound(repository, "127.0.0.1", 9000);
+                final Socket userSocket = new Socket()) {
             receiver.start();
             Assertions.assertDoesNotThrow(() -> userSocket.connect(new InetSocketAddress("127.0.0.1", 9000)));
             // I can't be sure that the receiver processed the connection immediatly, I give
@@ -104,8 +103,8 @@ public final class UserConnectionReceiverTest {
 
     @Test
     void testDisconnectClient() throws IOException, InterruptedException {
-        final UserConnectionRepository repository = UserConnectionRepository.create();
-        try (final UserConnectionReceiver receiver = UserConnectionReceiver.createAndBind(repository, "127.0.0.1",
+        final UserConnectionRepository repository = UserConnectionRepository.createEmpty();
+        try (final UserConnectionReceiver receiver = UserConnectionReceiver.createBound(repository, "127.0.0.1",
                 9000)) {
             final Socket userSocket = new Socket();
             receiver.start();

@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 
 public interface UserConnectionReceiver extends Closeable {
-    public static UserConnectionReceiver createAndBind(UserConnectionRepository repository, String bindAddress,
+    public static UserConnectionReceiver createBound(UserConnectionRepository repository, String bindAddress,
             int bindPort) throws UnknownHostException, IOException {
         return TcpUserConnectionReceiver.createAndBind(repository, bindAddress, bindPort);
     }
