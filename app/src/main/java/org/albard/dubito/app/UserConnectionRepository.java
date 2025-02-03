@@ -8,4 +8,6 @@ public interface UserConnectionRepository {
     }
 
     public boolean addUser(InetSocketAddress remoteEndPoint);
+
+    public boolean removeUser(InetSocketAddress remoteEndPoint);
 }

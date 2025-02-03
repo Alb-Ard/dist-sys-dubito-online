@@ -11,4 +11,9 @@ public final class UniqueUserConnectionRepository implements UserConnectionRepos
     public boolean addUser(final InetSocketAddress remoteEndPoint) {
         return this.userSockets.add(remoteEndPoint);
     }
+
+    @Override
+    public boolean removeUser(final InetSocketAddress remoteEndPoint) {
+        return this.userSockets.remove(remoteEndPoint);
+    }
 }
