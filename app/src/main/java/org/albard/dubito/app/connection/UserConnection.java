@@ -1,4 +1,4 @@
-package org.albard.dubito.app;
+package org.albard.dubito.app.connection;
 
 import java.io.Closeable;
 import java.io.IOException;

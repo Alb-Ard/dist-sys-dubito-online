@@ -1,4 +1,4 @@
-package org.albard.dubito.app;
+package org.albard.dubito.app.connection;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,12 +9,14 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.time.Duration;
 
+import org.albard.dubito.app.UserConnectionRepository;
+
 public final class TcpUserConnectionReceiver implements UserConnectionReceiver {
     private final ServerSocket listeningSocket;
     private final Thread listeningThread;
-    private final UserConnectionRepository userRepository;
+    private final UserConnectionRepository<Socket> userRepository;
 
-    public TcpUserConnectionReceiver(UserConnectionRepository repository, ServerSocket socket) {
+    public TcpUserConnectionReceiver(UserConnectionRepository<Socket> repository, ServerSocket socket) {
         this.userRepository = repository;
         this.listeningSocket = socket;
         this.listeningThread = new Thread(this::listenForUsers, "UserReceiver");
@@ -52,7 +54,7 @@ public final class TcpUserConnectionReceiver implements UserConnectionReceiver {
             try {
                 final Socket userSocket = this.listeningSocket.accept();
                 if (!(userSocket.getRemoteSocketAddress() instanceof InetSocketAddress remoteEndPoint)
-                        || !this.userRepository.addUser(remoteEndPoint)) {
+                        || !this.userRepository.addUser(remoteEndPoint, userSocket)) {
                     // TODO: Log error
                     continue;
                 }
@@ -89,8 +91,8 @@ public final class TcpUserConnectionReceiver implements UserConnectionReceiver {
         });
     }
 
-    public static TcpUserConnectionReceiver createAndBind(UserConnectionRepository repository, String bindAddress,
-            int bindPort) throws UnknownHostException, IOException {
+    public static TcpUserConnectionReceiver createAndBind(UserConnectionRepository<Socket> repository,
+            String bindAddress, int bindPort) throws UnknownHostException, IOException {
         return new TcpUserConnectionReceiver(repository,
                 new ServerSocket(bindPort, 4, InetAddress.getByName(bindAddress)));
     }

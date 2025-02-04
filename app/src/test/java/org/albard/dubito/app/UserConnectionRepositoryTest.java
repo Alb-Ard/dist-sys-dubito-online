@@ -8,51 +8,48 @@ import org.junit.jupiter.api.Test;
 public final class UserConnectionRepositoryTest {
     @Test
     void testCreatesEmpty() {
-        final UserConnectionRepository repository = UserConnectionRepository.createEmpty();
+        final UserConnectionRepository<Object> repository = UserConnectionRepository.createEmpty();
         Assertions.assertEquals(repository.getUserCount(), 0);
     }
 
     @Test
     void testAddNewUser() {
-        final UserConnectionRepository repository = UserConnectionRepository.createEmpty();
-        final InetSocketAddress endPoint = new InetSocketAddress("127.0.0.1", 5050);
-        Assertions.assertTrue(repository.addUser(endPoint));
+        final UserConnectionRepository<Object> repository = UserConnectionRepository.createEmpty();
+        Assertions.assertTrue(repository.addUser(new InetSocketAddress("127.0.0.1", 5050), new Object()));
         Assertions.assertEquals(repository.getUserCount(), 1);
     }
 
     @Test
     void testAddExistingUser() {
-        final UserConnectionRepository repository = UserConnectionRepository.createEmpty();
-        final InetSocketAddress endPoint = new InetSocketAddress("127.0.0.1", 5050);
-        repository.addUser(endPoint);
-        final InetSocketAddress endPoint2 = new InetSocketAddress("127.0.0.1", 5050);
-        Assertions.assertFalse(repository.addUser(endPoint2));
+        final UserConnectionRepository<Object> repository = UserConnectionRepository.createEmpty();
+        final Object value = new Object();
+        repository.addUser(new InetSocketAddress("127.0.0.1", 5050), value);
+        Assertions.assertFalse(repository.addUser(new InetSocketAddress("127.0.0.1", 5050), value));
         Assertions.assertEquals(repository.getUserCount(), 1);
+        Assertions.assertEquals(repository.getUser(new InetSocketAddress("127.0.0.1", 5050)), value);
     }
 
     @Test
     void testRemoveExistingUser() {
-        final UserConnectionRepository repository = UserConnectionRepository.createEmpty();
-        final InetSocketAddress endPoint = new InetSocketAddress("127.0.0.1", 5050);
-        repository.addUser(endPoint);
-        final InetSocketAddress endPoint2 = new InetSocketAddress("127.0.0.1", 5050);
-        Assertions.assertTrue(repository.removeUser(endPoint2));
+        final UserConnectionRepository<Object> repository = UserConnectionRepository.createEmpty();
+        repository.addUser(new InetSocketAddress("127.0.0.1", 5050), new Object());
+        Assertions.assertTrue(repository.removeUser(new InetSocketAddress("127.0.0.1", 5050)));
         Assertions.assertEquals(repository.getUserCount(), 0);
+        Assertions.assertEquals(repository.getUser(new InetSocketAddress("127.0.0.1", 5050)), null);
     }
 
     @Test
     void testRemoveNonExistingUser() {
-        final UserConnectionRepository repository = UserConnectionRepository.createEmpty();
-        final InetSocketAddress endPoint = new InetSocketAddress("127.0.0.1", 5050);
-        Assertions.assertFalse(repository.removeUser(endPoint));
+        final UserConnectionRepository<Object> repository = UserConnectionRepository.createEmpty();
+        Assertions.assertFalse(repository.removeUser(new InetSocketAddress("127.0.0.1", 5050)));
         Assertions.assertEquals(repository.getUserCount(), 0);
     }
 
     @Test
     void testRemoveAlreadyRemovedUser() {
-        final UserConnectionRepository repository = UserConnectionRepository.createEmpty();
+        final UserConnectionRepository<Object> repository = UserConnectionRepository.createEmpty();
         final InetSocketAddress endPoint = new InetSocketAddress("127.0.0.1", 5050);
-        repository.addUser(endPoint);
+        repository.addUser(endPoint, new Object());
         Assertions.assertTrue(repository.removeUser(endPoint));
         Assertions.assertFalse(repository.removeUser(endPoint));
         Assertions.assertEquals(repository.getUserCount(), 0);
@@ -60,9 +57,11 @@ public final class UserConnectionRepositoryTest {
 
     @Test
     void testClear() {
-        final UserConnectionRepository repository = UserConnectionRepository.createEmpty();
+        final UserConnectionRepository<Object> repository = UserConnectionRepository.createEmpty();
         for (int i = 0; i < 10; i++) {
-            repository.addUser(new InetSocketAddress("127.0.0.1", i));
+            final Object value = new Object();
+            repository.addUser(new InetSocketAddress("127.0.0.1", i), value);
+            Assertions.assertEquals(repository.getUser(new InetSocketAddress("127.0.0.1", i)), value);
         }
         repository.clear();
         Assertions.assertEquals(repository.getUserCount(), 0);

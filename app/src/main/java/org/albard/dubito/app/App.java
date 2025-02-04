@@ -4,14 +4,18 @@
 package org.albard.dubito.app;
 
 import java.io.IOException;
+import java.net.Socket;
 import java.util.Scanner;
 import java.util.function.Supplier;
+
+import org.albard.dubito.app.connection.UserConnection;
+import org.albard.dubito.app.connection.UserConnectionReceiver;
 
 public class App {
     public static void main(final String[] args) {
         final String bindAddress = getArgOrDefault(args, 0, () -> "0.0.0.0");
         final int bindPort = Integer.parseInt(getArgOrDefault(args, 1, () -> "9000"));
-        final UserConnectionRepository userRepository = UserConnectionRepository.createEmpty();
+        final UserConnectionRepository<Socket> userRepository = UserConnectionRepository.createEmpty();
         try (final UserConnectionReceiver connectionReceiver = UserConnectionReceiver.createBound(userRepository,
                 bindAddress, bindPort)) {
             final Scanner inputScanner = new Scanner(System.in);
@@ -21,7 +25,7 @@ public class App {
                     getArgOrDefault(args, 3,
                             () -> requestInput(inputScanner, "Insert remote peer port (or empty for default): ")),
                     () -> 9000);
-            try (final UserConnectionSender sender = UserConnectionSender.create()) {
+            try (final UserConnection sender = UserConnection.create()) {
                 sender.connect(remoteAddress, remotePort);
                 System.out.println("Connected! Press any key to exit...");
                 inputScanner.nextLine();

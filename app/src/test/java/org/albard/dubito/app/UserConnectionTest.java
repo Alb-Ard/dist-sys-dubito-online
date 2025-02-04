@@ -6,13 +6,14 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
+import org.albard.dubito.app.connection.UserConnection;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public final class UserConnectionTest {
     @Test
     void testCreateAndConnect() throws IOException {
-        try (final UserConnectionSender sender = UserConnectionSender.create();
+        try (final UserConnection sender = UserConnection.create();
                 final ServerSocket server = this.createAndLaunchServer("127.0.0.1", 9000)) {
             Assertions.assertDoesNotThrow(() -> sender.connect("127.0.0.1", 9000));
         }
@@ -21,7 +22,7 @@ public final class UserConnectionTest {
     @Test
     void testConnectAgain() throws IOException {
         try (final ServerSocket server = this.createAndLaunchServer("127.0.0.1", 9000)) {
-            final UserConnectionSender sender = UserConnectionSender.create();
+            final UserConnection sender = UserConnection.create();
             sender.connect("127.0.0.1", 9000);
             sender.close();
             Assertions.assertThrows(Exception.class, () -> sender.connect("127.0.0.1", 9000));
@@ -31,7 +32,7 @@ public final class UserConnectionTest {
     @Test
     void testDisconnect() throws UnknownHostException, IOException {
         try (final ServerSocket server = this.createAndLaunchServer("127.0.0.1", 9000)) {
-            final UserConnectionSender sender = UserConnectionSender.create();
+            final UserConnection sender = UserConnection.create();
             sender.connect("127.0.0.1", 9000);
             Assertions.assertDoesNotThrow(() -> sender.close());
         }
@@ -40,7 +41,7 @@ public final class UserConnectionTest {
     @Test
     void testDisconnectAgain() throws UnknownHostException, IOException {
         try (final ServerSocket server = this.createAndLaunchServer("127.0.0.1", 9000)) {
-            final UserConnectionSender sender = UserConnectionSender.create();
+            final UserConnection sender = UserConnection.create();
             sender.connect("127.0.0.1", 9000);
             sender.close();
             Assertions.assertDoesNotThrow(() -> sender.close());
@@ -50,7 +51,7 @@ public final class UserConnectionTest {
     @Test
     void testReconnect() throws UnknownHostException, IOException {
         try (final ServerSocket server = this.createAndLaunchServer("127.0.0.1", 9000)) {
-            final UserConnectionSender sender = UserConnectionSender.create();
+            final UserConnection sender = UserConnection.create();
             sender.connect("127.0.0.1", 9000);
             sender.close();
             Assertions.assertThrows(Exception.class, () -> sender.connect("127.0.0.1", 9000));
