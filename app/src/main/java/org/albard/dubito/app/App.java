@@ -4,12 +4,16 @@
 package org.albard.dubito.app;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.Scanner;
 import java.util.function.Supplier;
 
 import org.albard.dubito.app.connection.UserConnection;
 import org.albard.dubito.app.connection.UserConnectionReceiver;
+import org.albard.dubito.app.messaging.UserMessageSender;
+import org.albard.dubito.app.messaging.UserMessageSenderFactory;
+import org.albard.dubito.app.messaging.MessageSerializer;
 
 public class App {
     public static void main(final String[] args) {
@@ -27,14 +31,41 @@ public class App {
                     () -> 9000);
             try (final UserConnection sender = UserConnection.create()) {
                 sender.connect(remoteAddress, remotePort);
-                System.out.println("Connected! Press any key to exit...");
-                inputScanner.nextLine();
+                final UserMessageSender<Socket> messageSender = new UserMessageSenderFactory()
+                        .createSocketSender(userRepository, createMessageSerializer());
+                System.out.println("Connected!");
+                do {
+                    System.out.print("Input any message and press ENTER to send (or /q to quit): ");
+                    final String input = inputScanner.nextLine();
+                    if (input.equals("/q")) {
+                        break;
+                    }
+                    messageSender.sendToAll(input);
+                } while (true);
             } catch (final Exception ex) {
                 ex.printStackTrace();
             }
         } catch (final IOException ex) {
             ex.printStackTrace();
         }
+    }
+
+    private static MessageSerializer<Socket> createMessageSerializer() {
+        return new MessageSerializer<Socket>() {
+            @Override
+            public byte[] serialize(InetSocketAddress user, Socket connection, Object message) {
+                final StringBuilder builder = new StringBuilder();
+                builder.append(user).append("|").append(message.toString());
+                return builder.toString().getBytes();
+            }
+
+            @Override
+            public Object deserialize(InetSocketAddress user, Socket connection, byte[] rawMessage) {
+                final String fullMessage = new String(rawMessage);
+                final String[] messageParts = fullMessage.split("|", 2);
+                return new String(messageParts[1]);
+            }
+        };
     }
 
     private static int parseIntOrDefault(final String value, Supplier<Integer> defaultValueProvider) {
