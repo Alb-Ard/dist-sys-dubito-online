@@ -16,4 +16,9 @@ public final class TcpUserConnection implements UserConnection {
     public void connect(String remoteAddress, int remotePort) throws IOException {
         this.socket.connect(new InetSocketAddress(remoteAddress, remotePort));
     }
+
+    @Override
+    public Socket getSocket() {
+        return this.socket;
+    }
 }

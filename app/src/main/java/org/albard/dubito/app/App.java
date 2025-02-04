@@ -6,64 +6,124 @@ package org.albard.dubito.app;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.time.Duration;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import org.albard.dubito.app.connection.UserConnection;
 import org.albard.dubito.app.connection.UserConnectionReceiver;
-import org.albard.dubito.app.messaging.UserMessageSender;
-import org.albard.dubito.app.messaging.UserMessageSenderFactory;
+import org.albard.dubito.app.messaging.MessageSenderFactory;
 import org.albard.dubito.app.messaging.MessageSerializer;
+import org.albard.dubito.app.messaging.MessageReceiver;
+import org.albard.dubito.app.messaging.MessageSender;
 
 public class App {
     public static void main(final String[] args) {
         final String bindAddress = getArgOrDefault(args, 0, () -> "0.0.0.0");
         final int bindPort = Integer.parseInt(getArgOrDefault(args, 1, () -> "9000"));
-        final UserConnectionRepository<Socket> userRepository = UserConnectionRepository.createEmpty();
-        try (final UserConnectionReceiver connectionReceiver = UserConnectionReceiver.createBound(userRepository,
+        final MessageSerializer<Socket> messageSerializer = createMessageSerializer();
+        final UserConnectionRepository<Socket> serverUserRepository = UserConnectionRepository.createEmpty();
+        serverUserRepository.addUserListener(createUserRepositoryListener(messageSerializer));
+        try (final UserConnectionReceiver connectionReceiver = UserConnectionReceiver.createBound(serverUserRepository,
                 bindAddress, bindPort)) {
-            final Scanner inputScanner = new Scanner(System.in);
-            final String remoteAddress = getArgOrDefault(args, 2,
-                    () -> requestInput(inputScanner, "Insert remote peer hostname: "));
-            final int remotePort = parseIntOrDefault(
-                    getArgOrDefault(args, 3,
-                            () -> requestInput(inputScanner, "Insert remote peer port (or empty for default): ")),
-                    () -> 9000);
-            try (final UserConnection sender = UserConnection.create()) {
-                sender.connect(remoteAddress, remotePort);
-                final UserMessageSender<Socket> messageSender = new UserMessageSenderFactory()
-                        .createSocketSender(userRepository, createMessageSerializer());
-                System.out.println("Connected!");
-                do {
-                    System.out.print("Input any message and press ENTER to send (or /q to quit): ");
-                    final String input = inputScanner.nextLine();
-                    if (input.equals("/q")) {
-                        break;
-                    }
-                    messageSender.sendToAll(input);
-                } while (true);
-            } catch (final Exception ex) {
-                ex.printStackTrace();
-            }
+            connectionReceiver.start();
+            System.out.println("[SERVER] Listening on " + bindAddress + ":" + bindPort);
+            runClient(args, 2);
         } catch (final IOException ex) {
             ex.printStackTrace();
         }
+        System.out.println("[SERVER] Closed");
+    }
+
+    private static void runClient(final String[] args, int argsOffset) {
+        final Scanner inputScanner = new Scanner(System.in);
+        final String remoteAddress = getArgOrDefault(args, argsOffset,
+                () -> requestInput(inputScanner, "[CLIENT] Insert remote peer hostname: "));
+        final int remotePort = parseIntOrDefault(
+                getArgOrDefault(args, argsOffset + 1,
+                        () -> requestInput(inputScanner, "[CLIENT] Insert remote peer port (or empty for default): ")),
+                () -> 9000);
+        try (final UserConnection connection = UserConnection.create()) {
+            connection.connect(remoteAddress, remotePort);
+            final MessageSerializer<Socket> messageSerializer = createMessageSerializer();
+            final Socket clientSocket = connection.getSocket();
+            final MessageSender messageSender = new MessageSenderFactory().createSocketSender(clientSocket,
+                    messageSerializer);
+            final MessageReceiver messageReceiver = MessageReceiver.createFromStream(clientSocket.getInputStream(),
+                    m -> messageSerializer.deserialize((InetSocketAddress) clientSocket.getRemoteSocketAddress(),
+                            clientSocket, m));
+            messageReceiver.setMessageListener(
+                    createIncomingMessageHandler("CLIENT", (InetSocketAddress) clientSocket.getRemoteSocketAddress()));
+            messageReceiver.start();
+            System.out.println("[CLIENT] Connected!");
+            do {
+                Thread.sleep(Duration.ofSeconds(1));
+                System.out.print("[CLIENT] Input any message and press ENTER to send (or /q to quit): ");
+                final String input = inputScanner.nextLine();
+                if (input.equals("/q")) {
+                    break;
+                }
+                messageSender.send(input);
+            } while (true);
+        } catch (final Exception ex) {
+            ex.printStackTrace();
+        }
+        System.out.println("[CLIENT] Closed");
+    }
+
+    private static UserRepositoryListener<Socket> createUserRepositoryListener(
+            final MessageSerializer<Socket> messageSerializer) {
+        return new UserRepositoryListener<Socket>() {
+            final Map<InetSocketAddress, MessageReceiver> receivers = Collections.synchronizedMap(new HashMap<>());
+
+            @Override
+            public void handleUserAdded(InetSocketAddress endPoint, Socket connection) {
+                final MessageReceiver receiver;
+                try {
+                    receiver = MessageReceiver.createFromStream(connection.getInputStream(),
+                            t -> messageSerializer.deserialize(endPoint, connection, t));
+                    receiver.setMessageListener(createIncomingMessageHandler("SERVER", endPoint));
+                    receiver.start();
+                    this.receivers.put(endPoint, receiver);
+                    System.out.println("[SERVER] Opened connection from " + endPoint);
+                } catch (final IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
+
+            @Override
+            public void handleUserRemoved(InetSocketAddress endPoint, Socket connection) {
+                try {
+                    System.out.println("[SERVER] Closed connection from " + endPoint);
+                    this.receivers.remove(endPoint);
+                    connection.close();
+                } catch (final IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
+        };
+    }
+
+    private static Consumer<Object> createIncomingMessageHandler(String label, InetSocketAddress endPoint) {
+        return m -> {
+            System.out.println("[" + label + "] " + endPoint + ": " + m);
+        };
     }
 
     private static MessageSerializer<Socket> createMessageSerializer() {
         return new MessageSerializer<Socket>() {
             @Override
             public byte[] serialize(InetSocketAddress user, Socket connection, Object message) {
-                final StringBuilder builder = new StringBuilder();
-                builder.append(user).append("|").append(message.toString());
-                return builder.toString().getBytes();
+                return message.toString().getBytes();
             }
 
             @Override
             public Object deserialize(InetSocketAddress user, Socket connection, byte[] rawMessage) {
-                final String fullMessage = new String(rawMessage);
-                final String[] messageParts = fullMessage.split("|", 2);
-                return new String(messageParts[1]);
+                return new String(rawMessage);
             }
         };
     }

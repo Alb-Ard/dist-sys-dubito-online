@@ -1,9 +1,11 @@
 package org.albard.dubito.app.messaging;
 
-import java.net.InetSocketAddress;
+import java.util.function.Consumer;
 
 public interface MessageSender {
-    void sendToAll(Object message);
+    static MessageSender create(Consumer<Object> sendHandler) {
+        return SerialMessageSender.create(sendHandler);
+    }
 
-    void sendTo(Object message, InetSocketAddress[] userEndPoints);
+    void send(Object message);
 }

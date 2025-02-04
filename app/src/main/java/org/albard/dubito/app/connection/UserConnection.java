@@ -2,6 +2,7 @@ package org.albard.dubito.app.connection;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.net.Socket;
 
 public interface UserConnection extends Closeable {
     static UserConnection create() {
@@ -9,4 +10,6 @@ public interface UserConnection extends Closeable {
     }
 
     void connect(String remoteAddress, int remotePort) throws IOException;
+
+    Socket getSocket();
 }

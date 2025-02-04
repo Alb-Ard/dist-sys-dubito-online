@@ -1,7 +1,6 @@
 package org.albard.dubito.app.connection;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -53,14 +52,9 @@ public final class TcpUserConnectionReceiver implements UserConnectionReceiver {
         while (this.isListening()) {
             try {
                 final Socket userSocket = this.listeningSocket.accept();
-                if (!(userSocket.getRemoteSocketAddress() instanceof InetSocketAddress remoteEndPoint)
-                        || !this.userRepository.addUser(remoteEndPoint, userSocket)) {
-                    // TODO: Log error
-                    continue;
-                }
                 this.handleUserConnection(userSocket);
-            } catch (final IOException e) {
-                e.printStackTrace();
+            } catch (final IOException ex) {
+                ex.printStackTrace();
             }
         }
     }
@@ -68,25 +62,19 @@ public final class TcpUserConnectionReceiver implements UserConnectionReceiver {
     private void handleUserConnection(final Socket userSocket) {
         Thread.ofVirtual().name("UserConnection-" + userSocket.getRemoteSocketAddress()).start(() -> {
             try {
-                final InputStream stream = userSocket.getInputStream();
-                final byte[] receiveBuffer = new byte[1024];
-                while (this.isListening() && userSocket.isConnected()) {
-                    final int readByteCount = stream.read(receiveBuffer);
-                    if (readByteCount <= 0) {
-                        break;
+                if (this.userRepository.addUser((InetSocketAddress) userSocket.getRemoteSocketAddress(), userSocket)) {
+                    while (this.isListening() && !userSocket.isClosed() && userSocket.isConnected()) {
+                        Thread.sleep(Duration.ofMillis(10));
                     }
-                    // TODO: Do work
-                    Thread.sleep(Duration.ofMillis(10));
                 }
-            } catch (final Exception e) {
-                e.printStackTrace();
-            } finally {
+            } catch (final Exception ex) {
+                ex.printStackTrace();
+            }
+            try {
                 this.userRepository.removeUser((InetSocketAddress) userSocket.getRemoteSocketAddress());
-                try {
-                    userSocket.close();
-                } catch (final IOException e) {
-                    e.printStackTrace();
-                }
+                userSocket.close();
+            } catch (final Exception ex) {
+                ex.printStackTrace();
             }
         });
     }

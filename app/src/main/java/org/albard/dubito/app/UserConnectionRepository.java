@@ -18,4 +18,6 @@ public interface UserConnectionRepository<T> {
     public T getUser(InetSocketAddress endPoint);
 
     public InetSocketAddress[] getAllUserEndPoints();
+
+    public void addUserListener(UserRepositoryListener<T> userRepositoryListener);
 }

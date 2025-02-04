@@ -105,6 +105,23 @@ public final class UserConnectionReceiverTest {
     @Test
     void testDisconnectClient() throws IOException, InterruptedException {
         final UserConnectionRepository<Socket> repository = UserConnectionRepository.createEmpty();
+        repository.addUserListener(new UserRepositoryListener<Socket>() {
+            @Override
+            public void handleUserAdded(InetSocketAddress endPoint, Socket connection) {
+                try {
+                    // Fake reading to detect when the remote end closes the connection
+                    if (connection.getInputStream().read() < 0) {
+                        connection.close();
+                    }
+                } catch (final IOException ex) {
+                    ex.printStackTrace();
+                }
+            }
+
+            @Override
+            public void handleUserRemoved(InetSocketAddress endPoint, Socket connection) {
+            }
+        });
         try (final UserConnectionReceiver receiver = UserConnectionReceiver.createBound(repository, "127.0.0.1",
                 9000)) {
             final Socket userSocket = new Socket();
