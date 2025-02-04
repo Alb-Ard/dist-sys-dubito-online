@@ -23,7 +23,7 @@ public final class UserConnectionReceiverTest {
         try (final UserConnectionReceiver receiver = UserConnectionReceiver.createBound(repository, "127.0.0.1",
                 9000)) {
             Assertions.assertFalse(receiver.isListening());
-            Assertions.assertEquals(receiver.getUserCount(), 0);
+            Assertions.assertEquals(0, receiver.getUserCount());
         }
     }
 
@@ -56,7 +56,7 @@ public final class UserConnectionReceiverTest {
             receiver.close();
         } finally {
             Assertions.assertFalse(receiver.isListening());
-            Assertions.assertEquals(receiver.getUserCount(), 0);
+            Assertions.assertEquals(0, receiver.getUserCount());
         }
     }
 
@@ -70,7 +70,7 @@ public final class UserConnectionReceiverTest {
             receiver.close();
         } finally {
             Assertions.assertFalse(receiver.isListening());
-            Assertions.assertEquals(receiver.getUserCount(), 0);
+            Assertions.assertEquals(0, receiver.getUserCount());
         }
     }
 
@@ -98,7 +98,7 @@ public final class UserConnectionReceiverTest {
             // I can't be sure that the receiver processed the connection immediatly, I give
             // it some time to finish accepting the user...
             Thread.sleep(Duration.ofMillis(250));
-            Assertions.assertEquals(receiver.getUserCount(), 1);
+            Assertions.assertEquals(1, receiver.getUserCount());
         }
     }
 
@@ -115,7 +115,7 @@ public final class UserConnectionReceiverTest {
             userSocket.close();
             // Wait for receiver to finish disconnecting the user
             Thread.sleep(Duration.ofMillis(250));
-            Assertions.assertEquals(receiver.getUserCount(), 0);
+            Assertions.assertEquals(0, receiver.getUserCount());
         }
     }
 }
