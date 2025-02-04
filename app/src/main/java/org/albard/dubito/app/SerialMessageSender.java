@@ -19,9 +19,14 @@ public final class SerialMessageSender<T> implements MessageSender<T> {
 
     @Override
     public void sendToAll(final Object message) {
-        final InetSocketAddress[] userEndPoints = this.repository.getAllUserEndPoints();
+        this.sendTo(message, this.repository.getAllUserEndPoints());
+    }
+
+    @Override
+    public void sendTo(final Object message, final InetSocketAddress[] userEndPoints) {
         for (final InetSocketAddress userEndPoint : userEndPoints) {
-            this.sendHandler.send(this.repository.getUser(userEndPoint), message);
+            final T connection = this.repository.getUser(userEndPoint);
+            this.sendHandler.send(userEndPoint, connection, message);
         }
     }
 }
