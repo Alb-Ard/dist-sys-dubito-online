@@ -1,15 +1,19 @@
 package org.albard.dubito.app;
 
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.BiConsumer;
 
 import org.albard.dubito.app.messaging.UserMessageSender;
+import org.albard.dubito.app.messaging.UserMessageSenderFactory;
+import org.albard.dubito.app.messaging.MessageSerializer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public final class UserMessageSenderTest {
+
     @Test
     void testCreate() {
         Assertions.assertDoesNotThrow(
@@ -71,5 +75,21 @@ public final class UserMessageSenderTest {
             repository.addUser(user, messageHandler);
         }
         return users;
+    }
+
+    @Test
+    void testFactoryCreateSocket() {
+        final UserConnectionRepository<Socket> repository = UserConnectionRepository.createEmpty();
+        final UserMessageSenderFactory factory = new UserMessageSenderFactory();
+        Assertions.assertDoesNotThrow(() -> factory.createSocketSender(repository, new MessageSerializer<Socket>() {
+            public byte[] serialize(InetSocketAddress user, Socket connection, Object message) {
+                return message.toString().getBytes();
+            };
+
+            @Override
+            public Object deserialize(InetSocketAddress user, Socket connection, byte[] message) {
+                return new String(message);
+            }
+        }));
     }
 }
