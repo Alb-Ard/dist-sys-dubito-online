@@ -1,19 +1,21 @@
-package org.albard.dubito.app;
+package org.albard.dubito.app.messaging;
 
 import java.net.InetSocketAddress;
 
-public final class SerialMessageSender<T> implements MessageSender<T> {
+import org.albard.dubito.app.UserConnectionRepository;
+
+public final class SerialMessageSender<T> implements UserMessageSender<T> {
     private final UserConnectionRepository<T> repository;
     private final MessageHandler<T> sendHandler;
 
     public SerialMessageSender(final UserConnectionRepository<T> repository,
-            final MessageSender.MessageHandler<T> sendHandler) {
+            final UserMessageSender.MessageHandler<T> sendHandler) {
         this.repository = repository;
         this.sendHandler = sendHandler;
     }
 
-    static <T> MessageSender<T> create(final UserConnectionRepository<T> repository,
-            final MessageSender.MessageHandler<T> sendHandler) {
+    static <T> UserMessageSender<T> create(final UserConnectionRepository<T> repository,
+            final UserMessageSender.MessageHandler<T> sendHandler) {
         return new SerialMessageSender<T>(repository, sendHandler);
     }
 

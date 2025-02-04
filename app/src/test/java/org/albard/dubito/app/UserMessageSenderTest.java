@@ -5,14 +5,16 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.function.BiConsumer;
 
+import org.albard.dubito.app.messaging.UserMessageSender;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public final class MessageSenderTest {
+public final class UserMessageSenderTest {
     @Test
     void testCreate() {
-        Assertions.assertDoesNotThrow(() -> MessageSender.create(UserConnectionRepository.createEmpty(), (a, b, c) -> {
-        }));
+        Assertions.assertDoesNotThrow(
+                () -> UserMessageSender.create(UserConnectionRepository.createEmpty(), (a, b, c) -> {
+                }));
     }
 
     @Test
@@ -26,7 +28,7 @@ public final class MessageSenderTest {
             receipients.add(u);
             receivedMessages.add(m);
         });
-        final MessageSender<BiConsumer<InetSocketAddress, Object>> sender = MessageSender.create(repository,
+        final UserMessageSender<BiConsumer<InetSocketAddress, Object>> sender = UserMessageSender.create(repository,
                 (u, c, m) -> c.accept(u, m));
         Assertions.assertDoesNotThrow(() -> sender.sendToAll("Test"));
         Assertions.assertEquals(userCount, receipients.size());
@@ -48,7 +50,7 @@ public final class MessageSenderTest {
             receipients.add(u);
             receivedMessages.add(m);
         });
-        final MessageSender<BiConsumer<InetSocketAddress, Object>> sender = MessageSender.create(repository,
+        final UserMessageSender<BiConsumer<InetSocketAddress, Object>> sender = UserMessageSender.create(repository,
                 (u, c, m) -> c.accept(u, m));
         sender.sendTo("Test", new InetSocketAddress[] { repositoryUsers.get(0), repositoryUsers.get(2) });
         Assertions.assertEquals(2, receipients.size());
