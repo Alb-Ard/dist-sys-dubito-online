@@ -27,8 +27,10 @@ public class App {
         final MessageSerializer<Socket> messageSerializer = createMessageSerializer();
         final UserConnectionRepository<Socket> serverUserRepository = UserConnectionRepository.createEmpty();
         serverUserRepository.addUserListener(createUserRepositoryListener(messageSerializer));
-        try (final UserConnectionReceiver connectionReceiver = UserConnectionReceiver.createBound(serverUserRepository,
-                bindAddress, bindPort)) {
+        try (final UserConnectionReceiver connectionReceiver = UserConnectionReceiver.createBound(bindAddress,
+                bindPort)) {
+            connectionReceiver.setUserConnectedListener(c -> serverUserRepository
+                    .addUser((InetSocketAddress) c.getSocket().getRemoteSocketAddress(), c.getSocket()));
             connectionReceiver.start();
             System.out.println("[SERVER] Listening on " + bindAddress + ":" + bindPort);
             runClient(args, 2);
