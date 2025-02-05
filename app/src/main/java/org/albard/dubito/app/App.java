@@ -1,9 +1,6 @@
 package org.albard.dubito.app;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.Socket;
 import java.time.Duration;
 import java.util.List;
 import java.util.Scanner;
@@ -84,13 +81,14 @@ public class App {
         try (final PeerConnection connection = PeerConnection.createAndConnect(endPoint.getLocalEndPoint().getHost(),
                 endPoint.getLocalEndPoint().getPort(), endPoint.getRemoteEndPoint().getHost(),
                 endPoint.getRemoteEndPoint().getPort())) {
+            final PeerIdExchanger idExchanger = new PeerIdExchanger(localPeerId);
             System.out.println("[CLIENT] Connected! Sending my id...");
-            sendPeerIdToConnection(localPeerId, connection);
-            final PeerId remotePeerId = waitForConnectionPeerId(connection);
+            final PeerId remotePeerId = idExchanger.exchangeIds(connection);
             addPeerToDispatcher(messageDispatcher, remotePeerId, connection, messageSerializer);
             System.out.println("[CLIENT] Initialized!");
             do {
-                Thread.sleep(Duration.ofSeconds(5));
+                System.out.println("[CLIENT] Press any key to send a ping to all");
+                System.in.read();
                 System.out.println("[CLIENT] Sending Ping");
                 messageDispatcher.sendMessage(new PingMessage(localPeerId, Set.of()));
             } while (true);
@@ -100,43 +98,16 @@ public class App {
         System.out.println("[CLIENT] Closed");
     }
 
-    private static void sendPeerIdToConnection(final PeerId localPeerId, final PeerConnection connection)
-            throws IOException {
-        // Non blocking, since we may want to do a send-receive of peer ids
-        Thread.ofVirtual().start(() -> {
-            try {
-                final Socket socket = connection.getSocket();
-                System.out.println("[SERVER] Sending peer id " + localPeerId + " " + socket.getRemoteSocketAddress());
-                final OutputStream stream = socket.getOutputStream();
-                stream.write(localPeerId.getBytes());
-                stream.flush();
-            } catch (final IOException ex) {
-                ex.printStackTrace();
-            }
-        });
-    }
-
-    private static PeerId waitForConnectionPeerId(final PeerConnection connection) throws IOException {
-        final Socket socket = connection.getSocket();
-        final InputStream stream = socket.getInputStream();
-        final PeerId id = PeerId.createFromBytes(stream.readNBytes(PeerId.LENGTH));
-        // Clean the input buffer
-        while (stream.available() > 0) {
-            stream.read();
-        }
-        System.out.println("[SERVER] Received peer id " + id + " from " + socket.getRemoteSocketAddress());
-        return id;
-    }
-
     private static Consumer<PeerConnection> createConnectionsListener(final PeerId localPeerId,
             final MessageSerializer messageSerializer, final MessageDispatcher messageDispatcher) {
         return new Consumer<>() {
+            final PeerIdExchanger idExchanger = new PeerIdExchanger(localPeerId);
+
             @Override
             public void accept(final PeerConnection connection) {
                 try {
                     System.out.println("[SERVER] Connecting to " + connection.getSocket().getRemoteSocketAddress());
-                    sendPeerIdToConnection(localPeerId, connection);
-                    final PeerId remotePeerId = waitForConnectionPeerId(connection);
+                    final PeerId remotePeerId = idExchanger.exchangeIds(connection);
                     addPeerToDispatcher(messageDispatcher, remotePeerId, connection, messageSerializer);
                     System.out.println("[SERVER] Connected to " + remotePeerId);
                 } catch (final IOException ex) {
