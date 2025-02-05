@@ -24,12 +24,12 @@ public class App {
     public static void main(final String[] args) {
         final String bindAddress = getArgOrDefault(args, 0, () -> "0.0.0.0");
         final int bindPort = Integer.parseInt(getArgOrDefault(args, 1, () -> "9000"));
-        final MessageSerializer<Socket> messageSerializer = createMessageSerializer();
-        final UserConnectionRepository<Socket> serverUserRepository = UserConnectionRepository.createEmpty();
-        serverUserRepository.addUserListener(createUserRepositoryListener(messageSerializer));
+        final MessageSerializer messageSerializer = createMessageSerializer();
+        final UserConnectionRepository<Socket> connectionRepository = UserConnectionRepository.createEmpty();
+        connectionRepository.addUserListener(createUserRepositoryListener(messageSerializer));
         try (final UserConnectionReceiver connectionReceiver = UserConnectionReceiver.createBound(bindAddress,
                 bindPort)) {
-            connectionReceiver.setUserConnectedListener(c -> serverUserRepository
+            connectionReceiver.setUserConnectedListener(c -> connectionRepository
                     .addUser((InetSocketAddress) c.getSocket().getRemoteSocketAddress(), c.getSocket()));
             connectionReceiver.start();
             System.out.println("[SERVER] Listening on " + bindAddress + ":" + bindPort);
@@ -49,7 +49,7 @@ public class App {
                         () -> requestInput(inputScanner, "[CLIENT] Insert remote peer port (or empty for default): ")),
                 () -> 9000);
         try (final UserConnection connection = UserConnection.createAndConnect(remoteAddress, remotePort)) {
-            final MessageSerializer<Socket> messageSerializer = createMessageSerializer();
+            final MessageSerializer messageSerializer = createMessageSerializer();
             final Socket clientSocket = connection.getSocket();
             final MessageSender messageSender = MessageSender.createFromStream(clientSocket.getOutputStream(),
                     messageSerializer::serialize);
@@ -75,7 +75,7 @@ public class App {
     }
 
     private static UserRepositoryListener<Socket> createUserRepositoryListener(
-            final MessageSerializer<Socket> messageSerializer) {
+            final MessageSerializer messageSerializer) {
         return new UserRepositoryListener<Socket>() {
             final Map<InetSocketAddress, MessageReceiver> receivers = Collections.synchronizedMap(new HashMap<>());
 
@@ -113,8 +113,8 @@ public class App {
         };
     }
 
-    private static MessageSerializer<Socket> createMessageSerializer() {
-        return new MessageSerializer<Socket>() {
+    private static MessageSerializer createMessageSerializer() {
+        return new MessageSerializer() {
             @Override
             public byte[] serialize(Object message) {
                 return message.toString().getBytes();
