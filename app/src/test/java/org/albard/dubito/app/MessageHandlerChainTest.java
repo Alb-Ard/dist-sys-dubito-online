@@ -1,6 +1,5 @@
 package org.albard.dubito.app;
 
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -13,7 +12,7 @@ import org.junit.jupiter.api.Test;
 public final class MessageHandlerChainTest {
     private static class MockHandler implements MessageHandler {
         @Override
-        public boolean handleMessage(InetSocketAddress fromEndPoint, Object message) {
+        public boolean handleMessage(UserEndPoint fromEndPoint, Object message) {
             return false;
         }
     }

@@ -3,7 +3,6 @@ package org.albard.dubito.app;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
-import java.net.Socket;
 import java.net.UnknownHostException;
 
 public final class TestUtilities {
@@ -16,7 +15,7 @@ public final class TestUtilities {
         Thread.ofVirtual().start(() -> {
             try {
                 while (!server.isClosed()) {
-                    final Socket client = server.accept();
+                    server.accept();
                 }
             } catch (final Exception e) {
             }

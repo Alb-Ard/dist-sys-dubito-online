@@ -1,9 +1,10 @@
 package org.albard.dubito.app.messaging.handlers;
 
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
+import org.albard.dubito.app.UserEndPoint;
 
 public final class MessageHandlerChain implements MessageHandler {
     private final List<MessageHandler> handlers;
@@ -13,7 +14,7 @@ public final class MessageHandlerChain implements MessageHandler {
     }
 
     @Override
-    public boolean handleMessage(InetSocketAddress fromEndPoint, Object message) {
+    public boolean handleMessage(final UserEndPoint fromEndPoint, final Object message) {
         for (final MessageHandler handler : this.handlers) {
             try {
                 if (handler.handleMessage(fromEndPoint, message)) {

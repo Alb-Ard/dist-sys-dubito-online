@@ -1,6 +1,5 @@
 package org.albard.dubito.app;
 
-import java.net.InetSocketAddress;
 import java.util.function.Consumer;
 
 import org.albard.dubito.app.messaging.MessageDispatcher;
@@ -20,7 +19,7 @@ public final class MessageDispatcherTest {
         }
 
         @Override
-        public void send(Object message) {
+        public void sendMessage(Object message) {
         }
     }
 
@@ -34,8 +33,10 @@ public final class MessageDispatcherTest {
     void testAddMessenger() {
         final MessageDispatcher dispatcher = new MessageDispatcher();
         final MockMessenger messenger = new MockMessenger();
-        Assertions.assertDoesNotThrow(() -> dispatcher.addMessenger(new InetSocketAddress(0), messenger, messenger));
-        Assertions.assertDoesNotThrow(() -> dispatcher.addMessenger(new InetSocketAddress(1), messenger, messenger));
+        Assertions.assertDoesNotThrow(
+                () -> dispatcher.addMessenger(UserEndPoint.createFromValues("127.0.0.1", 0), messenger, messenger));
+        Assertions.assertDoesNotThrow(
+                () -> dispatcher.addMessenger(UserEndPoint.createFromValues("127.0.0.1", 1), messenger, messenger));
         Assertions.assertEquals(2, dispatcher.getMessengerCount());
     }
 
@@ -43,8 +44,9 @@ public final class MessageDispatcherTest {
     void testAddMessengerAgain() {
         final MessageDispatcher dispatcher = new MessageDispatcher();
         final MockMessenger messenger = new MockMessenger();
-        dispatcher.addMessenger(new InetSocketAddress(0), messenger, messenger);
-        Assertions.assertDoesNotThrow(() -> dispatcher.addMessenger(new InetSocketAddress(0), messenger, messenger));
+        dispatcher.addMessenger(UserEndPoint.createFromValues("127.0.0.1", 0), messenger, messenger);
+        Assertions.assertDoesNotThrow(
+                () -> dispatcher.addMessenger(UserEndPoint.createFromValues("127.0.0.1", 0), messenger, messenger));
         Assertions.assertEquals(1, dispatcher.getMessengerCount());
     }
 
@@ -52,9 +54,9 @@ public final class MessageDispatcherTest {
     void testRemoveMessenger() {
         final MessageDispatcher dispatcher = new MessageDispatcher();
         final MockMessenger messenger = new MockMessenger();
-        dispatcher.addMessenger(new InetSocketAddress(0), messenger, messenger);
-        dispatcher.addMessenger(new InetSocketAddress(1), messenger, messenger);
-        Assertions.assertDoesNotThrow(() -> dispatcher.removeMessenger(new InetSocketAddress(0)));
+        dispatcher.addMessenger(UserEndPoint.createFromValues("127.0.0.1", 0), messenger, messenger);
+        dispatcher.addMessenger(UserEndPoint.createFromValues("127.0.0.1", 1), messenger, messenger);
+        Assertions.assertDoesNotThrow(() -> dispatcher.removeMessenger(UserEndPoint.createFromValues("127.0.0.1", 0)));
         Assertions.assertEquals(1, dispatcher.getMessengerCount());
     }
 
@@ -62,16 +64,16 @@ public final class MessageDispatcherTest {
     void testRemoveNonExistingMessenger() {
         final MessageDispatcher dispatcher = new MessageDispatcher();
         final MockMessenger messenger = new MockMessenger();
-        dispatcher.addMessenger(new InetSocketAddress(0), messenger, messenger);
-        dispatcher.addMessenger(new InetSocketAddress(1), messenger, messenger);
-        Assertions.assertDoesNotThrow(() -> dispatcher.removeMessenger(new InetSocketAddress(2)));
+        dispatcher.addMessenger(UserEndPoint.createFromValues("127.0.0.1", 0), messenger, messenger);
+        dispatcher.addMessenger(UserEndPoint.createFromValues("127.0.0.1", 1), messenger, messenger);
+        Assertions.assertDoesNotThrow(() -> dispatcher.removeMessenger(UserEndPoint.createFromValues("127.0.0.1", 2)));
         Assertions.assertEquals(2, dispatcher.getMessengerCount());
     }
 
     @Test
     void testRemoveMessengerWhenEmpty() {
         final MessageDispatcher dispatcher = new MessageDispatcher();
-        Assertions.assertDoesNotThrow(() -> dispatcher.removeMessenger(new InetSocketAddress(9)));
+        Assertions.assertDoesNotThrow(() -> dispatcher.removeMessenger(UserEndPoint.createFromValues("127.0.0.1", 9)));
         Assertions.assertEquals(0, dispatcher.getMessengerCount());
     }
 }

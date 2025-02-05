@@ -8,5 +8,5 @@ public interface MessageSender {
         return SerialMessageSender.createFromStream(stream, serializer);
     }
 
-    void send(Object message);
+    void sendMessage(Object message);
 }

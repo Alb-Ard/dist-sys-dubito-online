@@ -1,19 +1,20 @@
 package org.albard.dubito.app.messaging;
 
-import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import org.albard.dubito.app.UserEndPoint;
+
 public final class MessageDispatcher implements MessageSender, MessageReceiver {
-    private final Map<InetSocketAddress, MessageSender> senders = Collections.synchronizedMap(new HashMap<>());
-    private final Map<InetSocketAddress, MessageReceiver> receivers = Collections.synchronizedMap(new HashMap<>());
+    private final Map<UserEndPoint, MessageSender> senders = Collections.synchronizedMap(new HashMap<>());
+    private final Map<UserEndPoint, MessageReceiver> receivers = Collections.synchronizedMap(new HashMap<>());
 
     private volatile boolean isStarted = false;
     private volatile Consumer<Object> messageListener;
 
-    public void addMessenger(final InetSocketAddress key, final MessageSender sender, final MessageReceiver receiver) {
+    public void addMessenger(final UserEndPoint key, final MessageSender sender, final MessageReceiver receiver) {
         this.senders.putIfAbsent(key, sender);
         if (this.receivers.putIfAbsent(key, receiver) == null) {
             receiver.setMessageListener(m -> {
@@ -27,7 +28,7 @@ public final class MessageDispatcher implements MessageSender, MessageReceiver {
         }
     }
 
-    public void removeMessenger(final InetSocketAddress key) {
+    public void removeMessenger(final UserEndPoint key) {
         this.senders.remove(key);
         final MessageReceiver receiver = this.receivers.remove(key);
         if (receiver != null) {
@@ -54,7 +55,7 @@ public final class MessageDispatcher implements MessageSender, MessageReceiver {
     }
 
     @Override
-    public void send(final Object message) {
-        this.senders.values().forEach(s -> s.send(message));
+    public void sendMessage(final Object message) {
+        this.senders.values().forEach(s -> s.sendMessage(message));
     }
 }

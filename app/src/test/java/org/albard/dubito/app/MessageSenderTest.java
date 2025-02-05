@@ -18,7 +18,7 @@ public final class MessageSenderTest {
     void testSend() {
         final ByteArrayOutputStream stream = new ByteArrayOutputStream(10);
         final MessageSender sender = MessageSender.createFromStream(stream, m -> m.toString().getBytes());
-        sender.send("Test");
+        sender.sendMessage("Test");
         Assertions.assertArrayEquals("Test".getBytes(), stream.toByteArray());
     }
 }

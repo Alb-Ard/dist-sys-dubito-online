@@ -4,8 +4,6 @@
 package org.albard.dubito.app;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.time.Duration;
 import java.util.Scanner;
 import java.util.function.Consumer;
@@ -23,17 +21,17 @@ public class App {
         final String bindAddress = getArgOrDefault(args, 0, () -> "0.0.0.0");
         final int bindPort = Integer.parseInt(getArgOrDefault(args, 1, () -> "9000"));
         final MessageSerializer messageSerializer = createMessageSerializer();
-        final ObservableMap<InetSocketAddress, UserConnection> connectionRepository = ObservableMap.createEmpty();
+        final ObservableMap<UserEndPoint, UserConnection> connections = ObservableMap.createEmpty();
         final MessageDispatcher messageDispatcher = new MessageDispatcher();
         messageDispatcher.start();
-        connectionRepository.addListener(createUserRepositoryListener(messageSerializer, messageDispatcher));
+        connections.addListener(createUserRepositoryListener(messageSerializer, messageDispatcher));
         try (final UserConnectionReceiver connectionReceiver = UserConnectionReceiver.createBound(bindAddress,
                 bindPort)) {
-            connectionReceiver.setUserConnectedListener(c -> connectionRepository
-                    .putIfAbsent((InetSocketAddress) c.getSocket().getRemoteSocketAddress(), c));
+            connectionReceiver.setUserConnectedListener(c -> connections
+                    .putIfAbsent(UserEndPoint.createFromAddress(c.getSocket().getRemoteSocketAddress()), c));
             connectionReceiver.start();
             System.out.println("[SERVER] Listening on " + bindAddress + ":" + bindPort);
-            runClient(args, 2, connectionRepository, messageDispatcher, messageDispatcher);
+            runClient(args, 2, connections, messageDispatcher, messageDispatcher);
         } catch (final IOException ex) {
             ex.printStackTrace();
         }
@@ -41,7 +39,7 @@ public class App {
     }
 
     private static void runClient(final String[] args, final int argsOffset,
-            final ObservableMap<InetSocketAddress, UserConnection> connectionRepository,
+            final ObservableMap<UserEndPoint, UserConnection> connectionRepository,
             final MessageReceiver messageReceiver, final MessageSender messageSender) {
         final Scanner inputScanner = new Scanner(System.in);
         final String remoteAddress = getArgOrDefault(args, argsOffset,
@@ -50,11 +48,10 @@ public class App {
                 getArgOrDefault(args, argsOffset + 1,
                         () -> requestInput(inputScanner, "[CLIENT] Insert remote peer port (or empty for default): ")),
                 () -> 9000);
+        final UserEndPoint remoteEndPoint = UserEndPoint.createFromValues(remoteAddress, remotePort);
         try (final UserConnection connection = UserConnection.createAndConnect(remoteAddress, remotePort)) {
-            connectionRepository.putIfAbsent(new InetSocketAddress(remoteAddress, remotePort), connection);
-            final Socket clientSocket = connection.getSocket();
-            messageReceiver.setMessageListener(
-                    createIncomingMessageHandler((InetSocketAddress) clientSocket.getRemoteSocketAddress()));
+            connectionRepository.putIfAbsent(remoteEndPoint, connection);
+            messageReceiver.setMessageListener(createIncomingMessageHandler(remoteEndPoint));
             System.out.println("[CLIENT] Connected!");
             do {
                 Thread.sleep(Duration.ofSeconds(1));
@@ -63,7 +60,7 @@ public class App {
                 if (input.equals("/q")) {
                     break;
                 }
-                messageSender.send(input);
+                messageSender.sendMessage(input);
             } while (true);
         } catch (final Exception ex) {
             ex.printStackTrace();
@@ -71,11 +68,11 @@ public class App {
         System.out.println("[CLIENT] Closed");
     }
 
-    private static ObservableMapListener<InetSocketAddress, UserConnection> createUserRepositoryListener(
+    private static ObservableMapListener<UserEndPoint, UserConnection> createUserRepositoryListener(
             final MessageSerializer messageSerializer, final MessageDispatcher messageDispatcher) {
         return new ObservableMapListener<>() {
             @Override
-            public void entryAdded(InetSocketAddress endPoint, UserConnection connection) {
+            public void entryAdded(UserEndPoint endPoint, UserConnection connection) {
                 try {
                     final MessageReceiver receiver = MessageReceiver
                             .createFromStream(connection.getSocket().getInputStream(), messageSerializer::deserialize);
@@ -89,7 +86,7 @@ public class App {
             }
 
             @Override
-            public void entryRemoved(InetSocketAddress endPoint, UserConnection connection) {
+            public void entryRemoved(UserEndPoint endPoint, UserConnection connection) {
                 try {
                     System.out.println("[SERVER] Closed connection from " + endPoint);
                     messageDispatcher.removeMessenger(endPoint);
@@ -101,7 +98,7 @@ public class App {
         };
     }
 
-    private static Consumer<Object> createIncomingMessageHandler(InetSocketAddress endPoint) {
+    private static Consumer<Object> createIncomingMessageHandler(UserEndPoint endPoint) {
         return m -> {
             System.out.println("[" + endPoint + "] " + m);
         };

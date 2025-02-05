@@ -1,7 +1,7 @@
 package org.albard.dubito.app.messaging.handlers;
 
-import java.net.InetSocketAddress;
+import org.albard.dubito.app.UserEndPoint;
 
 public interface MessageHandler {
-    boolean handleMessage(InetSocketAddress fromEndPoint, Object message);
+    boolean handleMessage(UserEndPoint fromEndPoint, Object message);
 }

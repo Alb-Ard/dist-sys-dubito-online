@@ -8,19 +8,22 @@ import java.net.UnknownHostException;
 import java.util.function.Consumer;
 
 public final class TcpUserConnectionReceiver implements UserConnectionReceiver {
+    private static final int SERVER_BACKLOG_SIZE = 4;
+
     private final ServerSocket listeningSocket;
     private final Thread listeningThread;
 
     private Consumer<UserConnection> userConnectedListener;
 
-    private TcpUserConnectionReceiver(ServerSocket socket) {
+    private TcpUserConnectionReceiver(final ServerSocket socket) {
         this.listeningSocket = socket;
         this.listeningThread = new Thread(this::listenForUsers, "UserReceiver");
     }
 
-    public static TcpUserConnectionReceiver createBound(String bindAddress, int bindPort)
+    public static TcpUserConnectionReceiver createBound(final String bindAddress, final int bindPort)
             throws UnknownHostException, IOException {
-        return new TcpUserConnectionReceiver(new ServerSocket(bindPort, 4, InetAddress.getByName(bindAddress)));
+        return new TcpUserConnectionReceiver(
+                new ServerSocket(bindPort, SERVER_BACKLOG_SIZE, InetAddress.getByName(bindAddress)));
     }
 
     @Override

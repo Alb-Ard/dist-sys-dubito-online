@@ -8,17 +8,17 @@ public final class SerialMessageSender implements MessageSender {
     private final OutputStream stream;
     private final Function<Object, byte[]> serializer;
 
-    public SerialMessageSender(final OutputStream stream, final Function<Object, byte[]> serializer) {
+    private SerialMessageSender(final OutputStream stream, final Function<Object, byte[]> serializer) {
         this.stream = stream;
         this.serializer = serializer;
     }
 
-    static MessageSender createFromStream(final OutputStream stream, final Function<Object, byte[]> serializer) {
+    public static MessageSender createFromStream(final OutputStream stream, final Function<Object, byte[]> serializer) {
         return new SerialMessageSender(stream, serializer);
     }
 
     @Override
-    public void send(final Object message) {
+    public void sendMessage(final Object message) {
         try {
             this.stream.write(this.serializer.apply(message));
             this.stream.flush();
