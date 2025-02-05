@@ -25,22 +25,23 @@ public class App {
         final String bindAddress = getArgOrDefault(args, 0, () -> "0.0.0.0");
         final int bindPort = Integer.parseInt(getArgOrDefault(args, 1, () -> "9000"));
         final MessageSerializer messageSerializer = createMessageSerializer();
-        final UserConnectionRepository<Socket> connectionRepository = UserConnectionRepository.createEmpty();
-        connectionRepository.addUserListener(createUserRepositoryListener(messageSerializer));
+        final ObservableMap<InetSocketAddress, UserConnection> connectionRepository = ObservableMap.createEmpty();
+        connectionRepository.addListener(createUserRepositoryListener(messageSerializer));
         try (final UserConnectionReceiver connectionReceiver = UserConnectionReceiver.createBound(bindAddress,
                 bindPort)) {
             connectionReceiver.setUserConnectedListener(c -> connectionRepository
-                    .addUser((InetSocketAddress) c.getSocket().getRemoteSocketAddress(), c.getSocket()));
+                    .putIfAbsent((InetSocketAddress) c.getSocket().getRemoteSocketAddress(), c));
             connectionReceiver.start();
             System.out.println("[SERVER] Listening on " + bindAddress + ":" + bindPort);
-            runClient(args, 2);
+            runClient(args, 2, connectionRepository);
         } catch (final IOException ex) {
             ex.printStackTrace();
         }
         System.out.println("[SERVER] Closed");
     }
 
-    private static void runClient(final String[] args, int argsOffset) {
+    private static void runClient(final String[] args, final int argsOffset,
+            final ObservableMap<InetSocketAddress, UserConnection> connectionRepository) {
         final Scanner inputScanner = new Scanner(System.in);
         final String remoteAddress = getArgOrDefault(args, argsOffset,
                 () -> requestInput(inputScanner, "[CLIENT] Insert remote peer hostname: "));
@@ -49,6 +50,7 @@ public class App {
                         () -> requestInput(inputScanner, "[CLIENT] Insert remote peer port (or empty for default): ")),
                 () -> 9000);
         try (final UserConnection connection = UserConnection.createAndConnect(remoteAddress, remotePort)) {
+            connectionRepository.putIfAbsent(new InetSocketAddress(remoteAddress, remotePort), connection);
             final MessageSerializer messageSerializer = createMessageSerializer();
             final Socket clientSocket = connection.getSocket();
             final MessageSender messageSender = MessageSender.createFromStream(clientSocket.getOutputStream(),
@@ -74,20 +76,20 @@ public class App {
         System.out.println("[CLIENT] Closed");
     }
 
-    private static UserRepositoryListener<Socket> createUserRepositoryListener(
+    private static ObservableMapListener<InetSocketAddress, UserConnection> createUserRepositoryListener(
             final MessageSerializer messageSerializer) {
-        return new UserRepositoryListener<Socket>() {
+        return new ObservableMapListener<>() {
             final Map<InetSocketAddress, MessageReceiver> receivers = Collections.synchronizedMap(new HashMap<>());
 
             @Override
-            public void handleUserAdded(InetSocketAddress endPoint, Socket connection) {
+            public void entryAdded(InetSocketAddress endPoint, UserConnection connection) {
                 final MessageReceiver receiver;
                 try {
-                    receiver = MessageReceiver.createFromStream(connection.getInputStream(),
+                    receiver = MessageReceiver.createFromStream(connection.getSocket().getInputStream(),
                             messageSerializer::deserialize);
                     receiver.setMessageListener(createIncomingMessageHandler("SERVER", endPoint));
                     receiver.start();
-                    this.receivers.put(endPoint, receiver);
+                    this.receivers.putIfAbsent(endPoint, receiver);
                     System.out.println("[SERVER] Opened connection from " + endPoint);
                 } catch (final IOException ex) {
                     ex.printStackTrace();
@@ -95,7 +97,7 @@ public class App {
             }
 
             @Override
-            public void handleUserRemoved(InetSocketAddress endPoint, Socket connection) {
+            public void entryRemoved(InetSocketAddress endPoint, UserConnection connection) {
                 try {
                     System.out.println("[SERVER] Closed connection from " + endPoint);
                     this.receivers.remove(endPoint);
