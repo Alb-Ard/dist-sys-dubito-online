@@ -1,9 +1,7 @@
 package org.albard.dubito.app.messaging;
 
-import java.net.InetSocketAddress;
-
 public interface MessageSerializer<T> {
-    byte[] serialize(InetSocketAddress user, T connection, Object message);
+    byte[] serialize(Object message);
 
-    Object deserialize(InetSocketAddress user, T connection, byte[] message);
+    Object deserialize(byte[] message);
 }

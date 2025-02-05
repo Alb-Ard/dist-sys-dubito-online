@@ -1,10 +1,11 @@
 package org.albard.dubito.app.messaging;
 
-import java.util.function.Consumer;
+import java.io.OutputStream;
+import java.util.function.Function;
 
 public interface MessageSender {
-    static MessageSender create(Consumer<Object> sendHandler) {
-        return SerialMessageSender.create(sendHandler);
+    static MessageSender createFromStream(final OutputStream stream, final Function<Object, byte[]> serializer) {
+        return SerialMessageSender.createFromStream(stream, serializer);
     }
 
     void send(Object message);

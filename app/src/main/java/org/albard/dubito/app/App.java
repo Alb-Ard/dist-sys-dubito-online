@@ -16,7 +16,6 @@ import java.util.function.Supplier;
 
 import org.albard.dubito.app.connection.UserConnection;
 import org.albard.dubito.app.connection.UserConnectionReceiver;
-import org.albard.dubito.app.messaging.MessageSenderFactory;
 import org.albard.dubito.app.messaging.MessageSerializer;
 import org.albard.dubito.app.messaging.MessageReceiver;
 import org.albard.dubito.app.messaging.MessageSender;
@@ -51,11 +50,10 @@ public class App {
             connection.connect(remoteAddress, remotePort);
             final MessageSerializer<Socket> messageSerializer = createMessageSerializer();
             final Socket clientSocket = connection.getSocket();
-            final MessageSender messageSender = new MessageSenderFactory().createSocketSender(clientSocket,
-                    messageSerializer);
+            final MessageSender messageSender = MessageSender.createFromStream(clientSocket.getOutputStream(),
+                    messageSerializer::serialize);
             final MessageReceiver messageReceiver = MessageReceiver.createFromStream(clientSocket.getInputStream(),
-                    m -> messageSerializer.deserialize((InetSocketAddress) clientSocket.getRemoteSocketAddress(),
-                            clientSocket, m));
+                    messageSerializer::deserialize);
             messageReceiver.setMessageListener(
                     createIncomingMessageHandler("CLIENT", (InetSocketAddress) clientSocket.getRemoteSocketAddress()));
             messageReceiver.start();
@@ -85,7 +83,7 @@ public class App {
                 final MessageReceiver receiver;
                 try {
                     receiver = MessageReceiver.createFromStream(connection.getInputStream(),
-                            t -> messageSerializer.deserialize(endPoint, connection, t));
+                            messageSerializer::deserialize);
                     receiver.setMessageListener(createIncomingMessageHandler("SERVER", endPoint));
                     receiver.start();
                     this.receivers.put(endPoint, receiver);
@@ -117,12 +115,12 @@ public class App {
     private static MessageSerializer<Socket> createMessageSerializer() {
         return new MessageSerializer<Socket>() {
             @Override
-            public byte[] serialize(InetSocketAddress user, Socket connection, Object message) {
+            public byte[] serialize(Object message) {
                 return message.toString().getBytes();
             }
 
             @Override
-            public Object deserialize(InetSocketAddress user, Socket connection, byte[] rawMessage) {
+            public Object deserialize(byte[] rawMessage) {
                 return new String(rawMessage);
             }
         };
