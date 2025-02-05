@@ -12,8 +12,7 @@ public final class UserConnectionIntegrationTest {
     void testConnection() throws IOException {
         final UserConnectionRepository<Socket> repository = UserConnectionRepository.createEmpty();
         try (final UserConnectionReceiver receiver = UserConnectionReceiver.createBound(repository, "127.0.0.1", 9000);
-                final UserConnection sender = UserConnection.create()) {
-            sender.connect("127.0.0.1", 9000);
+                final UserConnection sender = UserConnection.createAndConnect("127.0.0.1", 9000)) {
         }
     }
 }

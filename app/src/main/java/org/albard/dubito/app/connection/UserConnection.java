@@ -5,11 +5,10 @@ import java.io.IOException;
 import java.net.Socket;
 
 public interface UserConnection extends Closeable {
-    static UserConnection create() {
-        return new TcpUserConnection();
+    static UserConnection createAndConnect(String remoteAddress, int remotePort) throws IOException {
+        final Socket socket = new Socket(remoteAddress, remotePort);
+        return TcpUserConnection.createConnected(socket);
     }
-
-    void connect(String remoteAddress, int remotePort) throws IOException;
 
     Socket getSocket();
 }

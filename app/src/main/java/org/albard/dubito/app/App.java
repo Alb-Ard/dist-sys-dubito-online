@@ -46,8 +46,7 @@ public class App {
                 getArgOrDefault(args, argsOffset + 1,
                         () -> requestInput(inputScanner, "[CLIENT] Insert remote peer port (or empty for default): ")),
                 () -> 9000);
-        try (final UserConnection connection = UserConnection.create()) {
-            connection.connect(remoteAddress, remotePort);
+        try (final UserConnection connection = UserConnection.createAndConnect(remoteAddress, remotePort)) {
             final MessageSerializer<Socket> messageSerializer = createMessageSerializer();
             final Socket clientSocket = connection.getSocket();
             final MessageSender messageSender = MessageSender.createFromStream(clientSocket.getOutputStream(),

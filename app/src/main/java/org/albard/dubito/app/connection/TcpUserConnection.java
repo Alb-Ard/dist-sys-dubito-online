@@ -1,20 +1,26 @@
 package org.albard.dubito.app.connection;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketException;
 
 public final class TcpUserConnection implements UserConnection {
-    private final Socket socket = new Socket();
+    private final Socket socket;
+
+    private TcpUserConnection(final Socket socket) {
+        this.socket = socket;
+    }
+
+    public static TcpUserConnection createConnected(final Socket socket) throws SocketException {
+        if (!socket.isConnected()) {
+            throw new SocketException("Socket is not connected");
+        }
+        return new TcpUserConnection(socket);
+    }
 
     @Override
     public void close() throws IOException {
         socket.close();
-    }
-
-    @Override
-    public void connect(String remoteAddress, int remotePort) throws IOException {
-        this.socket.connect(new InetSocketAddress(remoteAddress, remotePort));
     }
 
     @Override
