@@ -6,7 +6,7 @@ import org.albard.dubito.app.messaging.MessageSender;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public final class UserMessageSenderTest {
+public final class MessageSenderTest {
 
     @Test
     void testCreate() {

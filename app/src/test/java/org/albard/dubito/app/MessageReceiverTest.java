@@ -9,7 +9,7 @@ import org.albard.dubito.app.messaging.MessageReceiver;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public final class UserMessageReceiverTest {
+public final class MessageReceiverTest {
     @Test
     void testCreate() {
         Assertions.assertDoesNotThrow(
