@@ -6,13 +6,14 @@ import java.util.List;
 
 import org.albard.dubito.app.messaging.handlers.MessageHandler;
 import org.albard.dubito.app.messaging.handlers.MessageHandlerChain;
+import org.albard.dubito.app.messaging.messages.GameMessage;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public final class MessageHandlerChainTest {
     private static class MockHandler implements MessageHandler {
         @Override
-        public boolean handleMessage(UserEndPoint fromEndPoint, Object message) {
+        public boolean handleMessage(UserEndPoint fromEndPoint, GameMessage message) {
             return false;
         }
     }
@@ -35,7 +36,7 @@ public final class MessageHandlerChainTest {
     @Test
     void testExecuteChainSuccess() {
         final List<Object> messages = new ArrayList<>();
-        final Object message = new Object();
+        final GameMessage message = TestUtilities.createMockMessage();
         final MessageHandlerChain chain = new MessageHandlerChain(
                 List.of(new MockHandler(), (u, m) -> messages.add(m), new MockHandler(), (u, m) -> messages.add(m)));
         Assertions.assertTrue(chain.handleMessage(null, message));
@@ -47,6 +48,6 @@ public final class MessageHandlerChainTest {
     void testExecuteChainFailure() {
         final MessageHandlerChain chain = new MessageHandlerChain(
                 List.of(new MockHandler(), new MockHandler(), new MockHandler()));
-        Assertions.assertFalse(chain.handleMessage(null, new Object()));
+        Assertions.assertFalse(chain.handleMessage(null, TestUtilities.createMockMessage()));
     }
 }

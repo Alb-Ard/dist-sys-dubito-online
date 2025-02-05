@@ -5,12 +5,14 @@ import java.net.SocketException;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.albard.dubito.app.messaging.messages.GameMessage;
+
 public final class BufferedMessageReceiver implements MessageReceiver {
     private final Thread receiveThread;
 
-    private volatile Consumer<Object> messageListener;
+    private volatile Consumer<GameMessage> messageListener;
 
-    public BufferedMessageReceiver(final InputStream stream, final Function<byte[], Object> deserializer) {
+    public BufferedMessageReceiver(final InputStream stream, final Function<byte[], GameMessage> deserializer) {
         this.receiveThread = Thread.ofVirtual().unstarted(() -> {
             final byte[] buffer = new byte[1024];
             while (true) {
@@ -33,7 +35,8 @@ public final class BufferedMessageReceiver implements MessageReceiver {
 
     }
 
-    static MessageReceiver createFromStream(final InputStream stream, final Function<byte[], Object> deserializer) {
+    static MessageReceiver createFromStream(final InputStream stream,
+            final Function<byte[], GameMessage> deserializer) {
         return new BufferedMessageReceiver(stream, deserializer);
     }
 
@@ -43,7 +46,7 @@ public final class BufferedMessageReceiver implements MessageReceiver {
     }
 
     @Override
-    public void setMessageListener(final Consumer<Object> listener) {
+    public void setMessageListener(final Consumer<GameMessage> listener) {
         this.messageListener = listener;
     }
 }

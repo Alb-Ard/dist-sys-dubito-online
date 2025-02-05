@@ -1,7 +1,9 @@
 package org.albard.dubito.app.messaging;
 
-public interface MessageSerializer {
-    byte[] serialize(Object message);
+import org.albard.dubito.app.messaging.messages.GameMessage;
 
-    Object deserialize(byte[] message);
+public interface MessageSerializer {
+    byte[] serialize(GameMessage message);
+
+    GameMessage deserialize(byte[] message);
 }

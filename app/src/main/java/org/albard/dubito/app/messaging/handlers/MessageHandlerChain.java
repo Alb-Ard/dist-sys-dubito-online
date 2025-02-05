@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 
 import org.albard.dubito.app.UserEndPoint;
+import org.albard.dubito.app.messaging.messages.GameMessage;
 
 public final class MessageHandlerChain implements MessageHandler {
     private final List<MessageHandler> handlers;
@@ -14,7 +15,7 @@ public final class MessageHandlerChain implements MessageHandler {
     }
 
     @Override
-    public boolean handleMessage(final UserEndPoint fromEndPoint, final Object message) {
+    public boolean handleMessage(final UserEndPoint fromEndPoint, final GameMessage message) {
         for (final MessageHandler handler : this.handlers) {
             try {
                 if (handler.handleMessage(fromEndPoint, message)) {

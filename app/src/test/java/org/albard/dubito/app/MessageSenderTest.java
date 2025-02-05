@@ -17,8 +17,9 @@ public final class MessageSenderTest {
     @Test
     void testSend() {
         final ByteArrayOutputStream stream = new ByteArrayOutputStream(10);
-        final MessageSender sender = MessageSender.createFromStream(stream, m -> m.toString().getBytes());
-        sender.sendMessage("Test");
+        final MessageSender sender = MessageSender.createFromStream(stream, TestUtilities
+                .createMockMessageSerializer(TestUtilities.createMockMessage(), "Test".getBytes())::serialize);
+        sender.sendMessage(TestUtilities.createMockMessage());
         Assertions.assertArrayEquals("Test".getBytes(), stream.toByteArray());
     }
 }

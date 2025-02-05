@@ -5,13 +5,14 @@ import java.util.function.Consumer;
 import org.albard.dubito.app.messaging.MessageDispatcher;
 import org.albard.dubito.app.messaging.MessageReceiver;
 import org.albard.dubito.app.messaging.MessageSender;
+import org.albard.dubito.app.messaging.messages.GameMessage;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public final class MessageDispatcherTest {
     private static class MockMessenger implements MessageSender, MessageReceiver {
         @Override
-        public void setMessageListener(Consumer<Object> listener) {
+        public void setMessageListener(Consumer<GameMessage> listener) {
         }
 
         @Override
@@ -19,7 +20,7 @@ public final class MessageDispatcherTest {
         }
 
         @Override
-        public void sendMessage(Object message) {
+        public void sendMessage(GameMessage message) {
         }
     }
 

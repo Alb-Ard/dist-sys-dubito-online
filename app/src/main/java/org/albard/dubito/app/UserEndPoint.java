@@ -5,11 +5,17 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public final class UserEndPoint {
+    public static final UserEndPoint BROADCAST = new UserEndPoint("*", 0);
+
     private final String host;
     private final int port;
 
-    private UserEndPoint(final String host, final int port) {
+    @JsonCreator
+    private UserEndPoint(@JsonProperty("host") final String host, @JsonProperty("port") final int port) {
         this.host = host;
         this.port = port;
     }
@@ -71,6 +77,9 @@ public final class UserEndPoint {
 
     @Override
     public String toString() {
+        if (this == BROADCAST) {
+            return "BROADCAST";
+        }
         return host + ":" + port;
     }
 }

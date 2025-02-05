@@ -4,6 +4,11 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
+import java.util.Set;
+
+import org.albard.dubito.app.messaging.MessageSerializer;
+import org.albard.dubito.app.messaging.messages.GameMessage;
+import org.albard.dubito.app.messaging.messages.PingMessage;
 
 public final class TestUtilities {
     private TestUtilities() {
@@ -21,5 +26,25 @@ public final class TestUtilities {
             }
         });
         return server;
+    }
+
+    public static GameMessage createMockMessage() {
+        return new PingMessage(UserEndPoint.createFromValues("127.0.0.1", 1),
+                Set.of(UserEndPoint.createFromValues("127.0.0.1", 2)));
+    }
+
+    public static MessageSerializer createMockMessageSerializer(final GameMessage deserializedMessage,
+            final byte[] serializedData) {
+        return new MessageSerializer() {
+            @Override
+            public GameMessage deserialize(final byte[] message) {
+                return deserializedMessage;
+            }
+
+            @Override
+            public byte[] serialize(GameMessage message) {
+                return serializedData;
+            }
+        };
     }
 }

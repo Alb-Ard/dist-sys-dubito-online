@@ -6,13 +6,14 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import org.albard.dubito.app.UserEndPoint;
+import org.albard.dubito.app.messaging.messages.GameMessage;
 
 public final class MessageDispatcher implements MessageSender, MessageReceiver {
     private final Map<UserEndPoint, MessageSender> senders = Collections.synchronizedMap(new HashMap<>());
     private final Map<UserEndPoint, MessageReceiver> receivers = Collections.synchronizedMap(new HashMap<>());
 
     private volatile boolean isStarted = false;
-    private volatile Consumer<Object> messageListener;
+    private volatile Consumer<GameMessage> messageListener;
 
     public void addMessenger(final UserEndPoint key, final MessageSender sender, final MessageReceiver receiver) {
         this.senders.putIfAbsent(key, sender);
@@ -41,7 +42,7 @@ public final class MessageDispatcher implements MessageSender, MessageReceiver {
     }
 
     @Override
-    public void setMessageListener(final Consumer<Object> listener) {
+    public void setMessageListener(final Consumer<GameMessage> listener) {
         this.messageListener = listener;
     }
 
@@ -55,7 +56,7 @@ public final class MessageDispatcher implements MessageSender, MessageReceiver {
     }
 
     @Override
-    public void sendMessage(final Object message) {
+    public void sendMessage(final GameMessage message) {
         this.senders.values().forEach(s -> s.sendMessage(message));
     }
 }
