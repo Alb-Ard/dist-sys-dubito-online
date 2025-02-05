@@ -7,22 +7,22 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.function.Consumer;
 
-public final class TcpUserConnectionReceiver implements UserConnectionReceiver {
+public final class TcpPeerConnectionReceiver implements PeerConnectionReceiver {
     private static final int SERVER_BACKLOG_SIZE = 4;
 
     private final ServerSocket listeningSocket;
     private final Thread listeningThread;
 
-    private Consumer<UserConnection> userConnectedListener;
+    private Consumer<PeerConnection> peerConnectedListener;
 
-    private TcpUserConnectionReceiver(final ServerSocket socket) {
+    private TcpPeerConnectionReceiver(final ServerSocket socket) {
         this.listeningSocket = socket;
         this.listeningThread = new Thread(this::listenForUsers, "UserReceiver");
     }
 
-    public static TcpUserConnectionReceiver createBound(final String bindAddress, final int bindPort)
+    public static TcpPeerConnectionReceiver createBound(final String bindAddress, final int bindPort)
             throws UnknownHostException, IOException {
-        return new TcpUserConnectionReceiver(
+        return new TcpPeerConnectionReceiver(
                 new ServerSocket(bindPort, SERVER_BACKLOG_SIZE, InetAddress.getByName(bindAddress)));
     }
 
@@ -51,7 +51,7 @@ public final class TcpUserConnectionReceiver implements UserConnectionReceiver {
             try {
                 final Socket userSocket = this.listeningSocket.accept();
                 try {
-                    this.userConnectedListener.accept(TcpUserConnection.createConnected(userSocket));
+                    this.peerConnectedListener.accept(TcpPeerConnection.createConnected(userSocket));
                 } catch (final Exception ex) {
                 }
             } catch (final IOException ex) {
@@ -61,7 +61,7 @@ public final class TcpUserConnectionReceiver implements UserConnectionReceiver {
     }
 
     @Override
-    public void setUserConnectedListener(final Consumer<UserConnection> listener) {
-        this.userConnectedListener = listener;
+    public void setPeerConnectedListener(final Consumer<PeerConnection> listener) {
+        this.peerConnectedListener = listener;
     }
 }

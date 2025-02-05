@@ -43,7 +43,10 @@ public final class MessageReceiverTest {
         try (final InputStream inputStream = new ByteArrayInputStream(new byte[0])) {
             final MessageReceiver receiver = MessageReceiver.createFromStream(inputStream,
                     TestUtilities.createMockMessageSerializer(expectedMessage, "Test".getBytes())::deserialize);
-            receiver.setMessageListener((m) -> Assertions.assertEquals(expectedMessage, m));
+            receiver.setMessageListener(m -> {
+                Assertions.assertEquals(expectedMessage, m);
+                return true;
+            });
             receiver.start();
             // Let the receiver handle the message
             Thread.sleep(Duration.ofMillis(500));

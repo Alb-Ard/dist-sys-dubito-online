@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 public final class MessageHandlerChainTest {
     private static class MockHandler implements MessageHandler {
         @Override
-        public boolean handleMessage(UserEndPoint fromEndPoint, GameMessage message) {
+        public boolean handleMessage(final GameMessage message) {
             return false;
         }
     }
@@ -38,8 +38,8 @@ public final class MessageHandlerChainTest {
         final List<Object> messages = new ArrayList<>();
         final GameMessage message = TestUtilities.createMockMessage();
         final MessageHandlerChain chain = new MessageHandlerChain(
-                List.of(new MockHandler(), (u, m) -> messages.add(m), new MockHandler(), (u, m) -> messages.add(m)));
-        Assertions.assertTrue(chain.handleMessage(null, message));
+                List.of(new MockHandler(), m -> messages.add(m), new MockHandler(), m -> messages.add(m)));
+        Assertions.assertTrue(chain.handleMessage(message));
         Assertions.assertEquals(1, messages.size());
         Assertions.assertEquals(message, messages.get(0));
     }
@@ -48,6 +48,6 @@ public final class MessageHandlerChainTest {
     void testExecuteChainFailure() {
         final MessageHandlerChain chain = new MessageHandlerChain(
                 List.of(new MockHandler(), new MockHandler(), new MockHandler()));
-        Assertions.assertFalse(chain.handleMessage(null, TestUtilities.createMockMessage()));
+        Assertions.assertFalse(chain.handleMessage(TestUtilities.createMockMessage()));
     }
 }

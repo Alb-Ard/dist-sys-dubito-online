@@ -2,10 +2,17 @@ package org.albard.dubito.app.messaging.messages;
 
 import java.util.Set;
 
-import org.albard.dubito.app.UserEndPoint;
+import org.albard.dubito.app.PeerId;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public interface GameMessage {
-    UserEndPoint getSender();
+    PeerId getSender();
 
-    Set<UserEndPoint> getReceipients();
+    Set<PeerId> getReceipients();
+
+    @JsonIgnore
+    default boolean isBroadcast() {
+        return this.getReceipients().isEmpty();
+    }
 }

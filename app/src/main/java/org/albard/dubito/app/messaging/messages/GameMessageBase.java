@@ -2,22 +2,22 @@ package org.albard.dubito.app.messaging.messages;
 
 import java.util.Set;
 
-import org.albard.dubito.app.UserEndPoint;
+import org.albard.dubito.app.PeerId;
 
 public abstract class GameMessageBase implements GameMessage {
-    private final UserEndPoint sender;
-    private final Set<UserEndPoint> receipients;
+    private final PeerId sender;
+    private final Set<PeerId> receipients;
 
-    public GameMessageBase(UserEndPoint sender, Set<UserEndPoint> receipients) {
+    public GameMessageBase(PeerId sender, Set<PeerId> receipients) {
         this.sender = sender;
-        this.receipients = Set.copyOf(receipients);
+        this.receipients = receipients == null ? Set.of() : Set.copyOf(receipients);
     }
 
-    public UserEndPoint getSender() {
+    public PeerId getSender() {
         return this.sender;
     }
 
-    public Set<UserEndPoint> getReceipients() {
+    public Set<PeerId> getReceipients() {
         return Set.copyOf(this.receipients);
     }
 }

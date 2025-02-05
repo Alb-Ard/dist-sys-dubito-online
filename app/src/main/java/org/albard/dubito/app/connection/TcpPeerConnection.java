@@ -4,18 +4,18 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
 
-public final class TcpUserConnection implements UserConnection {
+public final class TcpPeerConnection implements PeerConnection {
     private final Socket socket;
 
-    private TcpUserConnection(final Socket socket) {
+    private TcpPeerConnection(final Socket socket) {
         this.socket = socket;
     }
 
-    public static TcpUserConnection createConnected(final Socket socket) throws SocketException {
+    public static TcpPeerConnection createConnected(final Socket socket) throws SocketException {
         if (!socket.isConnected()) {
             throw new SocketException("Socket is not connected");
         }
-        return new TcpUserConnection(socket);
+        return new TcpPeerConnection(socket);
     }
 
     @Override

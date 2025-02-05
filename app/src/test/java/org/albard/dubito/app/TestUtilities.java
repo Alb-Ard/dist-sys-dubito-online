@@ -28,9 +28,16 @@ public final class TestUtilities {
         return server;
     }
 
+    public static PeerEndPoint createMockEndPoint(final int port) {
+        return PeerEndPoint.createFromValues("127.0.0.1", port);
+    }
+
+    public static PeerEndPointPair createMockEndPointPair(final int localPort, final int remotePort) {
+        return new PeerEndPointPair(createMockEndPoint(localPort), createMockEndPoint(remotePort));
+    }
+
     public static GameMessage createMockMessage() {
-        return new PingMessage(UserEndPoint.createFromValues("127.0.0.1", 1),
-                Set.of(UserEndPoint.createFromValues("127.0.0.1", 2)));
+        return new PingMessage(PeerId.createNew(), Set.of(PeerId.createNew()));
     }
 
     public static MessageSerializer createMockMessageSerializer(final GameMessage deserializedMessage,

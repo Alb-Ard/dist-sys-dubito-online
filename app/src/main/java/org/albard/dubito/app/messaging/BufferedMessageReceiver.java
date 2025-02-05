@@ -2,15 +2,15 @@ package org.albard.dubito.app.messaging;
 
 import java.io.InputStream;
 import java.net.SocketException;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.albard.dubito.app.messaging.handlers.MessageHandler;
 import org.albard.dubito.app.messaging.messages.GameMessage;
 
 public final class BufferedMessageReceiver implements MessageReceiver {
     private final Thread receiveThread;
 
-    private volatile Consumer<GameMessage> messageListener;
+    private volatile MessageHandler messageListener;
 
     public BufferedMessageReceiver(final InputStream stream, final Function<byte[], GameMessage> deserializer) {
         this.receiveThread = Thread.ofVirtual().unstarted(() -> {
@@ -23,7 +23,7 @@ public final class BufferedMessageReceiver implements MessageReceiver {
                     }
                     final byte[] messageBuffer = new byte[readByteCount];
                     System.arraycopy(buffer, 0, messageBuffer, 0, readByteCount);
-                    this.messageListener.accept(deserializer.apply(messageBuffer));
+                    this.messageListener.handleMessage(deserializer.apply(messageBuffer));
                 } catch (final SocketException ex) {
                     ex.printStackTrace();
                     break;
@@ -32,7 +32,6 @@ public final class BufferedMessageReceiver implements MessageReceiver {
                 }
             }
         });
-
     }
 
     static MessageReceiver createFromStream(final InputStream stream,
@@ -46,7 +45,7 @@ public final class BufferedMessageReceiver implements MessageReceiver {
     }
 
     @Override
-    public void setMessageListener(final Consumer<GameMessage> listener) {
+    public void setMessageListener(final MessageHandler listener) {
         this.messageListener = listener;
     }
 }

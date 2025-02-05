@@ -1,8 +1,8 @@
 package org.albard.dubito.app.messaging.handlers;
 
-import org.albard.dubito.app.UserEndPoint;
 import org.albard.dubito.app.messaging.messages.GameMessage;
 
+@FunctionalInterface
 public interface MessageHandler {
-    boolean handleMessage(UserEndPoint fromEndPoint, GameMessage message);
+    boolean handleMessage(GameMessage message);
 }

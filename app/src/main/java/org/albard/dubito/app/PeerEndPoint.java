@@ -8,33 +8,31 @@ import java.net.UnknownHostException;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public final class UserEndPoint {
-    public static final UserEndPoint BROADCAST = new UserEndPoint("*", 0);
-
+public final class PeerEndPoint {
     private final String host;
     private final int port;
 
     @JsonCreator
-    private UserEndPoint(@JsonProperty("host") final String host, @JsonProperty("port") final int port) {
+    private PeerEndPoint(@JsonProperty("host") final String host, @JsonProperty("port") final int port) {
         this.host = host;
         this.port = port;
     }
 
-    public static UserEndPoint createFromValues(String host, int port) {
+    public static PeerEndPoint createFromValues(String host, int port) {
         try {
             final InetAddress hostAddress = InetAddress.getByName(host);
-            if (host == null || host.length() <= 0 || hostAddress == null || port <= 0) {
+            if (host == null || host.length() <= 0 || hostAddress == null || port < 0) {
                 return null;
             }
-            return new UserEndPoint(host, port);
+            return new PeerEndPoint(host, port);
         } catch (UnknownHostException e) {
             return null;
         }
     }
 
-    public static UserEndPoint createFromAddress(SocketAddress address) {
+    public static PeerEndPoint createFromAddress(SocketAddress address) {
         if (address instanceof InetSocketAddress socketAddress) {
-            return new UserEndPoint(socketAddress.getHostString(), socketAddress.getPort());
+            return new PeerEndPoint(socketAddress.getHostString(), socketAddress.getPort());
         }
         return null;
     }
@@ -68,7 +66,7 @@ public final class UserEndPoint {
         if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        UserEndPoint other = (UserEndPoint) obj;
+        PeerEndPoint other = (PeerEndPoint) obj;
         if (host == null && other.host != null) {
             return false;
         }
@@ -77,9 +75,6 @@ public final class UserEndPoint {
 
     @Override
     public String toString() {
-        if (this == BROADCAST) {
-            return "BROADCAST";
-        }
         return host + ":" + port;
     }
 }
