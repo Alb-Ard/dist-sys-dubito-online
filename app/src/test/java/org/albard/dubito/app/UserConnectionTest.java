@@ -3,6 +3,8 @@ package org.albard.dubito.app;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.albard.dubito.app.connection.UserConnection;
 import org.junit.jupiter.api.Assertions;
@@ -12,7 +14,14 @@ public final class UserConnectionTest {
     @Test
     void testCreateAndConnect() throws IOException {
         try (final ServerSocket server = TestUtilities.createAndLaunchServer("127.0.0.1", 9000)) {
-            Assertions.assertDoesNotThrow(() -> UserConnection.createAndConnect("127.0.0.1", 9000).close());
+            final List<UserConnection> connections = new ArrayList<>();
+            Assertions.assertDoesNotThrow(() -> connections.add(UserConnection.createAndConnect("127.0.0.1", 9000)));
+            connections.forEach(c -> {
+                try {
+                    c.close();
+                } catch (Exception ex) {
+                }
+            });
         }
     }
 
