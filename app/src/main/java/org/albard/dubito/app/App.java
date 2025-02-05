@@ -33,7 +33,7 @@ public class App {
         final PeerEndPoint serverEndPoint = readServerEndPointFromArgs(args);
         final PeerEndPointPair clientEndPoint = readClientEndPointFromArgs(args);
         final MessageSerializer messageSerializer = createMessageSerializer();
-        final MessageDispatcher messageDispatcher = new MessageDispatcher();
+        final MessageDispatcher messageDispatcher = new MessageDispatcher(localPeerId);
         messageDispatcher.setMessageListener(createIncomingMessageHandler(messageDispatcher, localPeerId));
         messageDispatcher.start();
         try (final PeerConnectionReceiver connectionReceiver = PeerConnectionReceiver

@@ -13,14 +13,24 @@ import org.albard.dubito.app.messaging.messages.GameMessage;
 public final class MessageDispatcher implements MessageReceiver, MessageSender {
     private final Map<PeerId, MessageSender> senders = Collections.synchronizedMap(new HashMap<>());
     private final Map<PeerId, MessageReceiver> receivers = Collections.synchronizedMap(new HashMap<>());
+    private final PeerId localPeerId;
 
     private volatile boolean isStarted = false;
     private volatile MessageHandler messageListener;
+
+    public MessageDispatcher(final PeerId localPeerId) {
+        this.localPeerId = localPeerId;
+
+    }
 
     public void addPeer(final PeerId key, final MessageSender sender, final MessageReceiver receiver) {
         this.senders.putIfAbsent(key, sender);
         if (this.receivers.putIfAbsent(key, receiver) == null) {
             receiver.setMessageListener(m -> {
+                // Protection against loops
+                if (m.getSender() == localPeerId) {
+                    return false;
+                }
                 if (this.messageListener != null) {
                     return this.messageListener.handleMessage(m);
                 }
