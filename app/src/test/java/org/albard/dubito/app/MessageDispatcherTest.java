@@ -2,12 +2,13 @@ package org.albard.dubito.app;
 
 import java.util.Set;
 
-import org.albard.dubito.app.messaging.MessageDispatcher;
+import org.albard.dubito.app.messaging.HashMapMessageDispatcher;
 import org.albard.dubito.app.messaging.MessageReceiver;
 import org.albard.dubito.app.messaging.MessageSender;
 import org.albard.dubito.app.messaging.handlers.MessageHandler;
 import org.albard.dubito.app.messaging.messages.GameMessage;
 import org.albard.dubito.app.messaging.messages.PingMessage;
+import org.albard.dubito.app.network.PeerId;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -34,13 +35,13 @@ public final class MessageDispatcherTest {
 
     @Test
     void testCreate() {
-        final MessageDispatcher dispatcher = new MessageDispatcher(PeerId.createNew());
+        final HashMapMessageDispatcher dispatcher = new HashMapMessageDispatcher(PeerId.createNew());
         Assertions.assertEquals(0, dispatcher.getPeerCount());
     }
 
     @Test
     void testAddMessenger() {
-        final MessageDispatcher dispatcher = new MessageDispatcher(PeerId.createNew());
+        final HashMapMessageDispatcher dispatcher = new HashMapMessageDispatcher(PeerId.createNew());
         final MockMessenger messenger = new MockMessenger();
         Assertions.assertDoesNotThrow(() -> dispatcher.addPeer(PeerId.createNew(), messenger, messenger));
         Assertions.assertDoesNotThrow(() -> dispatcher.addPeer(PeerId.createNew(), messenger, messenger));
@@ -49,7 +50,7 @@ public final class MessageDispatcherTest {
 
     @Test
     void testAddMessengerAgain() {
-        final MessageDispatcher dispatcher = new MessageDispatcher(PeerId.createNew());
+        final HashMapMessageDispatcher dispatcher = new HashMapMessageDispatcher(PeerId.createNew());
         final MockMessenger messenger = new MockMessenger();
         final PeerId peerId = PeerId.createNew();
         dispatcher.addPeer(peerId, messenger, messenger);
@@ -59,7 +60,7 @@ public final class MessageDispatcherTest {
 
     @Test
     void testRemoveMessenger() {
-        final MessageDispatcher dispatcher = new MessageDispatcher(PeerId.createNew());
+        final HashMapMessageDispatcher dispatcher = new HashMapMessageDispatcher(PeerId.createNew());
         final MockMessenger messenger = new MockMessenger();
         final PeerId peerId = PeerId.createNew();
         dispatcher.addPeer(peerId, messenger, messenger);
@@ -70,7 +71,7 @@ public final class MessageDispatcherTest {
 
     @Test
     void testRemoveNonExistingMessenger() {
-        final MessageDispatcher dispatcher = new MessageDispatcher(PeerId.createNew());
+        final HashMapMessageDispatcher dispatcher = new HashMapMessageDispatcher(PeerId.createNew());
         final MockMessenger messenger = new MockMessenger();
         dispatcher.addPeer(PeerId.createNew(), messenger, messenger);
         dispatcher.addPeer(PeerId.createNew(), messenger, messenger);
@@ -80,14 +81,14 @@ public final class MessageDispatcherTest {
 
     @Test
     void testRemoveMessengerWhenEmpty() {
-        final MessageDispatcher dispatcher = new MessageDispatcher(PeerId.createNew());
+        final HashMapMessageDispatcher dispatcher = new HashMapMessageDispatcher(PeerId.createNew());
         Assertions.assertDoesNotThrow(() -> dispatcher.removePeer(PeerId.createNew()));
         Assertions.assertEquals(0, dispatcher.getPeerCount());
     }
 
     @Test
     void testLoopProtection() {
-        final MessageDispatcher dispatcher = new MessageDispatcher(PeerId.createNew());
+        final HashMapMessageDispatcher dispatcher = new HashMapMessageDispatcher(PeerId.createNew());
         // ID of the peer that sends this message
         final PeerId senderPeerId = PeerId.createNew();
         // Messenger of ANOTHER peer that will receive the message

@@ -16,10 +16,15 @@ import org.albard.dubito.app.messaging.handlers.MessageHandlerChain;
 import org.albard.dubito.app.messaging.handlers.PingPongMessageHandler;
 import org.albard.dubito.app.messaging.messages.GameMessage;
 import org.albard.dubito.app.messaging.messages.PingMessage;
+import org.albard.dubito.app.network.PeerEndPoint;
+import org.albard.dubito.app.network.PeerEndPointPair;
+import org.albard.dubito.app.network.PeerId;
+import org.albard.dubito.app.network.PeerIdExchanger;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.albard.dubito.app.messaging.HashMapMessageDispatcher;
 import org.albard.dubito.app.messaging.MessageDispatcher;
 import org.albard.dubito.app.messaging.MessageReceiver;
 import org.albard.dubito.app.messaging.MessageSender;
@@ -30,7 +35,7 @@ public class App {
         final PeerEndPoint serverEndPoint = readServerEndPointFromArgs(args);
         final PeerEndPointPair clientEndPoint = readClientEndPointFromArgs(args);
         final MessageSerializer messageSerializer = createMessageSerializer();
-        final MessageDispatcher messageDispatcher = new MessageDispatcher(localPeerId);
+        final MessageDispatcher messageDispatcher = new HashMapMessageDispatcher(localPeerId);
         messageDispatcher.setMessageListener(createIncomingMessageHandler(messageDispatcher, localPeerId));
         messageDispatcher.start();
         try (final PeerConnectionReceiver connectionReceiver = PeerConnectionReceiver

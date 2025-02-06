@@ -2,11 +2,11 @@ package org.albard.dubito.app.messaging.handlers;
 
 import java.util.Set;
 
-import org.albard.dubito.app.PeerId;
 import org.albard.dubito.app.messaging.MessageSender;
 import org.albard.dubito.app.messaging.messages.GameMessage;
 import org.albard.dubito.app.messaging.messages.PingMessage;
 import org.albard.dubito.app.messaging.messages.PongMessage;
+import org.albard.dubito.app.network.PeerId;
 
 public final class PingPongMessageHandler implements MessageHandler {
     private final MessageSender pongMessageSender;

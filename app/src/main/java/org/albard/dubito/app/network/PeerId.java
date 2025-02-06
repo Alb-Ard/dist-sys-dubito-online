@@ -1,4 +1,4 @@
-package org.albard.dubito.app;
+package org.albard.dubito.app.network;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;

@@ -9,6 +9,9 @@ import java.util.Set;
 import org.albard.dubito.app.messaging.MessageSerializer;
 import org.albard.dubito.app.messaging.messages.GameMessage;
 import org.albard.dubito.app.messaging.messages.PingMessage;
+import org.albard.dubito.app.network.PeerEndPoint;
+import org.albard.dubito.app.network.PeerEndPointPair;
+import org.albard.dubito.app.network.PeerId;
 
 public final class TestUtilities {
     private TestUtilities() {

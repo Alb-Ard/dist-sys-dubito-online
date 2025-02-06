@@ -1,4 +1,4 @@
-package org.albard.dubito.app;
+package org.albard.dubito.app.network;
 
 import java.io.IOException;
 import java.io.InputStream;
