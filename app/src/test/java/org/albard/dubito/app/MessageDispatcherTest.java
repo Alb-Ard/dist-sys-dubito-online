@@ -17,8 +17,13 @@ public final class MessageDispatcherTest {
         private MessageHandler listener;
 
         @Override
-        public void setMessageListener(MessageHandler listener) {
+        public void addMessageListener(MessageHandler listener) {
             this.listener = listener;
+        }
+
+        @Override
+        public void removeMessageListener(MessageHandler listener) {
+            this.listener = null;
         }
 
         @Override
@@ -93,7 +98,7 @@ public final class MessageDispatcherTest {
         final PeerId senderPeerId = PeerId.createNew();
         // Messenger of ANOTHER peer that will receive the message
         final MockMessenger messenger = new MockMessenger();
-        messenger.setMessageListener(m -> {
+        messenger.addMessageListener(m -> {
             // If the message reaches here, it means that I've received the message I've
             // sent!
             Assertions.assertNotEquals(m.getSender(), senderPeerId);

@@ -12,7 +12,9 @@ public interface MessageReceiver {
         return BufferedMessageReceiver.createFromStream(stream, deserializer);
     }
 
-    void setMessageListener(MessageHandler listener);
+    void addMessageListener(MessageHandler listener);
+
+    void removeMessageListener(MessageHandler listener);
 
     void start();
 }

@@ -2,6 +2,7 @@ package org.albard.dubito.app.messaging;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -14,9 +15,9 @@ public final class HashMapMessageDispatcher implements MessageDispatcher {
     private final Map<PeerId, MessageSender> senders = Collections.synchronizedMap(new HashMap<>());
     private final Map<PeerId, MessageReceiver> receivers = Collections.synchronizedMap(new HashMap<>());
     private final PeerId localPeerId;
+    private final Set<MessageHandler> messageListeners = Collections.synchronizedSet(new HashSet<>());
 
     private volatile boolean isStarted = false;
-    private volatile MessageHandler messageListener;
 
     public HashMapMessageDispatcher(final PeerId localPeerId) {
         this.localPeerId = localPeerId;
@@ -26,27 +27,26 @@ public final class HashMapMessageDispatcher implements MessageDispatcher {
     public void addPeer(final PeerId key, final MessageSender sender, final MessageReceiver receiver) {
         this.senders.putIfAbsent(key, sender);
         if (this.receivers.putIfAbsent(key, receiver) == null) {
-            receiver.setMessageListener(m -> {
-                // Protection against loops
-                if (m.getSender() == localPeerId) {
-                    return false;
-                }
-                if (this.messageListener != null) {
-                    return this.messageListener.handleMessage(m);
-                }
-                return false;
-            });
+            receiver.addMessageListener(this::handleMessageFromPeer);
             if (this.isStarted) {
                 receiver.start();
             }
         }
     }
 
+    private boolean handleMessageFromPeer(final GameMessage message) {
+        // Protection against loops
+        if (message.getSender() == localPeerId) {
+            return false;
+        }
+        return this.messageListeners.stream().map(l -> l.handleMessage(message)).anyMatch(h -> h);
+    }
+
     public void removePeer(final PeerId key) {
         this.senders.remove(key);
         final MessageReceiver receiver = this.receivers.remove(key);
         if (receiver != null) {
-            receiver.setMessageListener(null);
+            receiver.removeMessageListener(this::handleMessageFromPeer);
         }
     }
 
@@ -55,8 +55,13 @@ public final class HashMapMessageDispatcher implements MessageDispatcher {
     }
 
     @Override
-    public void setMessageListener(final MessageHandler listener) {
-        this.messageListener = listener;
+    public void addMessageListener(final MessageHandler listener) {
+        this.messageListeners.add(listener);
+    }
+
+    @Override
+    public void removeMessageListener(final MessageHandler listener) {
+        this.messageListeners.remove(listener);
     }
 
     @Override
@@ -76,6 +81,6 @@ public final class HashMapMessageDispatcher implements MessageDispatcher {
         }
         receipients = receipients.stream().filter(s -> message.getSender() != s).collect(Collectors.toSet());
         System.out.println("Sending " + message.getClass().getName() + " to " + receipients);
-        receipients.stream().map(this.senders::get).forEach(s -> s.sendMessage(message));
+        receipients.stream().map(this.senders::get).filter(s -> s != null).forEach(s -> s.sendMessage(message));
     }
 }

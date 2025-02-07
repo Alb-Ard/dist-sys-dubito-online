@@ -17,7 +17,7 @@ public final class ObservableMapTest {
     @Test
     void testAddNew() {
         final ObservableMap<Object, Object> map = ObservableMap.createEmpty();
-        Assertions.assertTrue(map.putIfAbsent(new InetSocketAddress("127.0.0.1", 5050), new Object()));
+        Assertions.assertNull(map.putIfAbsent(new InetSocketAddress("127.0.0.1", 5050), new Object()));
         Assertions.assertEquals(1, map.size());
     }
 
@@ -51,7 +51,7 @@ public final class ObservableMapTest {
         final ObservableMap<Object, Object> map = ObservableMap.createEmpty();
         final Object value = new Object();
         map.putIfAbsent(new InetSocketAddress("127.0.0.1", 5050), value);
-        Assertions.assertFalse(map.putIfAbsent(new InetSocketAddress("127.0.0.1", 5050), value));
+        Assertions.assertNotNull(map.putIfAbsent(new InetSocketAddress("127.0.0.1", 5050), value));
         Assertions.assertEquals(1, map.size());
         Assertions.assertEquals(value, map.get(new InetSocketAddress("127.0.0.1", 5050)));
     }
@@ -60,7 +60,7 @@ public final class ObservableMapTest {
     void testRemoveExisting() {
         final ObservableMap<Object, Object> map = ObservableMap.createEmpty();
         map.putIfAbsent(new InetSocketAddress("127.0.0.1", 5050), new Object());
-        Assertions.assertTrue(map.remove(new InetSocketAddress("127.0.0.1", 5050)));
+        Assertions.assertNotNull(map.remove(new InetSocketAddress("127.0.0.1", 5050)));
         Assertions.assertEquals(0, map.size());
         Assertions.assertEquals(null, map.get(new InetSocketAddress("127.0.0.1", 5050)));
     }
@@ -93,7 +93,7 @@ public final class ObservableMapTest {
     @Test
     void testRemoveNonExisting() {
         final ObservableMap<Object, Object> map = ObservableMap.createEmpty();
-        Assertions.assertFalse(map.remove(new InetSocketAddress("127.0.0.1", 5050)));
+        Assertions.assertNull(map.remove(new InetSocketAddress("127.0.0.1", 5050)));
         Assertions.assertEquals(0, map.size());
     }
 
@@ -102,8 +102,8 @@ public final class ObservableMapTest {
         final ObservableMap<Object, Object> map = ObservableMap.createEmpty();
         final InetSocketAddress endPoint = new InetSocketAddress("127.0.0.1", 5050);
         map.putIfAbsent(endPoint, new Object());
-        Assertions.assertTrue(map.remove(endPoint));
-        Assertions.assertFalse(map.remove(endPoint));
+        Assertions.assertNotNull(map.remove(endPoint));
+        Assertions.assertNull(map.remove(endPoint));
         Assertions.assertEquals(0, map.size());
     }
 
