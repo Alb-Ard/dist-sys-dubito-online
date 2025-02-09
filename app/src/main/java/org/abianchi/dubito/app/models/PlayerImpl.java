@@ -2,10 +2,11 @@ package org.abianchi.dubito.app.models;
 
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class PlayerImpl implements Player{
 
-    private ArrayList<Card> playerHand;
+    private List<Card> playerHand;
     private int lives;
 
     public PlayerImpl() {
@@ -14,12 +15,12 @@ public class PlayerImpl implements Player{
     }
 
     @Override
-    public void playCards(ArrayList<Card> selectedCards) {
-
+    public void playCards(List<Card> selectedCards) {
+        this.playerHand.removeAll(selectedCards);
     }
 
     @Override
-    public void receiveNewHand(ArrayList<Card> newCards) {
+    public void receiveNewHand(List<Card> newCards) {
         this.playerHand.clear();
         this.playerHand.addAll(newCards);
     }
@@ -35,7 +36,7 @@ public class PlayerImpl implements Player{
     }
 
     @Override
-    public ArrayList<Card> getHand() {
+    public List<Card> getHand() {
         return this.playerHand;
     }
 

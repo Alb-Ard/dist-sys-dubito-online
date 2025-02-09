@@ -1,15 +1,16 @@
 package org.abianchi.dubito.app.models;
 
-import java.util.ArrayList;
+
+import java.util.List;
 
 public interface Player {
 
     int getLives();
 
-    ArrayList<Card> getHand();
-    void playCards(ArrayList<Card> selectedCards);
+    List<Card> getHand();
+    void playCards(List<Card> selectedCards);
 
-    void receiveNewHand(ArrayList<Card> newCards);
+    void receiveNewHand(List<Card> newCards);
 
     void loseRound();
 
