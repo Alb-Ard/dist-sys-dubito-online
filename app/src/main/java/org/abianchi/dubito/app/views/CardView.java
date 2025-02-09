@@ -33,4 +33,8 @@ public class CardView {
         Random random = new Random();
         return random.nextBoolean() ? "_of_hearts.png" : "_of_spades.png";
     }
+
+    public Image getCardImage() {
+        return this.cardImage;
+    }
 }
