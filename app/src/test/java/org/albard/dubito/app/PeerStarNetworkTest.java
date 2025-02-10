@@ -42,13 +42,18 @@ public final class PeerStarNetworkTest {
 
             app1.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9001));
             app2.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9002));
-            app3.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9000));
 
             Thread.sleep(Duration.ofSeconds(3));
 
             Assertions.assertEquals(2, app1.getPeerCount());
+            Assertions.assertArrayEquals(new PeerId[] { app2Id, app3Id },
+                    app1.getPeers().keySet().toArray(new PeerId[0]));
             Assertions.assertEquals(2, app2.getPeerCount());
+            Assertions.assertArrayEquals(new PeerId[] { app1Id, app3Id },
+                    app2.getPeers().keySet().toArray(new PeerId[0]));
             Assertions.assertEquals(2, app3.getPeerCount());
+            Assertions.assertArrayEquals(new PeerId[] { app1Id, app2Id },
+                    app3.getPeers().keySet().toArray(new PeerId[0]));
         }
     }
 }

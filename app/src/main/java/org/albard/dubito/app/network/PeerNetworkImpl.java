@@ -143,7 +143,10 @@ public final class PeerNetworkImpl implements PeerNetwork {
 
     private PeerId bindToIdAndAddConnection(final PeerConnection connection) throws IOException {
         final PeerId remotePeerId = this.peerIdExchanger.exchangeIds(connection);
-        this.connections.putIfAbsent(remotePeerId, connection);
+        final PeerConnection oldConnection = this.connections.put(remotePeerId, connection);
+        if (oldConnection != null) {
+            oldConnection.close();
+        }
         return remotePeerId;
     }
 
