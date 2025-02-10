@@ -1,11 +1,11 @@
 package org.albard.dubito.app;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.HashSet;
 import java.util.Set;
 
 import org.albard.dubito.app.messaging.handlers.RouteMessageHandler;
 import org.albard.dubito.app.messaging.messages.RouteAddedMessage;
+import org.albard.dubito.app.messaging.messages.RouteRemovedMessage;
 import org.albard.dubito.app.network.PeerEndPoint;
 import org.albard.dubito.app.network.PeerId;
 import org.junit.jupiter.api.Assertions;
@@ -14,31 +14,51 @@ import org.junit.jupiter.api.Test;
 public final class RouteMessageHandlerTest {
     @Test
     void testCreate() {
-        Assertions.assertDoesNotThrow(() -> new RouteMessageHandler((i, e) -> {
+        Assertions.assertDoesNotThrow(() -> new RouteMessageHandler(e -> {
         }, i -> {
         }));
     }
 
     @Test
-    void testHandlesRouteMessage() {
-        final RouteMessageHandler handler = new RouteMessageHandler((i, e) -> {
+    void testHandlesRouteAddedMessage() {
+        final RouteMessageHandler handler = new RouteMessageHandler(e -> {
+        }, i -> {
         });
-        Assertions.assertTrue(handler.handleMessage(
-                new RouteAddedMessage(PeerId.createNew(), Set.of(PeerId.createNew()),
-                        TestUtilities.createMockEndPoint(1))));
+        Assertions.assertTrue(handler.handleMessage(new RouteAddedMessage(PeerId.createNew(),
+                Set.of(PeerId.createNew()), TestUtilities.createMockEndPoint(1))));
+    }
+
+    @Test
+    void testHandlesRouteRemovedMessage() {
+        final RouteMessageHandler handler = new RouteMessageHandler(e -> {
+        }, i -> {
+        });
+        Assertions.assertTrue(
+                handler.handleMessage(new RouteRemovedMessage(PeerId.createNew(), Set.of(PeerId.createNew()))));
     }
 
     @Test
     void testConnectToNewRoute() {
         final PeerId newPeerId = PeerId.createNew();
-        final Map<PeerId, PeerEndPoint> receivedPeers = new HashMap<>();
-        final RouteMessageHandler handler = new RouteMessageHandler((i, e) -> {
-            receivedPeers.put(i, e);
+        final Set<PeerEndPoint> receivedPeers = new HashSet<>();
+        final RouteMessageHandler handler = new RouteMessageHandler(e -> {
+            receivedPeers.add(e);
+        }, i -> {
         });
         final PeerEndPoint newPeerEndPoint = PeerEndPoint.createFromValues("127.0.0.1", 9000);
         handler.handleMessage(new RouteAddedMessage(newPeerId, Set.of(), newPeerEndPoint));
         Assertions.assertEquals(1, receivedPeers.size());
-        Assertions.assertEquals(receivedPeers.keySet().stream().findFirst().get(), newPeerId);
-        Assertions.assertEquals(receivedPeers.get(newPeerId), newPeerEndPoint);
+        Assertions.assertEquals(receivedPeers.stream().findFirst().get(), newPeerEndPoint);
+    }
+
+    @Test
+    void testDisconnectFromRoute() {
+        final PeerId remotePeerId = PeerId.createNew();
+        final Set<PeerId> receivedPeers = new HashSet<>();
+        receivedPeers.add(remotePeerId);
+        final RouteMessageHandler handler = new RouteMessageHandler(e -> {
+        }, i -> receivedPeers.remove(i));
+        handler.handleMessage(new RouteRemovedMessage(remotePeerId, Set.of()));
+        Assertions.assertEquals(0, receivedPeers.size());
     }
 }

@@ -7,6 +7,7 @@ import java.net.UnknownHostException;
 import java.util.Set;
 
 import org.albard.dubito.app.messaging.MessageSerializer;
+import org.albard.dubito.app.messaging.MessengerFactory;
 import org.albard.dubito.app.messaging.messages.GameMessage;
 import org.albard.dubito.app.messaging.messages.PingMessage;
 import org.albard.dubito.app.network.PeerEndPoint;
@@ -41,6 +42,10 @@ public final class TestUtilities {
 
     public static GameMessage createMockMessage() {
         return new PingMessage(PeerId.createNew(), Set.of(PeerId.createNew()));
+    }
+
+    public static MessengerFactory createMessengerFactory() {
+        return new MessengerFactory(MessageSerializer.createJson());
     }
 
     public static MessageSerializer createMockMessageSerializer(final GameMessage deserializedMessage,

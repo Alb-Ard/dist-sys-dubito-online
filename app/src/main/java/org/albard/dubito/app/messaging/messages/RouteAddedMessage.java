@@ -8,11 +8,11 @@ import org.albard.dubito.app.network.PeerId;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public final class RouteMessage extends GameMessageBase {
+public final class RouteAddedMessage extends GameMessageBase {
     private final PeerEndPoint routeEndPoint;
 
     @JsonCreator
-    public RouteMessage(@JsonProperty("sender") final PeerId sender,
+    public RouteAddedMessage(@JsonProperty("sender") final PeerId sender,
             @JsonProperty("receipients") final Set<PeerId> receipients,
             @JsonProperty("routeEndPoint") final PeerEndPoint routeEndPoint) {
         super(sender, Set.copyOf(receipients));

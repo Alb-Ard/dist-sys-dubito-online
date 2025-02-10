@@ -10,15 +10,12 @@ import org.albard.dubito.app.messaging.MessageSerializer;
 import org.albard.dubito.app.messaging.MessengerFactory;
 import org.albard.dubito.app.messaging.handlers.MessageHandler;
 import org.albard.dubito.app.messaging.handlers.MessageHandlerChain;
-import org.albard.dubito.app.messaging.handlers.PingPongMessageHandler;
 import org.albard.dubito.app.messaging.messages.PingMessage;
 import org.albard.dubito.app.network.PeerEndPoint;
 import org.albard.dubito.app.network.PeerId;
 import org.albard.dubito.app.network.PeerNetwork;
 import org.albard.dubito.app.network.PeerStarNetwork;
 
-import org.albard.dubito.app.messaging.HashMapMessageDispatcher;
-import org.albard.dubito.app.messaging.MessageDispatcher;
 import org.albard.dubito.app.messaging.MessageSender;
 
 public class App {
@@ -27,18 +24,16 @@ public class App {
         final PeerEndPoint serverEndPoint = readServerEndPointFromArgs(args);
         final PeerEndPoint clientEndPoint = readClientEndPointFromArgs(args);
         final MessageSerializer messageSerializer = MessageSerializer.createJson();
-        final MessageDispatcher messageDispatcher = new HashMapMessageDispatcher(localPeerId);
         final MessengerFactory messengerFactory = new MessengerFactory(messageSerializer);
-        messageDispatcher.addMessageListener(createIncomingMessageHandler(messageDispatcher, localPeerId));
-        messageDispatcher.start();
         try (final PeerNetwork network = PeerStarNetwork.createBound(localPeerId, serverEndPoint.getHost(),
-                serverEndPoint.getPort(), messageDispatcher, messengerFactory)) {
-            network.start();
+                serverEndPoint.getPort(), messengerFactory)) {
+
+            network.addMessageListener(createIncomingMessageHandler(network, localPeerId));
             System.out.println("[SERVER] Listening on " + serverEndPoint);
             Thread.sleep(Duration.ofSeconds(1));
             while (true) {
                 try {
-                    runClient(clientEndPoint, network, localPeerId, messageDispatcher, messageSerializer);
+                    runClient(clientEndPoint, network, localPeerId, messageSerializer);
                 } catch (final Exception ex) {
                     ex.printStackTrace();
                 }
@@ -68,7 +63,7 @@ public class App {
     }
 
     private static void runClient(final PeerEndPoint endPoint, final PeerNetwork network, final PeerId localPeerId,
-            final MessageDispatcher messageDispatcher, final MessageSerializer messageSerializer) {
+            final MessageSerializer messageSerializer) {
         try {
             System.out.println("[CLIENT] Opening connection " + endPoint);
             if (!network.connectToPeer(endPoint)) {
@@ -80,7 +75,7 @@ public class App {
                 System.out.println("[CLIENT] Press any key to send a ping to all");
                 System.in.read();
                 System.out.println("[CLIENT] Sending Ping");
-                messageDispatcher.sendMessage(new PingMessage(localPeerId, Set.of()));
+                network.sendMessage(new PingMessage(localPeerId, Set.of()));
             } while (true);
         } catch (final Exception ex) {
             ex.printStackTrace();
@@ -94,8 +89,7 @@ public class App {
             System.out.println("[" + m.getSender() + "] " + m);
             return true;
         };
-        return new MessageHandlerChain(
-                List.of(new PingPongMessageHandler(localPeerId, messageSender), fallbackHandler));
+        return new MessageHandlerChain(List.of(fallbackHandler));
     }
 
     private static int parseIntOrDefault(final String value, Supplier<Integer> defaultValueProvider) {

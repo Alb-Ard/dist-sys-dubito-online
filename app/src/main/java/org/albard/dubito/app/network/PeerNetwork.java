@@ -4,16 +4,18 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Map;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import org.albard.dubito.app.connection.PeerConnection;
+import org.albard.dubito.app.messaging.MessageReceiver;
+import org.albard.dubito.app.messaging.MessageSender;
+import org.albard.dubito.app.messaging.MessengerFactory;
 
-public interface PeerNetwork extends Closeable {
-    static PeerNetwork createBound(final PeerId localPeerId, final String bindAddress, final int bindPort)
-            throws IOException {
-        return PeerNetworkImpl.createBound(localPeerId, bindAddress, bindPort);
+public interface PeerNetwork extends Closeable, MessageSender, MessageReceiver {
+    static PeerNetwork createBound(final PeerId localPeerId, final String bindAddress, final int bindPort,
+            final MessengerFactory messengerFactory) throws IOException {
+        return PeerNetworkImpl.createBound(localPeerId, bindAddress, bindPort, messengerFactory);
     }
-
-    void start();
 
     Map<PeerId, PeerConnection> getPeers();
 
@@ -21,7 +23,9 @@ public interface PeerNetwork extends Closeable {
 
     boolean connectToPeer(PeerEndPoint peerEndPoint);
 
-    boolean bindRemotePeer(PeerId peerId, PeerEndPoint peerEndPoint);
+    boolean disconnectFromPeer(PeerId peerId);
 
     void setPeerConnectedListener(final BiConsumer<PeerId, PeerConnection> listener);
+
+    void setPeerDisconnectedListener(final Consumer<PeerId> listener);
 }

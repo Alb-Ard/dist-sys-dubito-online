@@ -5,55 +5,49 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import org.albard.dubito.app.connection.PeerConnection;
-import org.albard.dubito.app.messaging.MessageDispatcher;
 import org.albard.dubito.app.messaging.MessengerFactory;
+import org.albard.dubito.app.messaging.handlers.MessageHandler;
 import org.albard.dubito.app.messaging.handlers.RouteMessageHandler;
-import org.albard.dubito.app.messaging.messages.RouteMessage;
+import org.albard.dubito.app.messaging.messages.GameMessage;
+import org.albard.dubito.app.messaging.messages.RouteAddedMessage;
 
 public final class PeerStarNetwork implements PeerNetwork {
     private final PeerNetwork baseNetwork;
 
     private BiConsumer<PeerId, PeerConnection> peerConnectedlistener;
 
-    private PeerStarNetwork(final PeerId localPeerId, final PeerNetwork baseNetwork, final MessageDispatcher dispatcher,
-            final MessengerFactory messengerFactory) {
+    private PeerStarNetwork(final PeerId localPeerId, final PeerNetwork baseNetwork) {
         this.baseNetwork = baseNetwork;
         this.baseNetwork.setPeerConnectedListener((id, connection) -> {
             try {
                 Set<PeerId> receipients = new HashSet<>(PeerStarNetwork.this.getPeers().keySet());
                 receipients.remove(localPeerId);
                 receipients.remove(id);
-                dispatcher.addPeer(id, messengerFactory.createSender(connection.getSocket()),
-                        messengerFactory.createReceiver(connection.getSocket()));
                 System.out.println(localPeerId + ": Propagating connection " + id);
-                dispatcher.sendMessage(new RouteMessage(id, receipients,
+                this.sendMessage(new RouteAddedMessage(localPeerId, receipients,
                         PeerEndPoint.createFromAddress(connection.getSocket().getRemoteSocketAddress())));
                 if (PeerStarNetwork.this.peerConnectedlistener != null) {
                     PeerStarNetwork.this.peerConnectedlistener.accept(id, connection);
                 }
-            } catch (final IOException ex) {
+            } catch (final Exception ex) {
                 ex.printStackTrace();
             }
         });
-        dispatcher.addMessageListener(new RouteMessageHandler(this::bindRemotePeer));
+        this.addMessageListener(new RouteMessageHandler(this::connectToPeer, this::disconnectFromPeer));
     }
 
     public static PeerNetwork createBound(final PeerId localPeerId, final String bindAddress, final int bindPort,
-            final MessageDispatcher dispatcher, final MessengerFactory messengerFactory) throws IOException {
-        return new PeerStarNetwork(localPeerId, PeerNetwork.createBound(localPeerId, bindAddress, bindPort), dispatcher,
-                messengerFactory);
+            final MessengerFactory messengerFactory) throws IOException {
+        return new PeerStarNetwork(localPeerId,
+                PeerNetwork.createBound(localPeerId, bindAddress, bindPort, messengerFactory));
     }
 
     @Override
     public void close() throws IOException {
         this.baseNetwork.close();
-    }
-
-    @Override
-    public void start() {
-        this.baseNetwork.start();
     }
 
     @Override
@@ -67,18 +61,47 @@ public final class PeerStarNetwork implements PeerNetwork {
     }
 
     @Override
-    public boolean connectToPeer(PeerEndPoint peerEndPoint) {
+    public boolean connectToPeer(final PeerEndPoint peerEndPoint) {
         return this.baseNetwork.connectToPeer(peerEndPoint);
     }
 
     @Override
-    public boolean bindRemotePeer(PeerId peerId, PeerEndPoint peerEndPoint) {
-        System.out.println("Binding peer " + peerId);
-        return this.baseNetwork.bindRemotePeer(peerId, peerEndPoint);
+    public void setPeerConnectedListener(final BiConsumer<PeerId, PeerConnection> listener) {
+        this.peerConnectedlistener = listener;
     }
 
     @Override
-    public void setPeerConnectedListener(BiConsumer<PeerId, PeerConnection> listener) {
-        this.peerConnectedlistener = listener;
+    public void setPeerDisconnectedListener(final Consumer<PeerId> listener) {
+        this.baseNetwork.setPeerDisconnectedListener(listener);
+    }
+
+    @Override
+    public boolean disconnectFromPeer(final PeerId peerId) {
+        return this.baseNetwork.disconnectFromPeer(peerId);
+    }
+
+    @Override
+    public void sendMessage(final GameMessage message) {
+        this.baseNetwork.sendMessage(message);
+    }
+
+    @Override
+    public void addMessageListener(final MessageHandler listener) {
+        this.baseNetwork.addMessageListener(listener);
+    }
+
+    @Override
+    public void removeMessageListener(final MessageHandler listener) {
+        this.baseNetwork.removeMessageListener(listener);
+    }
+
+    @Override
+    public void addClosedListener(final ReceiverClosedListener listener) {
+        this.baseNetwork.addClosedListener(listener);
+    }
+
+    @Override
+    public void removeClosedListener(final ReceiverClosedListener listener) {
+        this.baseNetwork.removeClosedListener(listener);
     }
 }
