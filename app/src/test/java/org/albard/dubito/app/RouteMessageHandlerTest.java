@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.albard.dubito.app.messaging.handlers.RouteMessageHandler;
-import org.albard.dubito.app.messaging.messages.RouteMessage;
+import org.albard.dubito.app.messaging.messages.RouteAddedMessage;
 import org.albard.dubito.app.network.PeerEndPoint;
 import org.albard.dubito.app.network.PeerId;
 import org.junit.jupiter.api.Assertions;
@@ -15,6 +15,7 @@ public final class RouteMessageHandlerTest {
     @Test
     void testCreate() {
         Assertions.assertDoesNotThrow(() -> new RouteMessageHandler((i, e) -> {
+        }, i -> {
         }));
     }
 
@@ -23,7 +24,8 @@ public final class RouteMessageHandlerTest {
         final RouteMessageHandler handler = new RouteMessageHandler((i, e) -> {
         });
         Assertions.assertTrue(handler.handleMessage(
-                new RouteMessage(PeerId.createNew(), Set.of(PeerId.createNew()), TestUtilities.createMockEndPoint(1))));
+                new RouteAddedMessage(PeerId.createNew(), Set.of(PeerId.createNew()),
+                        TestUtilities.createMockEndPoint(1))));
     }
 
     @Test
@@ -34,7 +36,7 @@ public final class RouteMessageHandlerTest {
             receivedPeers.put(i, e);
         });
         final PeerEndPoint newPeerEndPoint = PeerEndPoint.createFromValues("127.0.0.1", 9000);
-        handler.handleMessage(new RouteMessage(newPeerId, Set.of(), newPeerEndPoint));
+        handler.handleMessage(new RouteAddedMessage(newPeerId, Set.of(), newPeerEndPoint));
         Assertions.assertEquals(1, receivedPeers.size());
         Assertions.assertEquals(receivedPeers.keySet().stream().findFirst().get(), newPeerId);
         Assertions.assertEquals(receivedPeers.get(newPeerId), newPeerEndPoint);
