@@ -25,4 +25,9 @@ public record PeerId(@JsonProperty("id") String id) {
     public byte[] getBytes() {
         return CHARSET.encode(id).array();
     }
+
+    @Override
+    public final String toString() {
+        return this.id();
+    }
 }

@@ -27,14 +27,9 @@ public final class PeerStarNetwork implements PeerNetwork {
                 receipients.remove(id);
                 dispatcher.addPeer(id, messengerFactory.createSender(connection.getSocket()),
                         messengerFactory.createReceiver(connection.getSocket()));
-                System.out.println(localPeerId + ": Propagating connection " + id + " to " + receipients);
+                System.out.println(localPeerId + ": Propagating connection " + id);
                 dispatcher.sendMessage(new RouteMessage(id, receipients,
                         PeerEndPoint.createFromAddress(connection.getSocket().getRemoteSocketAddress())));
-                for (final Map.Entry<PeerId, PeerConnection> peer : PeerStarNetwork.this.getPeers().entrySet()) {
-                    System.out.println(localPeerId + ": Sending connection " + peer.getKey() + " to " + id);
-                    dispatcher.sendMessage(new RouteMessage(peer.getKey(), Set.of(id),
-                            PeerEndPoint.createFromAddress(peer.getValue().getSocket().getRemoteSocketAddress())));
-                }
                 if (PeerStarNetwork.this.peerConnectedlistener != null) {
                     PeerStarNetwork.this.peerConnectedlistener.accept(id, connection);
                 }

@@ -102,10 +102,14 @@ public final class PeerNetworkImpl implements PeerNetwork {
         try {
             connection = PeerConnection.createAndConnect("0.0.0.0", 0, peerEndPoint.getHost(), peerEndPoint.getPort());
             final PeerId remotePeerId = this.peerIdExchanger.exchangeIds(connection);
-            if (remotePeerId != peerId) {
-                throw new Exception("Given bound peer Id and exchanged peer Id do not match");
+            if (!remotePeerId.equals(peerId)) {
+                throw new Exception(
+                        "Given bound peer Id " + peerId + " and exchanged peer Id " + remotePeerId + " do not match");
             }
-            this.connections.putIfAbsent(remotePeerId, connection);
+            final PeerConnection oldConnection = this.connections.putIfAbsent(remotePeerId, connection);
+            if (oldConnection != null) {
+                throw new Exception("A connection wht the same PeerId is already present");
+            }
         } catch (final Exception ex) {
             ex.printStackTrace();
             try {
@@ -141,11 +145,12 @@ public final class PeerNetworkImpl implements PeerNetwork {
         }
     }
 
-    private PeerId bindToIdAndAddConnection(final PeerConnection connection) throws IOException {
+    private PeerId bindToIdAndAddConnection(final PeerConnection connection) throws Exception {
         final PeerId remotePeerId = this.peerIdExchanger.exchangeIds(connection);
-        final PeerConnection oldConnection = this.connections.put(remotePeerId, connection);
+        final PeerConnection oldConnection = this.connections.putIfAbsent(remotePeerId, connection);
         if (oldConnection != null) {
-            oldConnection.close();
+            connection.close();
+            throw new Exception("A connection with the same PeerId is already present");
         }
         return remotePeerId;
     }
