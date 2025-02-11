@@ -10,55 +10,33 @@ import java.util.List;
 
 import org.albard.dubito.app.connection.PeerConnection;
 import org.albard.dubito.app.connection.PeerConnectionReceiver;
+import org.albard.dubito.app.messaging.MessengerFactory;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public final class UserConnectionReceiverTest {
     @Test
     void testBindsCorrectly() {
-        Assertions.assertDoesNotThrow(() -> PeerConnectionReceiver.createBound("127.0.0.1", 9000).close());
-    }
-
-    @Test
-    void testBindsIdle() throws UnknownHostException, IOException {
-        try (final PeerConnectionReceiver receiver = PeerConnectionReceiver.createBound("127.0.0.1", 9000)) {
-            Assertions.assertFalse(receiver.isListening());
-        }
+        final MessengerFactory messengerFactory = TestUtilities.createMessengerFactory();
+        Assertions.assertDoesNotThrow(
+                () -> PeerConnectionReceiver.createBound("127.0.0.1", 9000, messengerFactory).close());
     }
 
     @Test
     void testStartReceiving() throws UnknownHostException, IOException {
-        try (final PeerConnectionReceiver receiver = PeerConnectionReceiver.createBound("127.0.0.1", 9000)) {
-            Assertions.assertDoesNotThrow(() -> receiver.start());
+        final MessengerFactory messengerFactory = TestUtilities.createMessengerFactory();
+        try (final PeerConnectionReceiver receiver = PeerConnectionReceiver.createBound("127.0.0.1", 9000,
+                messengerFactory)) {
             Assertions.assertTrue(receiver.isListening());
         }
     }
 
     @Test
-    void testStartAgain() throws IOException {
-        try (final PeerConnectionReceiver receiver = PeerConnectionReceiver.createBound("127.0.0.1", 9000)) {
-            receiver.start();
-            Assertions.assertThrows(Exception.class, () -> receiver.start());
-        }
-    }
-
-    @Test
-    void testCloseWhenNotStarted() throws UnknownHostException, IOException {
-        PeerConnectionReceiver receiver = null;
-        try {
-            receiver = PeerConnectionReceiver.createBound("127.0.0.1", 9000);
-            receiver.close();
-        } finally {
-            Assertions.assertFalse(receiver.isListening());
-        }
-    }
-
-    @Test
     void testCloses() throws IOException {
+        final MessengerFactory messengerFactory = TestUtilities.createMessengerFactory();
         PeerConnectionReceiver receiver = null;
         try {
-            receiver = PeerConnectionReceiver.createBound("127.0.0.1", 9000);
-            receiver.start();
+            receiver = PeerConnectionReceiver.createBound("127.0.0.1", 9000, messengerFactory);
             receiver.close();
         } finally {
             Assertions.assertFalse(receiver.isListening());
@@ -67,10 +45,10 @@ public final class UserConnectionReceiverTest {
 
     @Test
     void testCloseAgain() throws IOException {
+        final MessengerFactory messengerFactory = TestUtilities.createMessengerFactory();
         PeerConnectionReceiver receiver = null;
         try {
-            receiver = PeerConnectionReceiver.createBound("127.0.0.1", 9000);
-            receiver.start();
+            receiver = PeerConnectionReceiver.createBound("127.0.0.1", 9000, messengerFactory);
             receiver.close();
             Assertions.assertDoesNotThrow(receiver::close);
         } finally {
@@ -80,11 +58,11 @@ public final class UserConnectionReceiverTest {
 
     @Test
     void testConnectClient() throws IOException, InterruptedException {
+        final MessengerFactory messengerFactory = TestUtilities.createMessengerFactory();
         final List<PeerConnection> connections = new ArrayList<>();
-        try (final PeerConnectionReceiver receiver = PeerConnectionReceiver.createBound("127.0.0.1", 9000);
-                final Socket userSocket = new Socket()) {
+        try (final PeerConnectionReceiver receiver = PeerConnectionReceiver.createBound("127.0.0.1", 9000,
+                messengerFactory); final Socket userSocket = new Socket()) {
             receiver.setPeerConnectedListener(connections::add);
-            receiver.start();
             Assertions.assertDoesNotThrow(() -> userSocket.connect(new InetSocketAddress("127.0.0.1", 9000)));
             // I can't be sure that the receiver processed the connection immediatly, I give
             // it some time to finish accepting the user...

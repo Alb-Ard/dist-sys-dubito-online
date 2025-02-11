@@ -2,7 +2,7 @@ package org.albard.dubito.app.messaging.messages;
 
 import java.util.Set;
 
-import org.albard.dubito.app.PeerId;
+import org.albard.dubito.app.network.PeerId;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

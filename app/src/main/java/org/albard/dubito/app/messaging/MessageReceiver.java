@@ -12,7 +12,20 @@ public interface MessageReceiver {
         return BufferedMessageReceiver.createFromStream(stream, deserializer);
     }
 
-    void setMessageListener(MessageHandler listener);
+    void addMessageListener(MessageHandler listener);
 
-    void start();
+    void removeMessageListener(MessageHandler listener);
+
+    default void addOnceMessageListener(final MessageHandler handler) {
+        this.addMessageListener(new MessageHandler() {
+            @Override
+            public boolean handleMessage(final GameMessage message) {
+                if (!handler.handleMessage(message)) {
+                    return false;
+                }
+                MessageReceiver.this.removeMessageListener(this);
+                return true;
+            }
+        });
+    }
 }
