@@ -26,9 +26,8 @@ public final class PeerStarNetwork implements PeerNetwork {
                 Set<PeerId> receipients = new HashSet<>(PeerStarNetwork.this.getPeers().keySet());
                 receipients.remove(localPeerId);
                 receipients.remove(id);
-                System.out.println(localPeerId + ": Propagating connection " + id);
-                this.sendMessage(new RouteAddedMessage(localPeerId, receipients,
-                        PeerEndPoint.createFromAddress(connection.getSocket().getRemoteSocketAddress())));
+                System.out.println(localPeerId + ": Propagating connection " + id + " to " + receipients);
+                this.sendMessage(new RouteAddedMessage(localPeerId, receipients, connection.getRemoteEndPoint()));
                 if (PeerStarNetwork.this.peerConnectedlistener != null) {
                     PeerStarNetwork.this.peerConnectedlistener.accept(id, connection);
                 }
@@ -93,15 +92,5 @@ public final class PeerStarNetwork implements PeerNetwork {
     @Override
     public void removeMessageListener(final MessageHandler listener) {
         this.baseNetwork.removeMessageListener(listener);
-    }
-
-    @Override
-    public void addClosedListener(final ReceiverClosedListener listener) {
-        this.baseNetwork.addClosedListener(listener);
-    }
-
-    @Override
-    public void removeClosedListener(final ReceiverClosedListener listener) {
-        this.baseNetwork.removeClosedListener(listener);
     }
 }

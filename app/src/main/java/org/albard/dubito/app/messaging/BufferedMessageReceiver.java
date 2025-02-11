@@ -4,16 +4,23 @@ import java.io.InputStream;
 import java.net.SocketException;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 
+import org.albard.dubito.app.ObservableCloseable;
 import org.albard.dubito.app.messaging.handlers.MessageHandler;
 import org.albard.dubito.app.messaging.messages.GameMessage;
 
-public final class BufferedMessageReceiver implements MessageReceiver {
+public final class BufferedMessageReceiver implements MessageReceiver, ObservableCloseable {
     private final Thread receiveThread;
-    private final Set<MessageHandler> messageListeners = Collections.synchronizedSet(new HashSet<>());
-    private final Set<ReceiverClosedListener> closedListeners = Collections.synchronizedSet(new HashSet<>());
+    private final Lock messageListenersLock = new ReentrantLock();
+    private final Set<MessageHandler> messageListeners = new HashSet<>();
+    private final Set<ClosedListener> closedListeners = Collections.synchronizedSet(new HashSet<>());
+    private final Queue<GameMessage> bufferedMessages = new LinkedList<>();
 
     public BufferedMessageReceiver(final InputStream stream, final Function<byte[], GameMessage> deserializer) {
         this.receiveThread = Thread.ofVirtual().unstarted(() -> {
@@ -27,7 +34,16 @@ public final class BufferedMessageReceiver implements MessageReceiver {
                     final byte[] messageBuffer = new byte[readByteCount];
                     System.arraycopy(buffer, 0, messageBuffer, 0, readByteCount);
                     final GameMessage message = deserializer.apply(messageBuffer);
-                    this.messageListeners.forEach(l -> l.handleMessage(message));
+                    try {
+                        messageListenersLock.lock();
+                        if (this.messageListeners.isEmpty()) {
+                            this.bufferedMessages.add(message);
+                        } else {
+                            this.messageListeners.forEach(l -> l.handleMessage(message));
+                        }
+                    } finally {
+                        this.messageListenersLock.unlock();
+                    }
                 } catch (final SocketException ex) {
                     System.err.println(ex.getMessage());
                     break;
@@ -35,7 +51,7 @@ public final class BufferedMessageReceiver implements MessageReceiver {
                     System.err.println(ex.getMessage());
                 }
             }
-            this.closedListeners.forEach(l -> l.receiverClosed());
+            this.closedListeners.forEach(l -> l.closed());
         });
     }
 
@@ -48,21 +64,31 @@ public final class BufferedMessageReceiver implements MessageReceiver {
 
     @Override
     public void addMessageListener(final MessageHandler listener) {
+        this.messageListenersLock.lock();
+        final int previousListenerCount = this.messageListeners.size();
         this.messageListeners.add(listener);
+        if (previousListenerCount <= 0) {
+            while (!this.bufferedMessages.isEmpty()) {
+                this.messageListeners.forEach(l -> l.handleMessage(this.bufferedMessages.remove()));
+            }
+        }
+        this.messageListenersLock.unlock();
     }
 
     @Override
     public void removeMessageListener(final MessageHandler listener) {
+        this.messageListenersLock.lock();
         this.messageListeners.remove(listener);
+        this.messageListenersLock.unlock();
     }
 
     @Override
-    public void addClosedListener(final ReceiverClosedListener listener) {
+    public void addClosedListener(final ClosedListener listener) {
         this.closedListeners.add(listener);
     }
 
     @Override
-    public void removeClosedListener(final ReceiverClosedListener listener) {
+    public void removeClosedListener(final ClosedListener listener) {
         this.closedListeners.remove(listener);
     }
 

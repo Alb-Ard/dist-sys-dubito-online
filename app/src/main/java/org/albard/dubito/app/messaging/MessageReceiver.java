@@ -7,11 +7,6 @@ import org.albard.dubito.app.messaging.handlers.MessageHandler;
 import org.albard.dubito.app.messaging.messages.GameMessage;
 
 public interface MessageReceiver {
-    @FunctionalInterface
-    public interface ReceiverClosedListener {
-        void receiverClosed();
-    }
-
     static MessageReceiver createFromStream(final InputStream stream,
             final Function<byte[], GameMessage> deserializer) {
         return BufferedMessageReceiver.createFromStream(stream, deserializer);
@@ -20,10 +15,6 @@ public interface MessageReceiver {
     void addMessageListener(MessageHandler listener);
 
     void removeMessageListener(MessageHandler listener);
-
-    void addClosedListener(ReceiverClosedListener listener);
-
-    void removeClosedListener(ReceiverClosedListener listener);
 
     default void addOnceMessageListener(final MessageHandler handler) {
         this.addMessageListener(new MessageHandler() {

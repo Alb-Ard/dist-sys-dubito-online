@@ -3,22 +3,36 @@ package org.albard.dubito.app.connection;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.HashSet;
+import java.util.Set;
 
+import org.albard.dubito.app.ObservableCloseable;
 import org.albard.dubito.app.messaging.MessageReceiver;
 import org.albard.dubito.app.messaging.MessageSender;
 import org.albard.dubito.app.messaging.MessengerFactory;
 import org.albard.dubito.app.messaging.handlers.MessageHandler;
 import org.albard.dubito.app.messaging.messages.GameMessage;
+import org.albard.dubito.app.network.PeerEndPoint;
 
 public final class TcpPeerConnection implements PeerConnection {
     private final Socket socket;
     private final MessageReceiver messageReceiver;
     private final MessageSender messageSender;
+    private final Set<ClosedListener> closedListeners = new HashSet<>();
 
     private TcpPeerConnection(final Socket socket, final MessengerFactory messengerFactory) throws IOException {
         this.socket = socket;
         this.messageSender = messengerFactory.createSender(socket);
         this.messageReceiver = messengerFactory.createReceiver(socket);
+        if (this.messageReceiver instanceof ObservableCloseable observableCloseable) {
+            observableCloseable.addClosedListener(() -> {
+                try {
+                    this.close();
+                } catch (final IOException ex) {
+                    System.err.println(ex.getMessage());
+                }
+            });
+        }
     }
 
     public static TcpPeerConnection createConnected(final Socket socket, final MessengerFactory messengerFactory)
@@ -31,7 +45,13 @@ public final class TcpPeerConnection implements PeerConnection {
 
     @Override
     public void close() throws IOException {
-        socket.close();
+        this.socket.close();
+        this.closedListeners.forEach(l -> {
+            try {
+                l.closed();
+            } catch (final Exception ex) {
+            }
+        });
     }
 
     @Override
@@ -50,18 +70,23 @@ public final class TcpPeerConnection implements PeerConnection {
     }
 
     @Override
-    public void addClosedListener(final ReceiverClosedListener listener) {
-        this.messageReceiver.addClosedListener(listener);
-
+    public void addClosedListener(final ClosedListener listener) {
+        this.closedListeners.add(listener);
     }
 
     @Override
-    public void removeClosedListener(final ReceiverClosedListener listener) {
-        this.messageReceiver.removeClosedListener(listener);
+    public void removeClosedListener(final ClosedListener listener) {
+        this.closedListeners.remove(listener);
     }
 
     @Override
-    public Socket getSocket() {
-        return this.socket;
+    public PeerEndPoint getRemoteEndPoint() {
+        return PeerEndPoint.createFromAddress(this.socket.getRemoteSocketAddress());
+    }
+
+    @Override
+    public String toString() {
+        return new StringBuilder().append("TcpConnection[").append(this.socket.getLocalSocketAddress()).append(" -> ")
+                .append(this.socket.getRemoteSocketAddress()).append("]").toString();
     }
 }

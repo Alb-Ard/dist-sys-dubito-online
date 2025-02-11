@@ -4,8 +4,9 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 import org.albard.dubito.app.messaging.MessengerFactory;
@@ -16,6 +17,7 @@ public final class TcpPeerConnectionReceiver implements PeerConnectionReceiver {
     private final ServerSocket listeningSocket;
     private final Thread listeningThread;
     private final MessengerFactory messengerFactory;
+    private final ExecutorService listenerExecutor = Executors.newSingleThreadExecutor();
 
     private Consumer<PeerConnection> peerConnectedListener;
 
@@ -61,15 +63,15 @@ public final class TcpPeerConnectionReceiver implements PeerConnectionReceiver {
         while (this.isListening()) {
             try {
                 final Socket userSocket = this.listeningSocket.accept();
-                try {
-                    this.peerConnectedListener
-                            .accept(TcpPeerConnection.createConnected(userSocket, this.messengerFactory));
-                } catch (final Exception ex) {
-                }
-            } catch (final SocketException ex) {
-                System.err.println(ex.getMessage());
+                this.listenerExecutor.submit(() -> {
+                    try {
+                        this.peerConnectedListener
+                                .accept(TcpPeerConnection.createConnected(userSocket, this.messengerFactory));
+                    } catch (final Exception ex) {
+                    }
+                });
             } catch (final IOException ex) {
-                ex.printStackTrace();
+                System.err.println(ex.getMessage());
             }
         }
     }

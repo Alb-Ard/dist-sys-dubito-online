@@ -21,7 +21,6 @@ public final class PeerNetworkImpl implements PeerNetwork {
     private final PeerConnectionReceiver connectionReceiver;
     private final PeerIdExchanger peerIdExchanger;
     private final Set<MessageHandler> messageReceiverListeners = new HashSet<>();
-    private final Set<ReceiverClosedListener> closedListeners = new HashSet<>();
 
     private BiConsumer<PeerId, PeerConnection> peerConnectedListener;
     private Consumer<PeerId> peerDisconnectedListener;
@@ -31,16 +30,18 @@ public final class PeerNetworkImpl implements PeerNetwork {
         this.connectionReceiver = receiver;
         this.connectionReceiver.setPeerConnectedListener(c -> {
             try {
-                System.out
-                        .println(localPeerId + ": Received connection from " + c.getSocket().getRemoteSocketAddress());
+                if (this.containsPeerAtEndPoint(c.getRemoteEndPoint())) {
+                    return;
+                }
+                System.out.println(localPeerId + ": Received connection from " + c.getRemoteEndPoint());
                 final PeerId remotePeerId = this.peerIdExchanger.exchangeIds(c);
                 this.addConnection(remotePeerId, c);
             } catch (final Exception ex) {
-                ex.printStackTrace();
+                System.err.println(ex.getMessage());
                 try {
                     c.close();
                 } catch (final Exception ex2) {
-                    ex2.printStackTrace();
+                    System.err.println(ex2.getMessage());
                 }
             }
         });
@@ -53,7 +54,7 @@ public final class PeerNetworkImpl implements PeerNetwork {
             }
 
             @Override
-            public void entryRemoved(PeerId key, PeerConnection value) {
+            public void entryRemoved(final PeerId key, final PeerConnection value) {
                 if (PeerNetworkImpl.this.peerDisconnectedListener != null) {
                     PeerNetworkImpl.this.peerDisconnectedListener.accept(key);
                 }
@@ -89,13 +90,13 @@ public final class PeerNetworkImpl implements PeerNetwork {
             final PeerId remotePeerId = this.peerIdExchanger.exchangeIds(connection);
             return this.addConnection(remotePeerId, connection);
         } catch (final Exception ex) {
-            ex.printStackTrace();
+            System.err.println(ex.getMessage());
             try {
                 if (connection != null) {
                     connection.close();
                 }
             } catch (final Exception ex2) {
-                ex2.printStackTrace();
+                System.err.println(ex2.getMessage());
             }
             return false;
         }
@@ -105,8 +106,10 @@ public final class PeerNetworkImpl implements PeerNetwork {
     public boolean disconnectFromPeer(final PeerId peerId) {
         final PeerConnection connection = this.connections.remove(peerId);
         if (connection == null) {
+            System.err.println("Disconnecting from " + peerId + ", but peer was not found!");
             return false;
         }
+        System.out.println("Disconnecting from " + peerId);
         try {
             connection.close();
         } catch (final IOException ex) {
@@ -127,6 +130,7 @@ public final class PeerNetworkImpl implements PeerNetwork {
 
     @Override
     public void close() {
+        System.out.println("Closing...");
         final Set<PeerId> connectedPeers = Set.copyOf(this.connections.keySet());
         for (final PeerId connectionId : connectedPeers) {
             this.disconnectFromPeer(connectionId);
@@ -134,14 +138,14 @@ public final class PeerNetworkImpl implements PeerNetwork {
         try {
             this.connectionReceiver.close();
         } catch (final IOException ex) {
-            ex.printStackTrace();
+            System.err.println(ex.getMessage());
         }
-        this.closedListeners.forEach(l -> l.receiverClosed());
     }
 
     @Override
     public void sendMessage(final GameMessage message) {
-        this.getPeers().entrySet().stream().filter(e -> message.getReceipients().contains(e.getKey()))
+        this.getPeers().entrySet().stream()
+                .filter(e -> message.getReceipients() == null || message.getReceipients().contains(e.getKey()))
                 .forEach(e -> e.getValue().sendMessage(message));
     }
 
@@ -155,19 +159,10 @@ public final class PeerNetworkImpl implements PeerNetwork {
         this.messageReceiverListeners.remove(listener);
     }
 
-    @Override
-    public void addClosedListener(final ReceiverClosedListener listener) {
-        this.closedListeners.add(listener);
-    }
-
-    @Override
-    public void removeClosedListener(final ReceiverClosedListener listener) {
-        this.closedListeners.remove(listener);
-    }
-
     private boolean addConnection(final PeerId id, final PeerConnection connection) {
         if (id == null) {
-            System.err.println("Provided Id is null (maybe Id exchange failed...)");
+            System.err.println("Provided Id for connection " + connection.getRemoteEndPoint()
+                    + " is null (maybe Id exchange failed...)");
             try {
                 connection.close();
             } catch (final IOException ex) {
@@ -183,14 +178,14 @@ public final class PeerNetworkImpl implements PeerNetwork {
             }
             return false;
         }
+        System.out.println("Connected to peer " + id);
         connection.addMessageListener(this::onMessageReceived);
         connection.addClosedListener(() -> this.disconnectFromPeer(id));
         return true;
     }
 
     private boolean containsPeerAtEndPoint(final PeerEndPoint peerEndPoint) {
-        return this.connections.values().stream().map(c -> c.getSocket().getRemoteSocketAddress())
-                .map(PeerEndPoint::createFromAddress).anyMatch(peerEndPoint::equals);
+        return this.connections.values().stream().map(c -> c.getRemoteEndPoint()).anyMatch(peerEndPoint::equals);
     }
 
     private boolean onMessageReceived(final GameMessage message) {

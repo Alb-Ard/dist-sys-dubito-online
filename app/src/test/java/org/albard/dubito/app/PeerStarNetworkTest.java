@@ -2,25 +2,23 @@ package org.albard.dubito.app;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.albard.dubito.app.messaging.MessageSerializer;
 import org.albard.dubito.app.messaging.MessengerFactory;
 import org.albard.dubito.app.network.PeerEndPoint;
 import org.albard.dubito.app.network.PeerId;
 import org.albard.dubito.app.network.PeerNetwork;
 import org.albard.dubito.app.network.PeerStarNetwork;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Timeout(10)
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public final class PeerStarNetworkTest {
     @Test
-    @Order(1)
     void testCreate() throws IOException {
         final MessengerFactory messengerFactory = TestUtilities.createMessengerFactory();
         Assertions.assertDoesNotThrow(
@@ -28,7 +26,6 @@ public final class PeerStarNetworkTest {
     }
 
     @Test
-    @Order(3)
     void testConnection() throws IOException, InterruptedException {
         final PeerId app1Id = PeerId.createNew();
         final PeerId app2Id = PeerId.createNew();
@@ -40,66 +37,55 @@ public final class PeerStarNetworkTest {
         }
     }
 
-    @Test
-    @Order(4)
-    void testDoubleConnectionPeers() throws IOException, InterruptedException {
-        final PeerId app1Id = PeerId.createNew();
-        final PeerId app2Id = PeerId.createNew();
-        final MessengerFactory messengerFactory = new MessengerFactory(MessageSerializer.createJson());
+    @ParameterizedTest
+    @ValueSource(ints = { 2, 3, 4, 5 })
+    void testConnectionPeers(final int appCount) throws IOException, InterruptedException {
+        final List<Integer> appBindPorts = new ArrayList<>();
+        final List<PeerId> appIds = new ArrayList<>();
+        final MessengerFactory messengerFactory = TestUtilities.createMessengerFactory();
+        final List<PeerNetwork> apps = new ArrayList<>();
 
-        try (final PeerNetwork app1 = PeerStarNetwork.createBound(app1Id, "127.0.0.1", 9000, messengerFactory);
-                final PeerNetwork app2 = PeerStarNetwork.createBound(app2Id, "127.0.0.1", 9001, messengerFactory)) {
+        try {
+            for (int i = 0; i < appCount; i++) {
+                appBindPorts.add(9000 + i);
+                appIds.add(new PeerId(Integer.toString(i)));
+                apps.add(
+                        PeerStarNetwork.createBound(appIds.get(i), "127.0.0.1", appBindPorts.get(i), messengerFactory));
+            }
 
-            app1.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9001));
-
-            Thread.sleep(Duration.ofSeconds(3));
-
-            Assertions.assertEquals(1, app1.getPeerCount());
-            Assertions.assertTrue(app1.getPeers().keySet().contains(app2Id));
-
-            Assertions.assertEquals(1, app2.getPeerCount());
-            Assertions.assertTrue(app2.getPeers().keySet().contains(app1Id));
-        }
-    }
-
-    @Test
-    @Order(5)
-    void testTripleConnectionPeers() throws IOException, InterruptedException {
-        final PeerId app1Id = PeerId.createNew();
-        final PeerId app2Id = PeerId.createNew();
-        final PeerId app3Id = PeerId.createNew();
-        final MessengerFactory messengerFactory = new MessengerFactory(MessageSerializer.createJson());
-
-        try (final PeerNetwork app1 = PeerStarNetwork.createBound(app1Id, "127.0.0.1", 9000, messengerFactory);
-                final PeerNetwork app2 = PeerStarNetwork.createBound(app2Id, "127.0.0.1", 9001, messengerFactory);
-                final PeerNetwork app3 = PeerStarNetwork.createBound(app3Id, "127.0.0.1", 9002, messengerFactory)) {
-
-            app1.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9001));
-            app2.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9002));
+            for (int i = 0; i < appCount - 1; i++) {
+                apps.get(i).connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", appBindPorts.get(i + 1)));
+            }
 
             Thread.sleep(Duration.ofSeconds(3));
 
-            Assertions.assertEquals(2, app1.getPeerCount());
-            Assertions.assertTrue(app1.getPeers().keySet().contains(app2Id));
-            Assertions.assertTrue(app1.getPeers().keySet().contains(app3Id));
+            for (int i = 0; i < appCount; i++) {
+                final PeerNetwork app = apps.get(i);
+                final PeerId appId = appIds.get(i);
+                Assertions.assertEquals(appCount - 1, app.getPeerCount());
+                final List<PeerId> remoteAppIds = appIds.stream().filter(x -> !appId.equals(x)).toList();
+                remoteAppIds.forEach(x -> Assertions.assertTrue(app.getPeers().keySet().contains(x)));
+            }
 
-            Assertions.assertEquals(2, app2.getPeerCount());
-            Assertions.assertTrue(app2.getPeers().keySet().contains(app1Id));
-            Assertions.assertTrue(app2.getPeers().keySet().contains(app3Id));
-
-            Assertions.assertEquals(2, app3.getPeerCount());
-            Assertions.assertTrue(app3.getPeers().keySet().contains(app1Id));
-            Assertions.assertTrue(app3.getPeers().keySet().contains(app2Id));
+        } finally {
+            apps.forEach(a -> {
+                try {
+                    a.close();
+                } catch (final Exception ex) {
+                }
+            });
         }
+
+        // Let the system completely shutdown
+        Thread.sleep(Duration.ofSeconds(1));
     }
 
     @Test
-    @Order(6)
     void testDisconnection() throws IOException, InterruptedException {
         final PeerId app1Id = PeerId.createNew();
         final PeerId app2Id = PeerId.createNew();
         final PeerId app3Id = PeerId.createNew();
-        final MessengerFactory messengerFactory = new MessengerFactory(MessageSerializer.createJson());
+        final MessengerFactory messengerFactory = TestUtilities.createMessengerFactory();
 
         try (final PeerNetwork app1 = PeerStarNetwork.createBound(app1Id, "127.0.0.1", 9000, messengerFactory);
                 final PeerNetwork app2 = PeerStarNetwork.createBound(app2Id, "127.0.0.1", 9001, messengerFactory)) {
