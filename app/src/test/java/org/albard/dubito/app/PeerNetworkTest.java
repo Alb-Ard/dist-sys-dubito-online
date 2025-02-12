@@ -29,6 +29,15 @@ public final class PeerNetworkTest {
     }
 
     @Test
+    void testGetLocalPeerId() throws IOException {
+        final MessengerFactory messengerFactory = TestUtilities.createMessengerFactory();
+        final PeerId peerId = PeerId.createNew();
+        final PeerNetwork network = PeerNetwork.createBound(peerId, "127.0.0.1", 9000, messengerFactory);
+        Assertions.assertEquals(peerId, network.getLocalPeerId());
+        network.close();
+    }
+
+    @Test
     void testConnectToOnlinePeer() throws IOException {
         final MessengerFactory messengerFactory = TestUtilities.createMessengerFactory();
         try (final PeerConnectionReceiver receiver = PeerConnectionReceiver.createBound("127.0.0.1", 9001,

@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import org.albard.dubito.app.ObservableHashMap;
 import org.albard.dubito.app.ObservableMap;
@@ -144,9 +145,10 @@ public final class PeerNetworkImpl implements PeerNetwork {
 
     @Override
     public void sendMessage(final GameMessage message) {
-        this.getPeers().entrySet().stream()
-                .filter(e -> message.getReceipients() == null || message.getReceipients().contains(e.getKey()))
-                .forEach(e -> e.getValue().sendMessage(message));
+        final Set<PeerConnection> receipients = (message.getReceipients() == null ? this.getPeers().values().stream()
+                : this.getPeers().entrySet().stream().filter(e -> message.getReceipients().contains(e.getKey()))
+                        .map(e -> e.getValue())).collect(Collectors.toSet());
+        receipients.forEach(e -> e.sendMessage(message));
     }
 
     @Override
@@ -157,6 +159,11 @@ public final class PeerNetworkImpl implements PeerNetwork {
     @Override
     public void removeMessageListener(final MessageHandler listener) {
         this.messageReceiverListeners.remove(listener);
+    }
+
+    @Override
+    public PeerId getLocalPeerId() {
+        return this.peerIdExchanger.getLocalPeerId();
     }
 
     private boolean addConnection(final PeerId id, final PeerConnection connection) {

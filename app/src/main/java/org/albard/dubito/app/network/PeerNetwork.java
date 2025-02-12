@@ -16,6 +16,8 @@ public interface PeerNetwork extends Closeable, Messenger {
         return PeerNetworkImpl.createBound(localPeerId, bindAddress, bindPort, messengerFactory);
     }
 
+    PeerId getLocalPeerId();
+
     Map<PeerId, PeerConnection> getPeers();
 
     int getPeerCount();

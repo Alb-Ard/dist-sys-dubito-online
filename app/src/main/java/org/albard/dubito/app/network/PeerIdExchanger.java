@@ -18,6 +18,10 @@ public final class PeerIdExchanger {
         this.localPeerId = localPeerId;
     }
 
+    public PeerId getLocalPeerId() {
+        return this.localPeerId;
+    }
+
     public PeerId exchangeIds(final Messenger messenger) {
         try {
             final Semaphore lock = new Semaphore(0);

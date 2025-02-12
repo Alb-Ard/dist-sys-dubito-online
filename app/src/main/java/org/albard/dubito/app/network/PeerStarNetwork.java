@@ -93,4 +93,9 @@ public final class PeerStarNetwork implements PeerNetwork {
     public void removeMessageListener(final MessageHandler listener) {
         this.baseNetwork.removeMessageListener(listener);
     }
+
+    @Override
+    public PeerId getLocalPeerId() {
+        return this.baseNetwork.getLocalPeerId();
+    }
 }
