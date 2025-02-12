@@ -4,8 +4,11 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
+import org.albard.dubito.app.messaging.MessageReceiver;
 import org.albard.dubito.app.messaging.MessageSerializer;
 import org.albard.dubito.app.messaging.MessengerFactory;
 import org.albard.dubito.app.messaging.messages.GameMessage;
@@ -61,5 +64,18 @@ public final class TestUtilities {
                 return serializedData;
             }
         };
+    }
+
+    public static <X extends GameMessage> List<X> addMessageListener(final Class<X> messageClass,
+            final MessageReceiver receiver) {
+        final List<X> received = new ArrayList<>();
+        receiver.addMessageListener(m -> {
+            if (messageClass.isAssignableFrom(m.getClass())) {
+                received.add(messageClass.cast(m));
+                return true;
+            }
+            return false;
+        });
+        return received;
     }
 }

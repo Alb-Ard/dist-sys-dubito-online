@@ -55,9 +55,9 @@ public final class Lobby {
         return new Lobby(this.id, this.owner, this.info, newParticipants);
     }
 
-    public Lobby removeParticipant(final PeerId newParticipant) {
+    public Lobby removeParticipant(final PeerId participant) {
         final Set<PeerId> newParticipants = new HashSet<>(this.participants);
-        newParticipants.remove(newParticipant);
+        newParticipants.remove(participant);
         return new Lobby(this.id, this.owner, this.info, newParticipants);
     }
 }
