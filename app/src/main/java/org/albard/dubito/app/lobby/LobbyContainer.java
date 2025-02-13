@@ -5,9 +5,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.albard.dubito.app.Either;
-import org.albard.dubito.app.Locked;
 import org.albard.dubito.app.network.PeerId;
+import org.albard.dubito.app.utils.Either;
+import org.albard.dubito.app.utils.Locked;
 
 public final class LobbyContainer {
     public static record LobbyResult(Lobby lobby, boolean isDeleted) {

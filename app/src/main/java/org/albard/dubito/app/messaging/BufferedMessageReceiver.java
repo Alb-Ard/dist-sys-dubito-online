@@ -10,10 +10,10 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.function.Function;
 
-import org.albard.dubito.app.Locked;
-import org.albard.dubito.app.ObservableCloseable;
 import org.albard.dubito.app.messaging.handlers.MessageHandler;
 import org.albard.dubito.app.messaging.messages.GameMessage;
+import org.albard.dubito.app.utils.Locked;
+import org.albard.dubito.app.utils.ObservableCloseable;
 
 public final class BufferedMessageReceiver implements MessageReceiver, ObservableCloseable {
     private final record MessageListenersState(Set<MessageHandler> listeners, Queue<GameMessage> bufferedMessages) {

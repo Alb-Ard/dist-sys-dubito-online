@@ -1,4 +1,4 @@
-package org.albard.dubito.app;
+package org.albard.dubito.app.utils;
 
 public interface ObservableMapListener<TKey, TValue> {
     void entryAdded(TKey key, TValue value);

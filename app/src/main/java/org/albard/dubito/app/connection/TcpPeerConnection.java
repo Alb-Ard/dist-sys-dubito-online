@@ -6,13 +6,13 @@ import java.net.SocketException;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.albard.dubito.app.ObservableCloseable;
 import org.albard.dubito.app.messaging.MessageReceiver;
 import org.albard.dubito.app.messaging.MessageSender;
 import org.albard.dubito.app.messaging.MessengerFactory;
 import org.albard.dubito.app.messaging.handlers.MessageHandler;
 import org.albard.dubito.app.messaging.messages.GameMessage;
 import org.albard.dubito.app.network.PeerEndPoint;
+import org.albard.dubito.app.utils.ObservableCloseable;
 
 public final class TcpPeerConnection implements PeerConnection {
     private final Socket socket;

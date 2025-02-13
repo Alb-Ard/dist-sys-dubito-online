@@ -1,4 +1,4 @@
-package org.albard.dubito.app;
+package org.albard.dubito.app.utils;
 
 import java.util.Optional;
 import java.util.function.Consumer;

@@ -5,10 +5,10 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
-import org.albard.dubito.app.ObservableCloseable;
 import org.albard.dubito.app.messaging.Messenger;
 import org.albard.dubito.app.messaging.MessengerFactory;
 import org.albard.dubito.app.network.PeerEndPoint;
+import org.albard.dubito.app.utils.ObservableCloseable;
 
 public interface PeerConnection extends Closeable, ObservableCloseable, Messenger {
     static PeerConnection createAndConnect(String bindAddress, int bindPort, String remoteAddress, int remotePort,

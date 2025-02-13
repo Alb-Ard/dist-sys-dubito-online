@@ -8,14 +8,14 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import org.albard.dubito.app.ObservableHashMap;
-import org.albard.dubito.app.ObservableMap;
-import org.albard.dubito.app.ObservableMapListener;
 import org.albard.dubito.app.connection.PeerConnection;
 import org.albard.dubito.app.connection.PeerConnectionReceiver;
 import org.albard.dubito.app.messaging.MessengerFactory;
 import org.albard.dubito.app.messaging.handlers.MessageHandler;
 import org.albard.dubito.app.messaging.messages.GameMessage;
+import org.albard.dubito.app.utils.ObservableHashMap;
+import org.albard.dubito.app.utils.ObservableMap;
+import org.albard.dubito.app.utils.ObservableMapListener;
 
 public final class PeerNetworkImpl implements PeerNetwork {
     private final ObservableMap<PeerId, PeerConnection> connections = new ObservableHashMap<>();
