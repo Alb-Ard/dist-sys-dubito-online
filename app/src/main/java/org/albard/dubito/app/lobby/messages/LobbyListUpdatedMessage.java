@@ -3,7 +3,7 @@ package org.albard.dubito.app.lobby.messages;
 import java.util.List;
 import java.util.Set;
 
-import org.albard.dubito.app.lobby.LobbyDisplay;
+import org.albard.dubito.app.lobby.models.LobbyDisplay;
 import org.albard.dubito.app.messaging.messages.GameMessageBase;
 import org.albard.dubito.app.network.PeerId;
 

@@ -4,10 +4,10 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 
-import org.albard.dubito.app.lobby.LobbyInfo;
-import org.albard.dubito.app.lobby.LobbyServer;
 import org.albard.dubito.app.lobby.messages.CreateLobbyMessage;
 import org.albard.dubito.app.lobby.messages.LobbyListUpdatedMessage;
+import org.albard.dubito.app.lobby.models.LobbyInfo;
+import org.albard.dubito.app.lobby.server.LobbyServer;
 import org.albard.dubito.app.messaging.MessageSerializer;
 import org.albard.dubito.app.messaging.MessengerFactory;
 import org.albard.dubito.app.network.PeerEndPoint;

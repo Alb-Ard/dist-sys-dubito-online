@@ -1,10 +1,13 @@
-package org.albard.dubito.app.lobby;
+package org.albard.dubito.app.lobby.server;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.albard.dubito.app.lobby.models.Lobby;
+import org.albard.dubito.app.lobby.models.LobbyId;
+import org.albard.dubito.app.lobby.models.LobbyInfo;
 import org.albard.dubito.app.network.PeerId;
 import org.albard.dubito.app.utils.Either;
 import org.albard.dubito.app.utils.Locked;

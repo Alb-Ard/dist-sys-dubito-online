@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.Set;
 
-import org.albard.dubito.app.lobby.LobbyClient;
-import org.albard.dubito.app.lobby.LobbyInfo;
-import org.albard.dubito.app.lobby.LobbyServer;
+import org.albard.dubito.app.lobby.client.LobbyClient;
+import org.albard.dubito.app.lobby.models.LobbyInfo;
+import org.albard.dubito.app.lobby.server.LobbyServer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

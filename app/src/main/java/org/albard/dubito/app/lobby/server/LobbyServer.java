@@ -1,4 +1,4 @@
-package org.albard.dubito.app.lobby;
+package org.albard.dubito.app.lobby.server;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -19,6 +19,10 @@ import org.albard.dubito.app.lobby.messages.LobbyListUpdatedMessage;
 import org.albard.dubito.app.lobby.messages.LobbyUpdatedMessage;
 import org.albard.dubito.app.lobby.messages.UpdateLobbyFailedMessage;
 import org.albard.dubito.app.lobby.messages.UpdateLobbyInfoMessage;
+import org.albard.dubito.app.lobby.models.Lobby;
+import org.albard.dubito.app.lobby.models.LobbyDisplay;
+import org.albard.dubito.app.lobby.models.LobbyId;
+import org.albard.dubito.app.lobby.models.LobbyInfo;
 import org.albard.dubito.app.messaging.MessageSerializer;
 import org.albard.dubito.app.messaging.MessengerFactory;
 import org.albard.dubito.app.messaging.messages.GameMessage;

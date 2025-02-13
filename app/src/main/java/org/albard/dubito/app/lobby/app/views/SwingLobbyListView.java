@@ -13,8 +13,8 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.ListSelectionModel;
 
-import org.albard.dubito.app.lobby.LobbyDisplay;
-import org.albard.dubito.app.lobby.LobbyId;
+import org.albard.dubito.app.lobby.models.LobbyDisplay;
+import org.albard.dubito.app.lobby.models.LobbyId;
 
 public final class SwingLobbyListView extends JPanel implements LobbyListView {
     private final static class LobbyDisplayView extends JPanel {

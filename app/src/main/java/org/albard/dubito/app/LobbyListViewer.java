@@ -15,11 +15,11 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
-import org.albard.dubito.app.lobby.Lobby;
-import org.albard.dubito.app.lobby.LobbyClient;
-import org.albard.dubito.app.lobby.LobbyDisplay;
-import org.albard.dubito.app.lobby.LobbyInfo;
 import org.albard.dubito.app.lobby.app.views.SwingLobbyListView;
+import org.albard.dubito.app.lobby.client.LobbyClient;
+import org.albard.dubito.app.lobby.models.Lobby;
+import org.albard.dubito.app.lobby.models.LobbyDisplay;
+import org.albard.dubito.app.lobby.models.LobbyInfo;
 import org.albard.dubito.app.network.PeerEndPoint;
 
 public final class LobbyListViewer {

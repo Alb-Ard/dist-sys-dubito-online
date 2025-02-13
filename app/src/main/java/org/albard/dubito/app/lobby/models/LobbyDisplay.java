@@ -1,4 +1,4 @@
-package org.albard.dubito.app.lobby;
+package org.albard.dubito.app.lobby.models;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

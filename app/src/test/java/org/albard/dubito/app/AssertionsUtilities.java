@@ -3,9 +3,9 @@ package org.albard.dubito.app;
 import java.util.List;
 import java.util.Set;
 
-import org.albard.dubito.app.lobby.Lobby;
-import org.albard.dubito.app.lobby.LobbyId;
-import org.albard.dubito.app.lobby.LobbyInfo;
+import org.albard.dubito.app.lobby.models.Lobby;
+import org.albard.dubito.app.lobby.models.LobbyId;
+import org.albard.dubito.app.lobby.models.LobbyInfo;
 import org.albard.dubito.app.network.PeerId;
 import org.junit.jupiter.api.Assertions;
 

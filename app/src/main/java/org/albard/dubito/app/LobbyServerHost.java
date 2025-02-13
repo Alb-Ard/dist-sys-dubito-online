@@ -2,7 +2,7 @@ package org.albard.dubito.app;
 
 import java.util.concurrent.Semaphore;
 
-import org.albard.dubito.app.lobby.LobbyServer;
+import org.albard.dubito.app.lobby.server.LobbyServer;
 
 public class LobbyServerHost {
     public static void main(final String[] args) {

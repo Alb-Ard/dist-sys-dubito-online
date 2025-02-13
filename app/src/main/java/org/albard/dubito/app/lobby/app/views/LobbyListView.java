@@ -3,8 +3,8 @@ package org.albard.dubito.app.lobby.app.views;
 import java.util.List;
 import java.util.function.Consumer;
 
-import org.albard.dubito.app.lobby.LobbyDisplay;
-import org.albard.dubito.app.lobby.LobbyId;
+import org.albard.dubito.app.lobby.models.LobbyDisplay;
+import org.albard.dubito.app.lobby.models.LobbyId;
 
 public interface LobbyListView {
     public void setLobbies(final List<LobbyDisplay> lobbies);
