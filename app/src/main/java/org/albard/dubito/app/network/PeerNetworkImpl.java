@@ -148,6 +148,8 @@ public final class PeerNetworkImpl implements PeerNetwork {
         final Set<PeerConnection> receipients = (message.getReceipients() == null ? this.getPeers().values().stream()
                 : this.getPeers().entrySet().stream().filter(e -> message.getReceipients().contains(e.getKey()))
                         .map(e -> e.getValue())).collect(Collectors.toSet());
+        System.out.println(new StringBuilder().append("Sending ").append(message.getClass().getSimpleName())
+                .append(" to ").append(receipients));
         receipients.forEach(e -> e.sendMessage(message));
     }
 

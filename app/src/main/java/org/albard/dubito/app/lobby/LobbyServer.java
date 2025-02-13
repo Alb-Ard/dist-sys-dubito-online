@@ -26,7 +26,7 @@ import org.albard.dubito.app.network.PeerId;
 import org.albard.dubito.app.network.PeerNetwork;
 
 public class LobbyServer implements Closeable {
-    private final LobbyContainer lobbies = new LobbyContainer();
+    private final LobbyService service = new LobbyService();
     private final PeerNetwork network;
 
     private LobbyServer(final PeerNetwork network) {
@@ -41,11 +41,11 @@ public class LobbyServer implements Closeable {
     }
 
     public int getLobbyCount() {
-        return this.lobbies.getLobbyCount();
+        return this.service.getLobbyCount();
     }
 
     public List<Lobby> getLobbies() {
-        return List.copyOf(this.lobbies.getLobbies().values());
+        return List.copyOf(this.service.getLobbies().values());
     }
 
     @Override
@@ -54,8 +54,7 @@ public class LobbyServer implements Closeable {
     }
 
     private void handleNewPeer(final PeerId id, final PeerConnection connection) {
-        this.network.sendMessage(new LobbyListUpdatedMessage(this.network.getLocalPeerId(), Set.of(id),
-                this.getLobbies().stream().map(LobbyDisplay::fromLobby).toList()));
+        this.sendLobbyListTo(Set.of(id));
     }
 
     private boolean handleMessage(final GameMessage message) {
@@ -80,20 +79,19 @@ public class LobbyServer implements Closeable {
     }
 
     private void createLobby(final PeerId owner, final LobbyInfo info) {
-        this.lobbies.createLobby(owner, info).getValue().match(errors -> {
+        this.service.createLobby(owner, info).getValue().match(errors -> {
             this.network
                     .sendMessage(new CreateLobbyFailedMessage(this.network.getLocalPeerId(), Set.of(owner), errors));
         }, result -> {
             this.network.sendMessage(
                     new LobbyCreatedMessage(this.network.getLocalPeerId(), Set.of(owner), result.lobby().getId()));
             this.sendLobbyUpdatedToParticipants(result.lobby());
-            this.network.sendMessage(new LobbyListUpdatedMessage(this.network.getLocalPeerId(), null,
-                    this.getLobbies().stream().map(LobbyDisplay::fromLobby).toList()));
+            this.sendLobbyListTo(null);
         });
     }
 
     private void updateLobby(final LobbyId lobbyId, final PeerId editorId, final LobbyInfo newInfo) {
-        this.lobbies.updateLobby(lobbyId, editorId, newInfo).getValue().match(errors -> {
+        this.service.updateLobby(lobbyId, editorId, newInfo).getValue().match(errors -> {
             this.network
                     .sendMessage(new UpdateLobbyFailedMessage(this.network.getLocalPeerId(), Set.of(editorId), errors));
         }, result -> {
@@ -102,7 +100,7 @@ public class LobbyServer implements Closeable {
     }
 
     private void joinLobby(final LobbyId lobbyId, final PeerId joinerId, final String password) {
-        this.lobbies.joinLobby(lobbyId, joinerId, password).getValue().match(errors -> {
+        this.service.joinLobby(lobbyId, joinerId, password).getValue().match(errors -> {
             this.network
                     .sendMessage(new JoinLobbyFailedMessage(this.network.getLocalPeerId(), Set.of(joinerId), errors));
         }, result -> {
@@ -112,7 +110,7 @@ public class LobbyServer implements Closeable {
     }
 
     private void leaveLobby(final LobbyId lobbyId, final PeerId leaverId) {
-        this.lobbies.leaveLobby(lobbyId, leaverId).getValue().match(errors -> {
+        this.service.leaveLobby(lobbyId, leaverId).getValue().match(errors -> {
             this.network
                     .sendMessage(new LeaveLobbyFailedMessage(this.network.getLocalPeerId(), Set.of(leaverId), errors));
         }, result -> {
@@ -122,8 +120,7 @@ public class LobbyServer implements Closeable {
             } else {
                 this.network.sendMessage(
                         new LobbyLeavedMessage(this.network.getLocalPeerId(), result.lobby().getParticipants()));
-                this.network.sendMessage(new LobbyListUpdatedMessage(this.network.getLocalPeerId(), null,
-                        this.getLobbies().stream().map(LobbyDisplay::fromLobby).toList()));
+                this.sendLobbyListTo(null);
             }
         });
     }
@@ -131,5 +128,10 @@ public class LobbyServer implements Closeable {
     private void sendLobbyUpdatedToParticipants(final Lobby newLobby) {
         this.network.sendMessage(
                 new LobbyUpdatedMessage(this.network.getLocalPeerId(), newLobby.getParticipants(), newLobby));
+    }
+
+    private void sendLobbyListTo(final Set<PeerId> receipients) {
+        this.network.sendMessage(new LobbyListUpdatedMessage(this.network.getLocalPeerId(), receipients,
+                this.getLobbies().stream().map(LobbyDisplay::fromLobby).toList()));
     }
 }

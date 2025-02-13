@@ -32,16 +32,25 @@ public final class LobbyServerBasicTest {
     @Test
     void testSendLobbyListToNewPeers() throws IOException, InterruptedException {
         try (final LobbyServer server = LobbyServer.createBound("127.0.0.1", 9000);
-                final PeerNetwork client = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 0,
+                final PeerNetwork client1 = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 0,
+                        new MessengerFactory(MessageSerializer.createJson()));
+                final PeerNetwork client2 = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 0,
                         new MessengerFactory(MessageSerializer.createJson()))) {
-            final List<LobbyListUpdatedMessage> updateReceived = TestUtilities
-                    .addMessageListener(LobbyListUpdatedMessage.class, client);
+            final List<LobbyListUpdatedMessage> client1UpdateReceived = TestUtilities
+                    .addMessageListener(LobbyListUpdatedMessage.class, client1);
+            final List<LobbyListUpdatedMessage> client2UpdateReceived = TestUtilities
+                    .addMessageListener(LobbyListUpdatedMessage.class, client2);
 
-            client.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9000));
+            client1.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9000));
             Thread.sleep(Duration.ofSeconds(1));
 
-            Assertions.assertEquals(1, updateReceived.size());
-            Assertions.assertEquals(0, updateReceived.getFirst().getLobbies().size());
+            client2.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9000));
+            Thread.sleep(Duration.ofSeconds(1));
+
+            Assertions.assertEquals(1, client1UpdateReceived.size());
+            Assertions.assertEquals(0, client1UpdateReceived.getFirst().getLobbies().size());
+            Assertions.assertEquals(1, client2UpdateReceived.size());
+            Assertions.assertEquals(0, client2UpdateReceived.getFirst().getLobbies().size());
         }
     }
 

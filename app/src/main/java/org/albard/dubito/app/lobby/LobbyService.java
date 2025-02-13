@@ -9,7 +9,7 @@ import org.albard.dubito.app.network.PeerId;
 import org.albard.dubito.app.utils.Either;
 import org.albard.dubito.app.utils.Locked;
 
-public final class LobbyContainer {
+public final class LobbyService {
     public static record LobbyResult(Lobby lobby, boolean isDeleted) {
     }
 
