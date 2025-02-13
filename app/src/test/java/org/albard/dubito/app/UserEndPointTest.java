@@ -2,6 +2,7 @@ package org.albard.dubito.app;
 
 import java.net.InetSocketAddress;
 
+import org.albard.dubito.app.network.PeerEndPoint;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

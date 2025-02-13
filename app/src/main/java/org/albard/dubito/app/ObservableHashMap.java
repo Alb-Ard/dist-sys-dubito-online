@@ -1,5 +1,6 @@
 package org.albard.dubito.app;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -11,22 +12,31 @@ public final class ObservableHashMap<TKey, TValue> implements ObservableMap<TKey
     private final Set<ObservableMapListener<TKey, TValue>> listeners = Collections.synchronizedSet(new HashSet<>());
 
     @Override
-    public boolean putIfAbsent(final TKey key, final TValue value) {
-        if (this.map.putIfAbsent(key, value) != null) {
-            return false;
-        }
-        this.listeners.forEach(l -> l.entryAdded(key, value));
-        return true;
+    public void addListener(final ObservableMapListener<TKey, TValue> listener) {
+        this.listeners.add(listener);
     }
 
     @Override
-    public boolean remove(final TKey key) {
-        final TValue value = this.map.remove(key);
-        if (value == null) {
-            return false;
+    public void removeListener(ObservableMapListener<TKey, TValue> listener) {
+        this.listeners.remove(listener);
+    }
+
+    @Override
+    public TValue put(final TKey key, final TValue value) {
+        final TValue oldValue = this.map.put(key, value);
+        this.listeners.forEach(l -> l.entryAdded(key, value));
+        return oldValue;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public TValue remove(final Object key) {
+        if (!this.containsKey(key)) {
+            return null;
         }
-        this.listeners.forEach(l -> l.entryRemoved(key, value));
-        return true;
+        final TValue value = this.map.remove(key);
+        this.listeners.forEach(l -> l.entryRemoved((TKey) key, value));
+        return value;
     }
 
     @Override
@@ -35,13 +45,33 @@ public final class ObservableHashMap<TKey, TValue> implements ObservableMap<TKey
     }
 
     @Override
-    public void clear() {
-        this.map.clear();
+    public boolean isEmpty() {
+        return this.map.isEmpty();
     }
 
     @Override
-    public TValue get(final TKey key) {
+    public boolean containsKey(final Object key) {
+        return this.map.containsKey(key);
+    }
+
+    @Override
+    public boolean containsValue(final Object value) {
+        return this.map.containsKey(value);
+    }
+
+    @Override
+    public TValue get(final Object key) {
         return this.map.get(key);
+    }
+
+    @Override
+    public void putAll(Map<? extends TKey, ? extends TValue> m) {
+        m.forEach(this::put);
+    }
+
+    @Override
+    public void clear() {
+        this.map.clear();
     }
 
     @Override
@@ -50,7 +80,12 @@ public final class ObservableHashMap<TKey, TValue> implements ObservableMap<TKey
     }
 
     @Override
-    public void addListener(final ObservableMapListener<TKey, TValue> listener) {
-        this.listeners.add(listener);
+    public Collection<TValue> values() {
+        return this.map.values();
+    }
+
+    @Override
+    public Set<Entry<TKey, TValue>> entrySet() {
+        return this.map.entrySet();
     }
 }

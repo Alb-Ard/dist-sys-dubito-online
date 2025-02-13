@@ -19,35 +19,15 @@ public final class MessageReceiverTest {
     }
 
     @Test
-    void testStart() throws IOException {
-        try (final InputStream inputStream = new ByteArrayInputStream(new byte[0])) {
-            final MessageReceiver receiver = MessageReceiver.createFromStream(inputStream, TestUtilities
-                    .createMockMessageSerializer(TestUtilities.createMockMessage(), new byte[0])::deserialize);
-            Assertions.assertDoesNotThrow(() -> receiver.start());
-        }
-    }
-
-    @Test
-    void testStartAgain() throws IOException {
-        try (final InputStream inputStream = new ByteArrayInputStream(new byte[0])) {
-            final MessageReceiver receiver = MessageReceiver.createFromStream(inputStream, TestUtilities
-                    .createMockMessageSerializer(TestUtilities.createMockMessage(), new byte[0])::deserialize);
-            receiver.start();
-            Assertions.assertThrows(Exception.class, () -> receiver.start());
-        }
-    }
-
-    @Test
     void testReceive() throws IOException, InterruptedException {
         final GameMessage expectedMessage = TestUtilities.createMockMessage();
         try (final InputStream inputStream = new ByteArrayInputStream(new byte[0])) {
             final MessageReceiver receiver = MessageReceiver.createFromStream(inputStream,
                     TestUtilities.createMockMessageSerializer(expectedMessage, "Test".getBytes())::deserialize);
-            receiver.setMessageListener(m -> {
+            receiver.addMessageListener(m -> {
                 Assertions.assertEquals(expectedMessage, m);
                 return true;
             });
-            receiver.start();
             // Let the receiver handle the message
             Thread.sleep(Duration.ofMillis(500));
         }
