@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
-import org.albard.dubito.app.lobby.LobbyContainer.Result;
+import org.albard.dubito.app.connection.PeerConnection;
 import org.albard.dubito.app.lobby.messages.CreateLobbyFailedMessage;
 import org.albard.dubito.app.lobby.messages.CreateLobbyMessage;
 import org.albard.dubito.app.lobby.messages.JoinLobbyFailedMessage;
@@ -15,6 +15,7 @@ import org.albard.dubito.app.lobby.messages.LeaveLobbyMessage;
 import org.albard.dubito.app.lobby.messages.LobbyCreatedMessage;
 import org.albard.dubito.app.lobby.messages.LobbyJoinedMessage;
 import org.albard.dubito.app.lobby.messages.LobbyLeavedMessage;
+import org.albard.dubito.app.lobby.messages.LobbyListUpdatedMessage;
 import org.albard.dubito.app.lobby.messages.LobbyUpdatedMessage;
 import org.albard.dubito.app.lobby.messages.UpdateLobbyFailedMessage;
 import org.albard.dubito.app.lobby.messages.UpdateLobbyInfoMessage;
@@ -31,6 +32,7 @@ public class LobbyServer implements Closeable {
     private LobbyServer(final PeerNetwork network) {
         this.network = network;
         this.network.addMessageListener(this::handleMessage);
+        this.network.setPeerConnectedListener(this::handleNewPeer);
     }
 
     public static LobbyServer createBound(final String bindAddress, final int bindPort) throws IOException {
@@ -49,6 +51,11 @@ public class LobbyServer implements Closeable {
     @Override
     public void close() throws IOException {
         this.network.close();
+    }
+
+    private void handleNewPeer(final PeerId id, final PeerConnection connection) {
+        this.network.sendMessage(new LobbyListUpdatedMessage(this.network.getLocalPeerId(), Set.of(id),
+                this.getLobbies().stream().map(LobbyDisplay::fromLobby).toList()));
     }
 
     private boolean handleMessage(final GameMessage message) {
@@ -73,47 +80,52 @@ public class LobbyServer implements Closeable {
     }
 
     private void createLobby(final PeerId owner, final LobbyInfo info) {
-        final Result result = this.lobbies.createLobby(owner, info);
-        if (result.getErrors().size() > 0) {
+        this.lobbies.createLobby(owner, info).getValue().match(errors -> {
+            this.network
+                    .sendMessage(new CreateLobbyFailedMessage(this.network.getLocalPeerId(), Set.of(owner), errors));
+        }, result -> {
             this.network.sendMessage(
-                    new CreateLobbyFailedMessage(this.network.getLocalPeerId(), Set.of(owner), result.getErrors()));
-        } else {
-            this.network.sendMessage(
-                    new LobbyCreatedMessage(this.network.getLocalPeerId(), Set.of(owner), result.getLobby().getId()));
-            this.sendLobbyUpdatedToParticipants(result.getLobby());
-        }
+                    new LobbyCreatedMessage(this.network.getLocalPeerId(), Set.of(owner), result.lobby().getId()));
+            this.sendLobbyUpdatedToParticipants(result.lobby());
+            this.network.sendMessage(new LobbyListUpdatedMessage(this.network.getLocalPeerId(), null,
+                    this.getLobbies().stream().map(LobbyDisplay::fromLobby).toList()));
+        });
     }
 
     private void updateLobby(final LobbyId lobbyId, final PeerId editorId, final LobbyInfo newInfo) {
-        final Result result = this.lobbies.updateLobby(lobbyId, editorId, newInfo);
-        if (result.getErrors().size() > 0) {
-            this.network.sendMessage(
-                    new UpdateLobbyFailedMessage(this.network.getLocalPeerId(), Set.of(editorId), result.getErrors()));
-        } else {
-            this.sendLobbyUpdatedToParticipants(result.getLobby());
-        }
+        this.lobbies.updateLobby(lobbyId, editorId, newInfo).getValue().match(errors -> {
+            this.network
+                    .sendMessage(new UpdateLobbyFailedMessage(this.network.getLocalPeerId(), Set.of(editorId), errors));
+        }, result -> {
+            this.sendLobbyUpdatedToParticipants(result.lobby());
+        });
     }
 
     private void joinLobby(final LobbyId lobbyId, final PeerId joinerId, final String password) {
-        final Result result = this.lobbies.joinLobby(lobbyId, joinerId, password);
-        if (result.getErrors().size() > 0) {
-            this.network.sendMessage(
-                    new JoinLobbyFailedMessage(this.network.getLocalPeerId(), Set.of(joinerId), result.getErrors()));
-        } else {
+        this.lobbies.joinLobby(lobbyId, joinerId, password).getValue().match(errors -> {
+            this.network
+                    .sendMessage(new JoinLobbyFailedMessage(this.network.getLocalPeerId(), Set.of(joinerId), errors));
+        }, result -> {
             this.network.sendMessage(new LobbyJoinedMessage(this.network.getLocalPeerId(), Set.of(joinerId), lobbyId));
-            this.sendLobbyUpdatedToParticipants(result.getLobby());
-        }
+            this.sendLobbyUpdatedToParticipants(result.lobby());
+        });
     }
 
     private void leaveLobby(final LobbyId lobbyId, final PeerId leaverId) {
-        final Result result = this.lobbies.leaveLobby(lobbyId, leaverId);
-        if (result.getErrors().size() > 0) {
-            this.network.sendMessage(
-                    new LeaveLobbyFailedMessage(this.network.getLocalPeerId(), Set.of(leaverId), result.getErrors()));
-        } else {
-            this.network.sendMessage(new LobbyLeavedMessage(this.network.getLocalPeerId(), Set.of(leaverId)));
-            this.sendLobbyUpdatedToParticipants(result.getLobby());
-        }
+        this.lobbies.leaveLobby(lobbyId, leaverId).getValue().match(errors -> {
+            this.network
+                    .sendMessage(new LeaveLobbyFailedMessage(this.network.getLocalPeerId(), Set.of(leaverId), errors));
+        }, result -> {
+            if (!result.isDeleted()) {
+                this.network.sendMessage(new LobbyLeavedMessage(this.network.getLocalPeerId(), Set.of(leaverId)));
+                this.sendLobbyUpdatedToParticipants(result.lobby());
+            } else {
+                this.network.sendMessage(
+                        new LobbyLeavedMessage(this.network.getLocalPeerId(), result.lobby().getParticipants()));
+                this.network.sendMessage(new LobbyListUpdatedMessage(this.network.getLocalPeerId(), null,
+                        this.getLobbies().stream().map(LobbyDisplay::fromLobby).toList()));
+            }
+        });
     }
 
     private void sendLobbyUpdatedToParticipants(final Lobby newLobby) {

@@ -35,8 +35,7 @@ public final class PeerNetworkImpl implements PeerNetwork {
                     return;
                 }
                 System.out.println(localPeerId + ": Received connection from " + c.getRemoteEndPoint());
-                final PeerId remotePeerId = this.peerIdExchanger.exchangeIds(c);
-                this.addConnection(remotePeerId, c);
+                this.peerIdExchanger.exchangeIds(c).ifPresent(remotePeerId -> this.addConnection(remotePeerId, c));
             } catch (final Exception ex) {
                 System.err.println(ex.getMessage());
                 try {
@@ -86,10 +85,11 @@ public final class PeerNetworkImpl implements PeerNetwork {
         }
         PeerConnection connection = null;
         try {
-            connection = PeerConnection.createAndConnect("0.0.0.0", 0, peerEndPoint.getHost(), peerEndPoint.getPort(),
-                    this.connectionReceiver.getMessengerFactory());
-            final PeerId remotePeerId = this.peerIdExchanger.exchangeIds(connection);
-            return this.addConnection(remotePeerId, connection);
+            final PeerConnection createdConnection = PeerConnection.createAndConnect("0.0.0.0", 0,
+                    peerEndPoint.getHost(), peerEndPoint.getPort(), this.connectionReceiver.getMessengerFactory());
+            connection = createdConnection;
+            return this.peerIdExchanger.exchangeIds(connection)
+                    .map(remotePeerId -> this.addConnection(remotePeerId, createdConnection)).orElse(false);
         } catch (final Exception ex) {
             System.err.println(ex.getMessage());
             try {

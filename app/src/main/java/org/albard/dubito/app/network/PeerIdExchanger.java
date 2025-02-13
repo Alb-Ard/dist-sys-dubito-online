@@ -2,6 +2,7 @@ package org.albard.dubito.app.network;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -22,7 +23,7 @@ public final class PeerIdExchanger {
         return this.localPeerId;
     }
 
-    public PeerId exchangeIds(final Messenger messenger) {
+    public Optional<PeerId> exchangeIds(final Messenger messenger) {
         try {
             final Semaphore lock = new Semaphore(0);
             final PeerId[] receivedId = new PeerId[] { null };
@@ -39,11 +40,11 @@ public final class PeerIdExchanger {
             } else {
                 System.err.println(localPeerId + ": Connection " + messenger + " did not respond to my ping");
             }
-            return receivedId[0];
+            return Optional.ofNullable(receivedId[0]);
         } catch (final Exception ex) {
             System.err.println(localPeerId + ": Could not exchange Ids: " + ex.getMessage());
         }
-        return null;
+        return Optional.empty();
     }
 
     private void sendPingToConnection(final Messenger messenger) throws IOException {

@@ -1,5 +1,7 @@
 package org.albard.dubito.app.messaging;
 
+import java.util.Optional;
+
 import org.albard.dubito.app.messaging.messages.GameMessage;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -22,15 +24,16 @@ public interface MessageSerializer {
             }
 
             @Override
-            public GameMessage deserialize(final byte[] rawMessage) {
+            public Optional<GameMessage> deserialize(final byte[] rawMessage) {
                 try {
                     final JsonNode jsonRoot = this.jsonMapper.readTree(rawMessage);
                     final String className = jsonRoot.get("className").asText();
                     final Class<?> messageClass = GameMessage.class.getClassLoader().loadClass(className);
-                    return (GameMessage) this.jsonMapper.treeToValue(jsonRoot.get("messageBody"), messageClass);
+                    return Optional
+                            .of((GameMessage) this.jsonMapper.treeToValue(jsonRoot.get("messageBody"), messageClass));
                 } catch (final Exception ex) {
                     ex.printStackTrace();
-                    return null;
+                    return Optional.empty();
                 }
             }
         };
@@ -38,5 +41,5 @@ public interface MessageSerializer {
 
     byte[] serialize(GameMessage message);
 
-    GameMessage deserialize(byte[] message);
+    Optional<GameMessage> deserialize(byte[] message);
 }

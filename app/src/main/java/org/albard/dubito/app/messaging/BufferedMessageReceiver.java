@@ -5,6 +5,7 @@ import java.net.SocketException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.function.Function;
@@ -23,7 +24,8 @@ public final class BufferedMessageReceiver implements MessageReceiver, Observabl
             .of(new MessageListenersState(new HashSet<>(), new LinkedList<>()));
     private final Set<ClosedListener> closedListeners = Collections.synchronizedSet(new HashSet<>());
 
-    public BufferedMessageReceiver(final InputStream stream, final Function<byte[], GameMessage> deserializer) {
+    public BufferedMessageReceiver(final InputStream stream,
+            final Function<byte[], Optional<GameMessage>> deserializer) {
         this.receiveThread = Thread.ofVirtual().unstarted(() -> {
             final byte[] buffer = new byte[1024];
             while (true) {
@@ -34,14 +36,15 @@ public final class BufferedMessageReceiver implements MessageReceiver, Observabl
                     }
                     final byte[] messageBuffer = new byte[readByteCount];
                     System.arraycopy(buffer, 0, messageBuffer, 0, readByteCount);
-                    final GameMessage message = deserializer.apply(messageBuffer);
-                    this.messageListenersState.exchange(s -> {
-                        if (s.listeners.isEmpty()) {
-                            s.bufferedMessages.add(message);
-                        } else {
-                            s.listeners.forEach(l -> l.handleMessage(message));
-                        }
-                        return s;
+                    deserializer.apply(messageBuffer).ifPresent(message -> {
+                        this.messageListenersState.exchange(s -> {
+                            if (s.listeners.isEmpty()) {
+                                s.bufferedMessages.add(message);
+                            } else {
+                                s.listeners.forEach(l -> l.handleMessage(message));
+                            }
+                            return s;
+                        });
                     });
                 } catch (final SocketException ex) {
                     System.err.println(ex.getMessage());
@@ -55,7 +58,7 @@ public final class BufferedMessageReceiver implements MessageReceiver, Observabl
     }
 
     static MessageReceiver createFromStream(final InputStream stream,
-            final Function<byte[], GameMessage> deserializer) {
+            final Function<byte[], Optional<GameMessage>> deserializer) {
         final BufferedMessageReceiver receiver = new BufferedMessageReceiver(stream, deserializer);
         receiver.start();
         return receiver;

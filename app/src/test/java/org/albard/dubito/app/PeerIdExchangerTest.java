@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 import org.albard.dubito.app.messaging.Messenger;
@@ -49,7 +50,7 @@ public final class PeerIdExchangerTest {
     void testConcurrentExchange() throws IOException, InterruptedException {
         final int exchangerCount = 10;
         final PeerIdExchanger exchanger = new PeerIdExchanger(PeerId.createNew());
-        final List<PeerId> exchangedIds = new ArrayList<>();
+        final List<Optional<PeerId>> exchangedIds = new ArrayList<>();
         for (int i = 0; i < exchangerCount; i++) {
             final Messenger messenger = new Messenger() {
                 MessageHandler handler;
@@ -80,6 +81,6 @@ public final class PeerIdExchangerTest {
         Thread.sleep(Duration.ofSeconds(2));
 
         Assertions.assertEquals(exchangerCount, exchangedIds.size());
-        exchangedIds.forEach(Assertions::assertNotNull);
+        exchangedIds.forEach(p -> Assertions.assertTrue(p.isPresent()));
     }
 }

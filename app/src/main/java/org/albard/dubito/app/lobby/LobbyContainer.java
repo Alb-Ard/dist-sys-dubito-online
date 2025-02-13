@@ -5,35 +5,31 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.albard.dubito.app.Either;
 import org.albard.dubito.app.Locked;
 import org.albard.dubito.app.network.PeerId;
 
 public final class LobbyContainer {
+    public static record LobbyResult(Lobby lobby, boolean isDeleted) {
+    }
+
     public static class Result {
-        private List<String> errors;
-        private Lobby lobby;
+        private Either<List<String>, LobbyResult> value;
 
         public Result() {
-            this.errors = new ArrayList<>();
-            this.lobby = null;
+            this.value = Either.ofX(new ArrayList<>());
         }
 
-        public List<String> getErrors() {
-            return this.errors;
-        }
-
-        public Lobby getLobby() {
-            return this.lobby;
+        public Either<List<String>, LobbyResult> getValue() {
+            return this.value;
         }
 
         private void setErrors(final List<String> errors) {
-            this.errors = List.copyOf(errors);
-            this.lobby = null;
+            this.value = Either.ofX(errors);
         }
 
-        private void setLobby(final Lobby lobby) {
-            this.errors = List.of();
-            this.lobby = lobby;
+        private void setLobby(final Lobby lobby, final boolean isDeleted) {
+            this.value = Either.ofY(new LobbyResult(lobby, isDeleted));
         }
     }
 
@@ -63,7 +59,7 @@ public final class LobbyContainer {
             System.out.println(new StringBuilder().append("Creating new lobby \"").append(info.name())
                     .append("\" owned by \"").append(owner).append(getLobbyCount()).toString());
             lobbies.put(newLobby.getId(), newLobby);
-            result.setLobby(newLobby);
+            result.setLobby(newLobby, false);
             return lobbies;
         });
         return result;
@@ -88,7 +84,7 @@ public final class LobbyContainer {
             }
             final Lobby newLobby = lobbyToEdit.setInfo(newInfo);
             lobbies.put(lobbyId, newLobby);
-            result.setLobby(newLobby);
+            result.setLobby(newLobby, false);
             return lobbies;
         });
         return result;
@@ -103,8 +99,7 @@ public final class LobbyContainer {
                 return lobbies;
             }
             final String expectedPassword = lobbyToJoin.getInfo().password();
-            if (expectedPassword != null && !expectedPassword.isBlank()
-                    && !lobbyToJoin.getInfo().password().equals(password)) {
+            if (!expectedPassword.isBlank() && !lobbyToJoin.getInfo().password().equals(password)) {
                 result.setErrors(List.of("invalid password"));
                 return lobbies;
             }
@@ -114,7 +109,7 @@ public final class LobbyContainer {
             }
             final Lobby newLobby = lobbyToJoin.addParticipant(joinerId);
             lobbies.put(lobbyId, newLobby);
-            result.setLobby(newLobby);
+            result.setLobby(newLobby, false);
             return lobbies;
         });
         return result;
@@ -132,10 +127,16 @@ public final class LobbyContainer {
                 result.setErrors(List.of("user is not in the given lobby"));
                 return lobbies;
             }
-            final Lobby newLobby = lobbyToLeave.removeParticipant(leaverId);
-            lobbies.put(lobbyId, newLobby);
-            result.setLobby(newLobby);
-            return lobbies;
+            if (!leaverId.equals(lobbyToLeave.getOwner())) {
+                final Lobby newLobby = lobbyToLeave.removeParticipant(leaverId);
+                lobbies.put(lobbyId, newLobby);
+                result.setLobby(newLobby, false);
+                return lobbies;
+            } else {
+                final Lobby deletedLobby = lobbies.remove(lobbyId);
+                result.setLobby(deletedLobby, true);
+                return lobbies;
+            }
         });
         return result;
     }

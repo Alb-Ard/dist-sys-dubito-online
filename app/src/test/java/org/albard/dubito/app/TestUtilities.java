@@ -6,6 +6,7 @@ import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import org.albard.dubito.app.messaging.MessageReceiver;
@@ -55,8 +56,8 @@ public final class TestUtilities {
             final byte[] serializedData) {
         return new MessageSerializer() {
             @Override
-            public GameMessage deserialize(final byte[] message) {
-                return deserializedMessage;
+            public Optional<GameMessage> deserialize(final byte[] message) {
+                return Optional.ofNullable(deserializedMessage);
             }
 
             @Override

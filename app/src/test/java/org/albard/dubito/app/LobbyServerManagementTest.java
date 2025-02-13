@@ -11,7 +11,9 @@ import org.albard.dubito.app.lobby.LobbyInfo;
 import org.albard.dubito.app.lobby.LobbyServer;
 import org.albard.dubito.app.lobby.messages.CreateLobbyFailedMessage;
 import org.albard.dubito.app.lobby.messages.CreateLobbyMessage;
+import org.albard.dubito.app.lobby.messages.LeaveLobbyMessage;
 import org.albard.dubito.app.lobby.messages.LobbyCreatedMessage;
+import org.albard.dubito.app.lobby.messages.LobbyLeavedMessage;
 import org.albard.dubito.app.lobby.messages.LobbyUpdatedMessage;
 import org.albard.dubito.app.lobby.messages.UpdateLobbyFailedMessage;
 import org.albard.dubito.app.lobby.messages.UpdateLobbyInfoMessage;
@@ -24,14 +26,46 @@ import org.albard.dubito.app.network.PeerNetwork;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EmptySource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 public final class LobbyServerManagementTest {
     @ParameterizedTest
     @ValueSource(strings = { "password" })
-    @NullAndEmptySource
+    @EmptySource
     void testCreateLobby(final String password) throws IOException, InterruptedException {
+        try (final LobbyServer server = LobbyServer.createBound("127.0.0.1", 9000);
+                final PeerNetwork client = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 9001,
+                        new MessengerFactory(MessageSerializer.createJson()))) {
+            client.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9000));
+
+            final LobbyInfo info = new LobbyInfo("Test Lobby", password);
+            final List<LobbyCreatedMessage> createReceived = TestUtilities.addMessageListener(LobbyCreatedMessage.class,
+                    client);
+            final List<LobbyUpdatedMessage> updateReceived = TestUtilities.addMessageListener(LobbyUpdatedMessage.class,
+                    client);
+            final List<ErrorGameMessageBase> failReceived = TestUtilities.addMessageListener(ErrorGameMessageBase.class,
+                    client);
+
+            client.sendMessage(new CreateLobbyMessage(client.getLocalPeerId(), null, info));
+            Thread.sleep(Duration.ofSeconds(2));
+
+            Assertions.assertEquals(1, server.getLobbyCount());
+            final Lobby lobby = server.getLobbies().getFirst();
+            Assertions.assertEquals(1, createReceived.size());
+            Assertions.assertEquals(lobby.getId(), createReceived.getFirst().getNewLobbyId());
+            Assertions.assertEquals(1, updateReceived.size());
+            AssertionsUtilities.assertLobby(client.getLocalPeerId(), info, lobby.getId(),
+                    Set.of(client.getLocalPeerId()), updateReceived.getFirst().getLobby());
+            Assertions.assertEquals(0, failReceived.size());
+        }
+    }
+
+    @ParameterizedTest
+    @NullSource
+    void testFailCreateLobbyWithInvalidPassword(final String password) throws IOException, InterruptedException {
         try (final LobbyServer server = LobbyServer.createBound("127.0.0.1", 9000);
                 final PeerNetwork client = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 9001,
                         new MessengerFactory(MessageSerializer.createJson()))) {
@@ -48,14 +82,12 @@ public final class LobbyServerManagementTest {
             client.sendMessage(new CreateLobbyMessage(client.getLocalPeerId(), null, info));
             Thread.sleep(Duration.ofSeconds(1));
 
-            Assertions.assertEquals(1, server.getLobbyCount());
-            final Lobby lobby = server.getLobbies().getFirst();
-            Assertions.assertEquals(1, createReceived.size());
-            Assertions.assertEquals(lobby.getId(), createReceived.getFirst().getNewLobbyId());
-            Assertions.assertEquals(1, updateReceived.size());
-            AssertionsUtilities.assertLobby(client.getLocalPeerId(), info, lobby.getId(),
-                    Set.of(client.getLocalPeerId()), updateReceived.getFirst().getLobby());
-            Assertions.assertEquals(0, failReceived.size());
+            Assertions.assertEquals(0, createReceived.size());
+            Assertions.assertEquals(0, updateReceived.size());
+            Assertions.assertEquals(0, server.getLobbyCount());
+            Assertions.assertEquals(1, failReceived.size());
+            Assertions.assertTrue(failReceived.getFirst() instanceof CreateLobbyFailedMessage);
+            failReceived.getFirst().getErrors().contains("password can't be null");
         }
     }
 
@@ -182,6 +214,38 @@ public final class LobbyServerManagementTest {
             Assertions.assertEquals(1, failReceived.size());
             Assertions.assertTrue(failReceived.getFirst() instanceof UpdateLobbyFailedMessage);
             AssertionsUtilities.assertLobbyNameValidationErrors(name, failReceived.getFirst().getErrors());
+        }
+    }
+
+    @Test
+    void testLobbyDeletesWhenOwnerExits() throws IOException, InterruptedException {
+        try (final LobbyServer server = LobbyServer.createBound("127.0.0.1", 9000);
+                final PeerNetwork client = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 9001,
+                        new MessengerFactory(MessageSerializer.createJson()))) {
+            client.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9000));
+
+            final LobbyInfo info = new LobbyInfo("Test Lobby", "");
+            final List<LobbyCreatedMessage> createReceived = TestUtilities.addMessageListener(LobbyCreatedMessage.class,
+                    client);
+            final List<LobbyUpdatedMessage> updateReceived = TestUtilities.addMessageListener(LobbyUpdatedMessage.class,
+                    client);
+            final List<LobbyLeavedMessage> leavedReceived = TestUtilities.addMessageListener(LobbyLeavedMessage.class,
+                    client);
+            final List<ErrorGameMessageBase> failReceived = TestUtilities.addMessageListener(ErrorGameMessageBase.class,
+                    client);
+
+            client.sendMessage(new CreateLobbyMessage(client.getLocalPeerId(), null, info));
+            Thread.sleep(Duration.ofSeconds(1));
+
+            final Lobby lobby = server.getLobbies().getFirst();
+            client.sendMessage(new LeaveLobbyMessage(client.getLocalPeerId(), null, lobby.getId()));
+            Thread.sleep(Duration.ofSeconds(1));
+
+            Assertions.assertEquals(0, server.getLobbyCount());
+            Assertions.assertEquals(1, createReceived.size());
+            Assertions.assertEquals(1, updateReceived.size());
+            Assertions.assertEquals(1, leavedReceived.size());
+            Assertions.assertEquals(0, failReceived.size());
         }
     }
 }

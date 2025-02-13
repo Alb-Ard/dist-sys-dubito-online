@@ -18,7 +18,7 @@ public final class PeerEndPoint {
         this.port = port;
     }
 
-    public static PeerEndPoint createFromValues(String host, int port) {
+    public static PeerEndPoint createFromValues(final String host, final int port) {
         try {
             final InetAddress hostAddress = InetAddress.getByName(host);
             if (host == null || host.length() <= 0 || hostAddress == null || port < 0) {

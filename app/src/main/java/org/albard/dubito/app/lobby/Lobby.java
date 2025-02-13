@@ -14,6 +14,7 @@ public final class Lobby {
     private final PeerId owner;
     private final LobbyInfo info;
     private final Set<PeerId> participants;
+    private final int maxParticipantCount = 4;
 
     @JsonCreator
     private Lobby(@JsonProperty("id") final LobbyId id, @JsonProperty("owner") final PeerId owner,
@@ -45,11 +46,18 @@ public final class Lobby {
         return Set.copyOf(this.participants);
     }
 
+    public int getMaxParticipantCount() {
+        return this.maxParticipantCount;
+    }
+
     public Lobby setInfo(final LobbyInfo newInfo) {
         return new Lobby(this.id, this.owner, newInfo, this.participants);
     }
 
     public Lobby addParticipant(final PeerId newParticipant) {
+        if (this.participants.size() >= this.maxParticipantCount) {
+            return this;
+        }
         final Set<PeerId> newParticipants = new HashSet<>(this.participants);
         newParticipants.add(newParticipant);
         return new Lobby(this.id, this.owner, this.info, newParticipants);
