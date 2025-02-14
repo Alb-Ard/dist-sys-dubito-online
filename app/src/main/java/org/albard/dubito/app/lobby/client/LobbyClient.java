@@ -10,11 +10,14 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import org.albard.dubito.app.lobby.messages.CreateLobbyMessage;
+import org.albard.dubito.app.lobby.messages.JoinLobbyMessage;
+import org.albard.dubito.app.lobby.messages.LeaveLobbyMessage;
 import org.albard.dubito.app.lobby.messages.LobbyCreatedMessage;
 import org.albard.dubito.app.lobby.messages.LobbyJoinedMessage;
 import org.albard.dubito.app.lobby.messages.LobbyLeavedMessage;
 import org.albard.dubito.app.lobby.messages.LobbyListUpdatedMessage;
 import org.albard.dubito.app.lobby.messages.LobbyUpdatedMessage;
+import org.albard.dubito.app.lobby.messages.UpdateLobbyInfoMessage;
 import org.albard.dubito.app.lobby.models.Lobby;
 import org.albard.dubito.app.lobby.models.LobbyDisplay;
 import org.albard.dubito.app.lobby.models.LobbyId;
@@ -129,6 +132,20 @@ public final class LobbyClient implements Closeable {
 
     public void requestNewLobby(final LobbyInfo info) {
         this.network.sendMessage(new CreateLobbyMessage(this.getLocalPeerId(), null, info));
+    }
+
+    public void requestJoinLobby(final LobbyId id, final String password) {
+        this.network.sendMessage(new JoinLobbyMessage(this.getLocalPeerId(), null, id, password));
+    }
+
+    public void requestLeaveCurrentLobby() {
+        this.getCurrentLobby().ifPresent(
+                l -> this.network.sendMessage(new LeaveLobbyMessage(this.getLocalPeerId(), null, l.getId())));
+    }
+
+    public void requestSaveLobbyInfo(final LobbyInfo newLobbyInfo) {
+        this.getCurrentLobby().ifPresent(l -> this.network
+                .sendMessage(new UpdateLobbyInfoMessage(this.getLocalPeerId(), null, l.getId(), newLobbyInfo)));
     }
 
     private boolean handleMessage(final GameMessage message) {

@@ -7,41 +7,35 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import javax.swing.BoxLayout;
-import javax.swing.DefaultListModel;
+import javax.swing.JButton;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JPanel;
-import javax.swing.ListSelectionModel;
 
 import org.albard.dubito.app.lobby.models.LobbyDisplay;
 import org.albard.dubito.app.lobby.models.LobbyId;
 
 public final class SwingLobbyListView extends JPanel implements LobbyListView {
     private final static class LobbyDisplayView extends JPanel {
-        public LobbyDisplayView(final LobbyDisplay lobby) {
+        public LobbyDisplayView(final LobbyDisplay lobby, final Consumer<LobbyId> lobbySelectedListener) {
             this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
             this.add(new JLabel(lobby.name()));
+            final JButton joinButton = new JButton("Join >");
+            joinButton.addActionListener(e -> lobbySelectedListener.accept(lobby.id()));
+            this.add(joinButton);
         }
     }
 
     private final Set<Consumer<LobbyId>> lobbySelectedListeners = Collections.synchronizedSet(new HashSet<>());
-    private final JList<LobbyDisplay> list = new JList<>();
 
     public SwingLobbyListView() {
-        this.list.setCellRenderer((list, value, index, isSelected, cellHasFocus) -> new LobbyDisplayView(value));
-        this.list.addListSelectionListener(e -> this.invokeLobbySelectedListener(this.list.getSelectedValue().id()));
-        this.list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        this.add(this.list);
+        this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
     }
 
     @Override
     public void setLobbies(final List<LobbyDisplay> lobbies) {
-        final DefaultListModel<LobbyDisplay> model = new DefaultListModel<>();
-        lobbies.stream().sorted((a, b) -> a.name().compareTo(b.name())).forEach(v -> {
-            model.addElement(v);
-        });
-        this.list.setModel(model);
-
+        this.removeAll();
+        lobbies.stream().sorted((a, b) -> a.name().compareTo(b.name()))
+                .map(l -> new LobbyDisplayView(l, this::invokeLobbySelectedListeners)).forEach(this::add);
     }
 
     @Override
@@ -54,7 +48,7 @@ public final class SwingLobbyListView extends JPanel implements LobbyListView {
         this.lobbySelectedListeners.remove(listener);
     }
 
-    private void invokeLobbySelectedListener(final LobbyId selectedLobbyId) {
+    private void invokeLobbySelectedListeners(final LobbyId selectedLobbyId) {
         this.lobbySelectedListeners.forEach(l -> l.accept(selectedLobbyId));
     }
 }

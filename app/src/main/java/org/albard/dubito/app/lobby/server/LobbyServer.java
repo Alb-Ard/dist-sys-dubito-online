@@ -100,6 +100,7 @@ public class LobbyServer implements Closeable {
                     .sendMessage(new UpdateLobbyFailedMessage(this.network.getLocalPeerId(), Set.of(editorId), errors));
         }, result -> {
             this.sendLobbyUpdatedToParticipants(result.lobby());
+            this.sendLobbyListTo(null);
         });
     }
 
@@ -110,6 +111,7 @@ public class LobbyServer implements Closeable {
         }, result -> {
             this.network.sendMessage(new LobbyJoinedMessage(this.network.getLocalPeerId(), Set.of(joinerId), lobbyId));
             this.sendLobbyUpdatedToParticipants(result.lobby());
+            this.sendLobbyListTo(null);
         });
     }
 
@@ -124,8 +126,8 @@ public class LobbyServer implements Closeable {
             } else {
                 this.network.sendMessage(
                         new LobbyLeavedMessage(this.network.getLocalPeerId(), result.lobby().getParticipants()));
-                this.sendLobbyListTo(null);
             }
+            this.sendLobbyListTo(null);
         });
     }
 
