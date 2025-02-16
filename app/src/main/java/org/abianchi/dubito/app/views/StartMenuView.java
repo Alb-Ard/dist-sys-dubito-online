@@ -1,28 +1,12 @@
 package org.abianchi.dubito.app.views;
 
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.EventQueue;
-import java.awt.FontMetrics;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Rectangle;
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.*;
+import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.swing.AbstractAction;
-import javax.swing.ActionMap;
-import javax.swing.InputMap;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.KeyStroke;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.*;
 
 public class StartMenuView {
 
@@ -39,10 +23,17 @@ public class StartMenuView {
                 } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
                     ex.printStackTrace();
                 }
-
+                final CardLayout cardlayout = new CardLayout();
                 JFrame frame = new JFrame("Dubito Online");
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                frame.add(new TestPane());
+                final Container contentPane = frame.getContentPane();
+                contentPane.setLayout(cardlayout);
+                contentPane.setPreferredSize(new Dimension(600, 400));
+                final StartPane startPane = new StartPane();
+                final LobbyPane lobbyPane = new LobbyPane();
+                contentPane.add(startPane);
+                contentPane.add(lobbyPane);
+                frame.add(new StartPane());
                 frame.pack();
                 frame.setLocationRelativeTo(null);
                 frame.setVisible(true);
@@ -50,50 +41,45 @@ public class StartMenuView {
         });
     }
 
-    public class TestPane extends JPanel {
+    public class StartPane extends JPanel {
 
-        private List<String> menuItems;
-        private String selectMenuItem;
-        private String focusedItem;
+        private List<JButton> menuItems;
+        private JButton focusedButton;
+
+        private JButton selectedButton;
 
         private MenuItemPainter painter;
-        private Map<String, Rectangle> menuBounds;
+        private Map<JButton, Rectangle> menuBounds;
 
-        public TestPane() {
+        public StartPane() {
             setBackground(Color.BLACK);
             painter = new SimpleMenuItemPainter();
-            menuItems = new ArrayList<>(25);
-            menuItems.add("Start Game");
-            menuItems.add("LeaderBoards");
-            menuItems.add("Settings");
-            menuItems.add("Exit");
-            selectMenuItem = menuItems.get(0);
+            menuItems = new ArrayList<>(5);
+            JButton start = new JButton("Start Game");
+            JButton leaderboards = new JButton("LeaderBoards");
+            JButton settings = new JButton("Settings");
+            JButton exit = new JButton("Exit");
+            menuItems.add(start);
+            menuItems.add(leaderboards);
+            menuItems.add(settings);
+            menuItems.add(exit);
+
+            exit.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    System.exit(0);
+                }
+            });
 
             MouseAdapter ma = new MouseAdapter() {
 
                 @Override
-                public void mouseClicked(MouseEvent e) {
-                    String newItem = null;
-                    for (String text : menuItems) {
-                        Rectangle bounds = menuBounds.get(text);
-                        if (bounds.contains(e.getPoint())) {
-                            newItem = text;
-                            break;
-                        }
-                    }
-                    if (newItem != null && !newItem.equals(selectMenuItem)) {
-                        selectMenuItem = newItem;
-                        repaint();
-                    }
-                }
-
-                @Override
                 public void mouseMoved(MouseEvent e) {
-                    focusedItem = null;
-                    for (String text : menuItems) {
-                        Rectangle bounds = menuBounds.get(text);
+                    focusedButton = null;
+                    for (JButton button : menuItems) {
+                        Rectangle bounds = menuBounds.get(button);
                         if (bounds.contains(e.getPoint())) {
-                            focusedItem = text;
+                            focusedButton = button;
                             repaint();
                             break;
                         }
@@ -124,7 +110,7 @@ public class StartMenuView {
 
         @Override
         public Dimension getPreferredSize() {
-            return new Dimension(200, 200);
+            return new Dimension(500, 500);
         }
 
         @Override
@@ -135,8 +121,8 @@ public class StartMenuView {
                 menuBounds = new HashMap<>(menuItems.size());
                 int width = 0;
                 int height = 0;
-                for (String text : menuItems) {
-                    Dimension dim = painter.getPreferredSize(g2d, text);
+                for (JButton button : menuItems) {
+                    Dimension dim = painter.getPreferredSize(g2d, button.getText());
                     width = Math.max(width, dim.width);
                     height = Math.max(height, dim.height);
                 }
@@ -148,17 +134,17 @@ public class StartMenuView {
 
                 int y = (getHeight() - totalHeight) / 2;
 
-                for (String text : menuItems) {
-                    menuBounds.put(text, new Rectangle(x, y, width + 10, height + 10));
+                for (JButton button : menuItems) {
+                    menuBounds.put(button, new Rectangle(x, y, width + 10, height + 10));
                     y += height + 10 + 5;
                 }
 
             }
-            for (String text : menuItems) {
-                Rectangle bounds = menuBounds.get(text);
-                boolean isSelected = text.equals(selectMenuItem);
-                boolean isFocused = text.equals(focusedItem);
-                painter.paint(g2d, text, bounds, isSelected, isFocused);
+            for (JButton button : menuItems) {
+                Rectangle bounds = menuBounds.get(button);
+                boolean isSelected = button.equals(selectedButton);
+                boolean isFocused = button.equals(focusedButton);
+                painter.paint(g2d, button, bounds, isSelected, isFocused);
             }
             g2d.dispose();
         }
@@ -173,17 +159,17 @@ public class StartMenuView {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                int index = menuItems.indexOf(selectMenuItem);
+                int index = menuItems.indexOf(selectedButton);
                 if (index < 0) {
-                    selectMenuItem = menuItems.get(0);
+                    selectedButton = menuItems.get(0);
                 }
                 index += delta;
                 if (index < 0) {
-                    selectMenuItem = menuItems.get(menuItems.size() - 1);
+                    selectedButton = menuItems.get(menuItems.size() - 1);
                 } else if (index >= menuItems.size()) {
-                    selectMenuItem = menuItems.get(0);
+                    selectedButton = menuItems.get(0);
                 } else {
-                    selectMenuItem = menuItems.get(index);
+                    selectedButton = menuItems.get(index);
                 }
                 repaint();
             }
@@ -192,9 +178,13 @@ public class StartMenuView {
 
     }
 
+    public class LobbyPane extends JPanel {
+
+    }
+
     public interface MenuItemPainter {
 
-        public void paint(Graphics2D g2d, String text, Rectangle bounds, boolean isSelected, boolean isFocused);
+        public void paint(Graphics2D g2d, JButton button, Rectangle bounds, boolean isSelected, boolean isFocused);
 
         public Dimension getPreferredSize(Graphics2D g2d, String text);
 
@@ -207,19 +197,19 @@ public class StartMenuView {
         }
 
         @Override
-        public void paint(Graphics2D g2d, String text, Rectangle bounds, boolean isSelected, boolean isFocused) {
+        public void paint(Graphics2D g2d, JButton button, Rectangle bounds, boolean isSelected, boolean isFocused) {
             FontMetrics fm = g2d.getFontMetrics();
             if (isSelected) {
                 paintBackground(g2d, bounds, Color.BLUE, Color.WHITE);
             } else if (isFocused) {
-                paintBackground(g2d, bounds, Color.MAGENTA, Color.BLACK);
+                paintBackground(g2d, bounds, Color.BLUE, Color.BLACK);
             } else {
                 paintBackground(g2d, bounds, Color.DARK_GRAY, Color.LIGHT_GRAY);
             }
-            int x = bounds.x + ((bounds.width - fm.stringWidth(text)) / 2);
+            int x = bounds.x + ((bounds.width - fm.stringWidth(button.getText())) / 2);
             int y = bounds.y + ((bounds.height - fm.getHeight()) / 2) + fm.getAscent();
             g2d.setColor(isSelected ? Color.WHITE : Color.LIGHT_GRAY);
-            g2d.drawString(text, x, y);
+            g2d.drawString(button.getText(), x, y);
         }
 
         protected void paintBackground(Graphics2D g2d, Rectangle bounds, Color background, Color foreground) {

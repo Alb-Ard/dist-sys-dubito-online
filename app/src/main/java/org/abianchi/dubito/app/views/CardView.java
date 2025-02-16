@@ -7,26 +7,26 @@ import java.util.Random;
 
 public class CardView {
 
-    private static String IMAGE_PATH = "../resources/";
+    private static String IMAGE_PATH = "card_images/";
     private Image cardImage;
 
     public CardView(Card card) {
-        String cardImage;
+        String cardImagePath;
         switch(card.getCardType()){
             case ACE:
-                cardImage = IMAGE_PATH + "ace" + chooseRandomImage();
+                cardImagePath = IMAGE_PATH + "ace" + chooseRandomImage();
                 break;
             case QUEEN:
-                cardImage = IMAGE_PATH + "queen" + chooseRandomImage();
+                cardImagePath = IMAGE_PATH + "queen" + chooseRandomImage();
                 break;
             case KING:
-                cardImage = IMAGE_PATH + "king" + chooseRandomImage();
+                cardImagePath = IMAGE_PATH + "king" + chooseRandomImage();
                 break;
             default:
-                cardImage = IMAGE_PATH + "joker_card.png";
+                cardImagePath = IMAGE_PATH + "joker_card.png";
                 break;
         }
-        this.cardImage = Toolkit.getDefaultToolkit().getImage(cardImage);
+        this.cardImage = Toolkit.getDefaultToolkit().getImage(cardImagePath);
     }
 
     private String chooseRandomImage() {
