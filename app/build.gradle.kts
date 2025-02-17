@@ -20,5 +20,5 @@ tasks.named<Test>("test") {
 
 application {
     // Define the main class for the application.
-    mainClass = "org.albard.dubito.app.App"
+    mainClass = "org.albard.dubito.App"
 }
