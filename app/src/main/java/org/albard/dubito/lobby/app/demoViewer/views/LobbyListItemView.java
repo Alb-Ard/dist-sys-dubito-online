@@ -12,11 +12,10 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import org.albard.dubito.lobby.models.LobbyDisplay;
-import org.albard.dubito.lobby.models.LobbyId;
 
 public final class LobbyListItemView extends JPanel {
     private final JLabel nameLabel = new JLabel();
-    private final Set<Consumer<LobbyId>> lobbySelectedListeners = Collections.synchronizedSet(new HashSet<>());
+    private final Set<Consumer<LobbyDisplay>> lobbySelectedListeners = Collections.synchronizedSet(new HashSet<>());
 
     private Optional<LobbyDisplay> lobby = Optional.empty();
 
@@ -24,8 +23,7 @@ public final class LobbyListItemView extends JPanel {
         this.setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
         this.add(this.nameLabel);
         final JButton joinButton = new JButton("Join >");
-        joinButton.addActionListener(
-                e -> lobby.ifPresent(m -> this.lobbySelectedListeners.forEach(l -> l.accept(m.id()))));
+        joinButton.addActionListener(e -> lobby.ifPresent(m -> this.lobbySelectedListeners.forEach(l -> l.accept(m))));
         this.add(joinButton);
     }
 
@@ -38,11 +36,11 @@ public final class LobbyListItemView extends JPanel {
         });
     }
 
-    public void addLobbySelectedListener(final Consumer<LobbyId> listener) {
+    public void addLobbySelectedListener(final Consumer<LobbyDisplay> listener) {
         this.lobbySelectedListeners.add(listener);
     }
 
-    public void removeLobbySelectedListener(final Consumer<LobbyId> listener) {
+    public void removeLobbySelectedListener(final Consumer<LobbyDisplay> listener) {
         this.lobbySelectedListeners.remove(listener);
     }
 
