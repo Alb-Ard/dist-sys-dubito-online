@@ -1,8 +1,10 @@
 package org.albard.dubito.lobby.app.demoViewer.models;
 
-public final class ConnectionRequestModel extends AbstractModel {
-    public static final String ADDRESS_PROPERTY_NAME = "address";
-    public static final String PORT_PROPERTY_NAME = "port";
+import com.jgoodies.binding.beans.Model;
+
+public final class ConnectionRequestModel extends Model {
+    public static final String ADDRESS_PROPERTY = "address";
+    public static final String PORT_PROPERTY = "port";
 
     private String address;
     private int port;
@@ -21,10 +23,14 @@ public final class ConnectionRequestModel extends AbstractModel {
     }
 
     public void setAddress(final String address) {
-        this.firePropertyChange(ADDRESS_PROPERTY_NAME, this.address, address, x -> this.address = x);
+        final String oldAddress = this.address;
+        this.address = address;
+        this.firePropertyChange(ADDRESS_PROPERTY, oldAddress, address);
     }
 
     public void setPort(final int port) {
-        this.firePropertyChange(ADDRESS_PROPERTY_NAME, this.port, port, x -> this.port = x);
+        final int oldPort = this.port;
+        this.port = port;
+        this.firePropertyChange(ADDRESS_PROPERTY, oldPort, port);
     }
 }

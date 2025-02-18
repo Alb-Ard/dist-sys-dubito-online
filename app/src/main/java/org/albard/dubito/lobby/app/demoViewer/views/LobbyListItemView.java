@@ -21,7 +21,7 @@ public final class LobbyListItemView extends JPanel {
     private Optional<LobbyDisplay> lobby = Optional.empty();
 
     public LobbyListItemView() {
-        this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        this.setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
         this.add(this.nameLabel);
         final JButton joinButton = new JButton("Join >");
         joinButton.addActionListener(
@@ -31,7 +31,11 @@ public final class LobbyListItemView extends JPanel {
 
     public void setLobby(final LobbyDisplay lobby) {
         this.lobby = Optional.ofNullable(lobby);
-        this.lobby.ifPresentOrElse(l -> this.nameLabel.setText(l.name()), () -> this.nameLabel.setText("[Unknown]"));
+        this.lobby.ifPresentOrElse(l -> {
+            this.nameLabel.setText(createLobbyDescription(lobby));
+        }, () -> {
+            this.nameLabel.setText("[Unknown]");
+        });
     }
 
     public void addLobbySelectedListener(final Consumer<LobbyId> listener) {
@@ -40,5 +44,14 @@ public final class LobbyListItemView extends JPanel {
 
     public void removeLobbySelectedListener(final Consumer<LobbyId> listener) {
         this.lobbySelectedListeners.remove(listener);
+    }
+
+    private static String createLobbyDescription(final LobbyDisplay lobby) {
+        final StringBuilder builder = new StringBuilder().append(lobby.name()).append(" ")
+                .append(lobby.currentParticipantCount()).append("/").append(lobby.maxParticipantCount());
+        if (lobby.isPasswordProtected()) {
+            builder.append(" P");
+        }
+        return builder.toString();
     }
 }

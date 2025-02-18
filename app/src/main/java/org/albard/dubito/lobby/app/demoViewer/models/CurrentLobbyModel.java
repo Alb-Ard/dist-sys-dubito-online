@@ -1,60 +1,95 @@
 package org.albard.dubito.lobby.app.demoViewer.models;
 
-import java.util.Optional;
-import java.util.function.Function;
+import java.util.List;
 
 import org.albard.dubito.lobby.models.Lobby;
-import org.albard.dubito.lobby.models.LobbyInfo;
 import org.albard.dubito.network.PeerId;
 
-public final class CurrentLobbyModel extends AbstractModel {
-    public static final String CURRENT_LOBBY_PROPERTY_NAME = "currentLobby";
-    public static final String EDITED_LOBBY_INFO_PROPERTY_NAME = "editedLobbyInfo";
+import com.jgoodies.binding.beans.Model;
 
-    private PeerId localPeerId;
-    private Optional<Lobby> currentLobby;
-    private Optional<LobbyInfo> editedLobbyInfo;
+public final class CurrentLobbyModel extends Model {
+    public static final String LOBBY_NAME_PROPERTY = "lobbyName";
+    public static final String LOBBY_PASSWORD_PROPERTY = "lobbyPassword";
+    public static final String LOBBY_OWNER_PROPERTY = "lobbyOwnerId";
+    public static final String PARTICIPANTS_PROPERTY = "participants";
+    public static final String MAX_PARTICIPANT_COUNT_PROPERTY = "maxParticipantCount";
 
-    public CurrentLobbyModel(final PeerId localPeerId, final Optional<Lobby> currentLobby) {
+    private final PeerId localPeerId;
+
+    private String lobbyName;
+    private String lobbyPassword;
+    private PeerId lobbyOwnerId;
+
+    private List<PeerId> participants;
+    private int maxParticipantCount;
+
+    public CurrentLobbyModel(final PeerId localPeerId) {
         this.localPeerId = localPeerId;
-        this.currentLobby = currentLobby;
-        this.editedLobbyInfo = currentLobby.map(l -> l.getInfo());
     }
 
     public PeerId getLocalPeerId() {
         return this.localPeerId;
     }
 
-    public Optional<Lobby> getCurrentLobby() {
-        return this.currentLobby;
+    public String getLobbyName() {
+        return this.lobbyName;
     }
 
-    public Optional<LobbyInfo> getEditedLobbyInfo() {
-        return this.editedLobbyInfo;
+    public String getLobbyPassword() {
+        return this.lobbyPassword;
+    }
+
+    public PeerId getLobbyOwnerId() {
+        return lobbyOwnerId;
+    }
+
+    public List<PeerId> getParticipants() {
+        return this.participants;
+    }
+
+    public int getMaxParticipantCount() {
+        return this.maxParticipantCount;
     }
 
     public boolean isLocalPeerOwner() {
-        return this.getCurrentLobby().map(l -> this.getLocalPeerId().equals(l.getOwner())).orElse(false);
+        return this.localPeerId.equals(this.lobbyOwnerId);
     }
 
-    public void setCurrentLobby(final Optional<Lobby> currentLobby) {
-        this.firePropertyChange(CURRENT_LOBBY_PROPERTY_NAME, this.currentLobby, currentLobby,
-                x -> this.currentLobby = x);
-        currentLobby.ifPresent(l -> this.setEditedLobbyInfo(Optional.of(l.getInfo())));
+    public void setFromLobby(final Lobby currentLobby) {
+        this.setLobbyName(currentLobby.getInfo().name());
+        this.setLobbyPassword(currentLobby.getInfo().password());
+        this.setLobbyOwnerId(currentLobby.getOwner());
+        this.setParticipants(List.copyOf(currentLobby.getParticipants()));
+        this.setMaxParticipantCount(currentLobby.getMaxParticipantCount());
     }
 
-    public void setEditedLobbyInfo(final Optional<LobbyInfo> editedLobbyInfo) {
-        if (this.getCurrentLobby().isPresent()) {
-            this.firePropertyChange(EDITED_LOBBY_INFO_PROPERTY_NAME, this.editedLobbyInfo, editedLobbyInfo,
-                    x -> this.editedLobbyInfo = x);
-        }
+    public void setLobbyName(final String lobbyName) {
+        final String oldName = this.lobbyName;
+        this.lobbyName = lobbyName;
+        this.firePropertyChange(LOBBY_NAME_PROPERTY, oldName, lobbyName);
     }
 
-    public void mapEditedLobbyInfo(final Function<LobbyInfo, LobbyInfo> mapper) {
-        this.getCurrentLobby().ifPresent(l -> {
-            this.firePropertyChange(EDITED_LOBBY_INFO_PROPERTY_NAME, this.editedLobbyInfo,
-                    Optional.ofNullable(mapper.apply(this.getEditedLobbyInfo().orElse(l.getInfo()))),
-                    x -> this.editedLobbyInfo = x);
-        });
+    public void setLobbyPassword(final String lobbyPassword) {
+        final String oldPassword = this.lobbyPassword;
+        this.lobbyPassword = lobbyPassword;
+        this.firePropertyChange(LOBBY_PASSWORD_PROPERTY, oldPassword, lobbyPassword);
+    }
+
+    public void setLobbyOwnerId(PeerId lobbyOwnerId) {
+        final PeerId oldOwner = this.lobbyOwnerId;
+        this.lobbyOwnerId = lobbyOwnerId;
+        this.firePropertyChange(LOBBY_OWNER_PROPERTY, oldOwner, lobbyOwnerId);
+    }
+
+    public void setParticipants(final List<PeerId> participants) {
+        final List<PeerId> oldParticipants = this.participants;
+        this.participants = List.copyOf(participants);
+        this.firePropertyChange(PARTICIPANTS_PROPERTY, oldParticipants, this.participants, true);
+    }
+
+    public void setMaxParticipantCount(final int maxParticipantCount) {
+        final int oldCount = this.maxParticipantCount;
+        this.maxParticipantCount = maxParticipantCount;
+        this.firePropertyChange(MAX_PARTICIPANT_COUNT_PROPERTY, oldCount, maxParticipantCount);
     }
 }

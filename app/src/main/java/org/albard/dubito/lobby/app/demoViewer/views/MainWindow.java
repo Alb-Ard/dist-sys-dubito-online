@@ -19,27 +19,27 @@ public final class MainWindow extends JFrame {
 
     private final LobbyClient client;
     private final LobbyListView listView;
-    private final CurrentLobbyPanel currentLobbyPanel;
+    private final CurrentLobbyView currentLobbyPanel;
 
     private final DefaultListModel<LobbyDisplay> lobbyListModel;
     private final CurrentLobbyModel currentLobbyModel;
 
     public MainWindow(final LobbyClient client) {
         super("List Window");
+        this.setMinimumSize(new Dimension(640, 480));
         this.getContentPane().setLayout(new BoxLayout(this.getContentPane(), BoxLayout.X_AXIS));
         this.client = client;
         this.lobbyListModel = new DefaultListModel<>();
+        this.currentLobbyModel = new CurrentLobbyModel(this.client.getLocalPeerId());
         this.listView = new LobbyListView(this.lobbyListModel);
         this.listView.addCreateLobbyListener(() -> this.client.requestNewLobby(NEW_LOBBY_DEFAULT_INFO));
         this.listView.addLobbySelectedListener(i -> this.client.requestJoinLobby(i, ""));
-        this.getContentPane().add(this.listView);
-        this.currentLobbyModel = new CurrentLobbyModel(this.client.getLocalPeerId(), Optional.empty());
-        this.currentLobbyPanel = new CurrentLobbyPanel(this.currentLobbyModel);
+        this.currentLobbyPanel = new CurrentLobbyView(this.currentLobbyModel);
         this.currentLobbyPanel.addSaveLobbyInfoListener(this.client::requestSaveLobbyInfo);
         this.currentLobbyPanel.addExitLobbyListener(this.client::requestLeaveCurrentLobby);
         this.currentLobbyPanel.setVisible(false);
+        this.getContentPane().add(this.listView);
         this.getContentPane().add(this.currentLobbyPanel);
-        this.setMinimumSize(new Dimension(640, 480));
         client.addLobbyListUpdatedListener(l -> {
             this.lobbyListModel.clear();
             this.lobbyListModel.addAll(l);
@@ -61,7 +61,7 @@ public final class MainWindow extends JFrame {
 
     private void showCurrentLobby(final Lobby lobby) {
         SwingUtilities.invokeLater(() -> {
-            this.currentLobbyModel.setCurrentLobby(Optional.ofNullable(lobby));
+            this.currentLobbyModel.setFromLobby(lobby);
             this.listView.setVisible(false);
             this.currentLobbyPanel.setVisible(true);
         });
