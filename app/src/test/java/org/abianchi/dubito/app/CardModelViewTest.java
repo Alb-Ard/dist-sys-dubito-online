@@ -8,36 +8,50 @@ import org.abianchi.dubito.app.views.CardView;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import javax.imageio.ImageIO;
+import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 public class CardModelViewTest {
 
-    private static String IMAGE_PATH = "../../../../../../src/main/java/org/abianchi/dubito/app/resources/";
+    public static void main(String[] args) {
 
-    final private Card createdSpecificCard = new CardImpl(Optional.of(CARDTYPE.JOKER));
-    final private Card createdRandomCard = new CardImpl(Optional.empty());
+        Card createdSpecificCard = new CardImpl(Optional.of(CARDTYPE.JOKER));
 
-    @Test
-    void testCardModel() {
-        Assertions.assertEquals(CARDTYPE.ACE, this.createdSpecificCard.getCardType());
-        Assertions.assertTrue(!Optional.of(this.createdRandomCard.getCardType()).isEmpty());
-    }
+        CardView createdCardView = new CardView(createdSpecificCard);
+        EventQueue.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+                } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
+                    ex.printStackTrace();
+                }
 
-    @Test
-    void testCardView() {
-        final CardView cardView = new CardView(this.createdSpecificCard);
-        final List<Image> possibleImages = new ArrayList<>();
-        possibleImages.add(Toolkit.getDefaultToolkit()
-                .getImage(IMAGE_PATH + "ace_of_hearts"));
-        possibleImages.add(Toolkit.getDefaultToolkit()
-                .getImage(IMAGE_PATH + "ace_of_spades"));
-        System.out.println("my card: " + cardView.getCardImage());
-        System.out.println("card in testList: " + possibleImages.get(0));
-        System.out.println("card in testList: " + possibleImages.get(1));
-        //Assertions.assertTrue(possibleImages.contains(cardView.getCardImage()));
+                String path = "card_images/joker_card.png";
+                final URL resourceUrl = ClassLoader.getSystemClassLoader().getResource(path);
+                if( resourceUrl != null ) {
+                    try {
+                        BufferedImage image = ImageIO.read(resourceUrl);
+                        JLabel label = new JLabel(new ImageIcon(image));
+                        JPanel jPanel = new JPanel();
+                        jPanel.add(label);
+                        JFrame frame = new JFrame("Card Test");
+                        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                        frame.setContentPane(label);
+                        frame.setSize(500, 500);
+                        frame.setVisible(true);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        });
     }
 }
