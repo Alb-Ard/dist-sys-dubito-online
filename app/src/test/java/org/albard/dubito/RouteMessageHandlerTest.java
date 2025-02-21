@@ -25,7 +25,7 @@ public final class RouteMessageHandlerTest {
         }, i -> {
         });
         Assertions.assertTrue(handler.handleMessage(new RouteAddedMessage(PeerId.createNew(),
-                Set.of(PeerId.createNew()), TestUtilities.createMockEndPoint(1))));
+                Set.of(PeerId.createNew()), TestUtilities.createEndPoint(1))));
     }
 
     @Test

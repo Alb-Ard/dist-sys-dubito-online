@@ -1,6 +1,7 @@
 package org.albard.dubito;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.time.Duration;
 import java.util.List;
 
@@ -13,29 +14,37 @@ import org.albard.dubito.messaging.MessengerFactory;
 import org.albard.dubito.network.PeerEndPoint;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
+import org.albard.dubito.userManagement.UserService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public final class LobbyServerBasicTest {
     @Test
-    void testCreate() {
-        Assertions.assertDoesNotThrow(() -> LobbyServer.createBound("127.0.0.1", 9000).close());
+    void testCreate() throws UnknownHostException, IOException {
+        final UserService peerService = new UserService();
+        try (final PeerNetwork network = TestUtilities.createAndLaunchServerNetwork("127.0.0.1", 9000)) {
+            Assertions.assertDoesNotThrow(() -> new LobbyServer(network, peerService));
+        }
     }
 
     @Test
     void testStartsEmpty() throws IOException {
-        try (final LobbyServer server = LobbyServer.createBound("127.0.0.1", 9000)) {
+        final UserService peerService = new UserService();
+        try (final PeerNetwork network = TestUtilities.createAndLaunchServerNetwork("127.0.0.1", 9000)) {
+            final LobbyServer server = new LobbyServer(network, peerService);
             Assertions.assertEquals(0, server.getLobbyCount());
         }
     }
 
     @Test
     void testSendLobbyListToNewPeers() throws IOException, InterruptedException {
-        try (final LobbyServer server = LobbyServer.createBound("127.0.0.1", 9000);
+        final UserService peerService = new UserService();
+        try (final PeerNetwork network = TestUtilities.createAndLaunchServerNetwork("127.0.0.1", 9000);
                 final PeerNetwork client1 = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 0,
                         new MessengerFactory(MessageSerializer.createJson()));
                 final PeerNetwork client2 = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 0,
                         new MessengerFactory(MessageSerializer.createJson()))) {
+            new LobbyServer(network, peerService);
             final List<LobbyListUpdatedMessage> client1UpdateReceived = TestUtilities
                     .addMessageListener(LobbyListUpdatedMessage.class, client1);
             final List<LobbyListUpdatedMessage> client2UpdateReceived = TestUtilities
@@ -56,9 +65,11 @@ public final class LobbyServerBasicTest {
 
     @Test
     void testSendLobbyListOnCreate() throws IOException, InterruptedException {
-        try (final LobbyServer server = LobbyServer.createBound("127.0.0.1", 9000);
+        final UserService peerService = new UserService();
+        try (final PeerNetwork network = TestUtilities.createAndLaunchServerNetwork("127.0.0.1", 9000);
                 final PeerNetwork client = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 0,
                         new MessengerFactory(MessageSerializer.createJson()))) {
+            new LobbyServer(network, peerService);
             final List<LobbyListUpdatedMessage> updateReceived = TestUtilities
                     .addMessageListener(LobbyListUpdatedMessage.class, client);
 
