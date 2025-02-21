@@ -13,6 +13,6 @@ public interface GameMessage {
 
     @JsonIgnore
     default boolean isBroadcast() {
-        return this.getReceipients().isEmpty();
+        return this.getReceipients() == null;
     }
 }

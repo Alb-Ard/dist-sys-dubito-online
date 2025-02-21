@@ -21,6 +21,9 @@ public final class UserServer {
         this.network.addMessageListener(this::handleMessage);
         this.network.setPeerConnectedListener(this::handlePeerConnected);
         this.network.setPeerDisconnectedListener(this::handlePeerDisconnected);
+        this.userService.addPeerAddedListener(u -> this.sendUserListTo(null));
+        this.userService.addPeerUpdatedListener(u -> this.sendUserListTo(null));
+        this.userService.addPeerRemovedListener(u -> this.sendUserListTo(null));
     }
 
     public int getUserCount() {
@@ -33,7 +36,6 @@ public final class UserServer {
 
     private void handlePeerConnected(final PeerId id, final PeerConnection connection) {
         this.userService.addUser(new User(id, id.id()));
-        this.sendUserListTo(Set.of(id));
     }
 
     private void handlePeerDisconnected(final PeerId id) {
@@ -50,7 +52,6 @@ public final class UserServer {
 
     private void updateUser(final PeerId peerId, final String userName) {
         this.userService.updatePeer(peerId, i -> i.changeName(userName));
-        this.sendUserListTo(null);
     }
 
     private void sendUserListTo(final Set<PeerId> receipients) {

@@ -1,9 +1,10 @@
 package org.albard.dubito.userManagement;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -11,8 +12,9 @@ import org.albard.dubito.network.PeerId;
 
 public final class UserService {
     private final Map<PeerId, User> users = new ConcurrentHashMap<>();
-    private final Set<Consumer<User>> addedListeners = new ConcurrentSkipListSet<>();
-    private final Set<Consumer<User>> removedListeners = new ConcurrentSkipListSet<>();
+    private final Set<Consumer<User>> addedListeners = Collections.synchronizedSet(new HashSet<>());
+    private final Set<Consumer<User>> updatedListeners = Collections.synchronizedSet(new HashSet<>());
+    private final Set<Consumer<User>> removedListeners = Collections.synchronizedSet(new HashSet<>());
 
     public int getUserCount() {
         return this.users.size();
@@ -36,7 +38,11 @@ public final class UserService {
     }
 
     public User updatePeer(final PeerId id, Function<User, User> updater) {
-        return this.users.computeIfPresent(id, (k, i) -> updater.apply(i));
+        final User newUser = this.users.computeIfPresent(id, (k, i) -> updater.apply(i));
+        if (newUser != null) {
+            this.updatedListeners.forEach(l -> l.accept(newUser));
+        }
+        return newUser;
     }
 
     public void addPeerAddedListener(final Consumer<User> listener) {
@@ -45,6 +51,14 @@ public final class UserService {
 
     public void removePeerAddedListener(final Consumer<User> listener) {
         this.addedListeners.remove(listener);
+    }
+
+    public void addPeerUpdatedListener(final Consumer<User> listener) {
+        this.updatedListeners.add(listener);
+    }
+
+    public void removePeerUpdatedListener(final Consumer<User> listener) {
+        this.updatedListeners.remove(listener);
     }
 
     public void addPeerRemovedListener(final Consumer<User> listener) {

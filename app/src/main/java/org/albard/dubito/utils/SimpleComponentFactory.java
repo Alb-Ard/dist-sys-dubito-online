@@ -16,4 +16,11 @@ public final class SimpleComponentFactory {
         Arrays.stream(elements).forEach(container::add);
         return container;
     }
+
+    public static JComponent createVerticalPanel(final JComponent... elements) {
+        final JPanel container = new JPanel();
+        container.setLayout(new BoxLayout(container, BoxLayout.Y_AXIS));
+        Arrays.stream(elements).forEach(container::add);
+        return container;
+    }
 }

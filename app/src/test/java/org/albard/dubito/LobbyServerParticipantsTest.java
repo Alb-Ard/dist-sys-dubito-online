@@ -25,13 +25,13 @@ import org.albard.dubito.userManagement.UserService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.EmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 public final class LobbyServerParticipantsTest {
         @ParameterizedTest
         @ValueSource(strings = { "password" })
-        @NullAndEmptySource
+        @EmptySource
         void testJoinLobbyOwner(final String password) throws IOException, InterruptedException {
                 final UserService peerService = new UserService();
                 try (final PeerNetwork network = TestUtilities.createAndLaunchServerNetwork("127.0.0.1", 9000);
@@ -66,7 +66,7 @@ public final class LobbyServerParticipantsTest {
 
         @ParameterizedTest
         @ValueSource(strings = { "password" })
-        @NullAndEmptySource
+        @EmptySource
         void testJoinLobbyJoiner(final String password) throws IOException, InterruptedException {
                 final UserService peerService = new UserService();
                 try (final PeerNetwork network = TestUtilities.createAndLaunchServerNetwork("127.0.0.1", 9000);

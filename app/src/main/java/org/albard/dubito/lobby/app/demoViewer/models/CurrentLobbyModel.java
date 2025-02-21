@@ -1,6 +1,7 @@
 package org.albard.dubito.lobby.app.demoViewer.models;
 
 import java.util.List;
+import java.util.function.Function;
 
 import org.albard.dubito.lobby.models.Lobby;
 import org.albard.dubito.network.PeerId;
@@ -11,17 +12,16 @@ public final class CurrentLobbyModel extends Model {
     public static final String LOBBY_NAME_PROPERTY = "lobbyName";
     public static final String LOBBY_PASSWORD_PROPERTY = "lobbyPassword";
     public static final String LOBBY_OWNER_PROPERTY = "lobbyOwnerId";
-    public static final String PARTICIPANTS_PROPERTY = "participants";
+    public static final String PARTICIPANT_NAMES_PROPERTY = "participantNames";
     public static final String MAX_PARTICIPANT_COUNT_PROPERTY = "maxParticipantCount";
 
     private final PeerId localPeerId;
 
-    private String lobbyName;
-    private String lobbyPassword;
-    private PeerId lobbyOwnerId;
-
-    private List<PeerId> participants;
-    private int maxParticipantCount;
+    private String lobbyName = "";
+    private String lobbyPassword = "";
+    private PeerId lobbyOwnerId = new PeerId("");
+    private List<String> participantNames = List.of();
+    private int maxParticipantCount = 0;
 
     public CurrentLobbyModel(final PeerId localPeerId) {
         this.localPeerId = localPeerId;
@@ -43,8 +43,8 @@ public final class CurrentLobbyModel extends Model {
         return lobbyOwnerId;
     }
 
-    public List<PeerId> getParticipants() {
-        return this.participants;
+    public List<String> getParticipantNames() {
+        return List.copyOf(this.participantNames);
     }
 
     public int getMaxParticipantCount() {
@@ -55,11 +55,11 @@ public final class CurrentLobbyModel extends Model {
         return this.localPeerId.equals(this.lobbyOwnerId);
     }
 
-    public void setFromLobby(final Lobby currentLobby) {
+    public void setFromLobby(final Lobby currentLobby, final Function<PeerId, String> participantNameMapper) {
         this.setLobbyName(currentLobby.getInfo().name());
         this.setLobbyPassword(currentLobby.getInfo().password());
         this.setLobbyOwnerId(currentLobby.getOwner());
-        this.setParticipants(List.copyOf(currentLobby.getParticipants()));
+        this.setParticipantNames(currentLobby.getParticipants().stream().map(participantNameMapper).toList());
         this.setMaxParticipantCount(currentLobby.getMaxParticipantCount());
     }
 
@@ -81,10 +81,10 @@ public final class CurrentLobbyModel extends Model {
         this.firePropertyChange(LOBBY_OWNER_PROPERTY, oldOwner, lobbyOwnerId);
     }
 
-    public void setParticipants(final List<PeerId> participants) {
-        final List<PeerId> oldParticipants = this.participants;
-        this.participants = List.copyOf(participants);
-        this.firePropertyChange(PARTICIPANTS_PROPERTY, oldParticipants, this.participants, true);
+    public void setParticipantNames(final List<String> participants) {
+        final List<String> oldParticipants = this.participantNames;
+        this.participantNames = List.copyOf(participants);
+        this.firePropertyChange(PARTICIPANT_NAMES_PROPERTY, oldParticipants, this.participantNames, true);
     }
 
     public void setMaxParticipantCount(final int maxParticipantCount) {
