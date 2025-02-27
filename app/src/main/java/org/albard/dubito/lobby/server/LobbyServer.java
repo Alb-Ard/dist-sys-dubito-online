@@ -36,6 +36,7 @@ public final class LobbyServer {
         this.peerService = peerService;
         this.network.addMessageListener(this::handleMessage);
         this.peerService.addPeerAddedListener(this::handleNewPeer);
+        this.peerService.addPeerRemovedListener(this::handlePeerRemoved);
     }
 
     public int getLobbyCount() {
@@ -48,6 +49,13 @@ public final class LobbyServer {
 
     private void handleNewPeer(final User peerInfo) {
         this.sendLobbyListTo(Set.of(peerInfo.peerId()));
+    }
+
+    private void handlePeerRemoved(final User peerInfo) {
+        this.getLobbies().stream()
+                .filter(x -> x.getOwner().equals(peerInfo.peerId()) || x.getParticipants().contains(peerInfo.peerId()))
+                .findFirst()
+                .ifPresent(x -> this.handleMessage(new LeaveLobbyMessage(peerInfo.peerId(), null, x.getId())));
     }
 
     private boolean handleMessage(final GameMessage message) {

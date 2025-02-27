@@ -20,9 +20,12 @@ public final class UserClient {
     private final Locked<Map<PeerId, User>> users = Locked.of(new HashMap<>());
     private final Set<Consumer<Set<User>>> userListChangedListeners = Collections.synchronizedSet(new HashSet<>());
 
-    public UserClient(PeerNetwork network) {
+    public UserClient(final PeerNetwork network) {
         this.network = network;
         this.network.addMessageListener(this::handleMessage);
+        // Add the default current user, while waiting for the server to send the users
+        // list
+        this.updateUserList(Set.of(new User(this.network.getLocalPeerId(), this.network.getLocalPeerId().id())));
     }
 
     public void requestSetName(final String newName) {
