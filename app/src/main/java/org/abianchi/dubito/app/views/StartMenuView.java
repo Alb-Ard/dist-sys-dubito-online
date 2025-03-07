@@ -15,17 +15,15 @@ public class StartMenuView {
      * leaderboards, settings and exit options
      */
     public StartMenuView() {
-            final CardLayout cardlayout = new CardLayout();
+            final BorderLayout borderLayout = new BorderLayout();
             JFrame frame = new JFrame("Dubito Online");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             final Container contentPane = frame.getContentPane();
-            contentPane.setLayout(cardlayout);
-            contentPane.setPreferredSize(new Dimension(600, 400));
+            contentPane.setLayout(borderLayout);
+            contentPane.setPreferredSize(new Dimension(700, 500));
             final StartPane startPane = new StartPane();
-            final LobbyPane lobbyPane = new LobbyPane();
-            contentPane.add(startPane);
-            contentPane.add(lobbyPane);
-            frame.add(new StartPane());
+            contentPane.add(startPane, BorderLayout.CENTER);
+
             frame.pack();
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
