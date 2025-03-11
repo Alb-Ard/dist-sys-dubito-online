@@ -1,7 +1,7 @@
 package org.albard.dubito.lobby.app.demoViewer.models;
 
 import java.util.List;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 import org.albard.dubito.lobby.models.Lobby;
 import org.albard.dubito.network.PeerId;
@@ -55,11 +55,12 @@ public final class CurrentLobbyModel extends Model {
         return this.localPeerId.equals(this.lobbyOwnerId);
     }
 
-    public void setFromLobby(final Lobby currentLobby, final Function<PeerId, String> participantNameMapper) {
+    public void setFromLobby(final Lobby currentLobby, final BiFunction<Lobby, PeerId, String> participantNameMapper) {
         this.setLobbyName(currentLobby.getInfo().name());
         this.setLobbyPassword(currentLobby.getInfo().password());
         this.setLobbyOwnerId(currentLobby.getOwner());
-        this.setParticipantNames(currentLobby.getParticipants().stream().map(participantNameMapper).toList());
+        this.setParticipantNames(currentLobby.getParticipants().stream()
+                .map(x -> participantNameMapper.apply(currentLobby, x)).toList());
         this.setMaxParticipantCount(currentLobby.getMaxParticipantCount());
     }
 

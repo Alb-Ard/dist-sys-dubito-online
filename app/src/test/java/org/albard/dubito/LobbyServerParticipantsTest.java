@@ -21,7 +21,7 @@ import org.albard.dubito.messaging.messages.ErrorGameMessageBase;
 import org.albard.dubito.network.PeerEndPoint;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
-import org.albard.dubito.userManagement.UserService;
+import org.albard.dubito.userManagement.server.UserService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

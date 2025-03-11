@@ -10,6 +10,7 @@ import org.albard.dubito.lobby.app.demoViewer.models.CurrentUserModel;
 import org.albard.dubito.lobby.app.demoViewer.models.JoinProtectedLobbyModel;
 import org.albard.dubito.lobby.app.demoViewer.models.LobbyStateModel;
 import org.albard.dubito.lobby.client.LobbyClient;
+import org.albard.dubito.lobby.models.Lobby;
 import org.albard.dubito.lobby.models.LobbyDisplay;
 import org.albard.dubito.lobby.models.LobbyId;
 import org.albard.dubito.lobby.models.LobbyInfo;
@@ -48,8 +49,12 @@ public final class LobbyController implements LobbyListController, LobbyManageme
         });
     }
 
-    private String getPeerUserName(final PeerId peerId) {
-        return Optional.ofNullable(this.userClient.getUser(peerId)).map(user -> user.name()).orElse(peerId.id());
+    private String getPeerUserName(final Lobby lobby, final PeerId peerId) {
+        return Optional.ofNullable(this.userClient.getUser(peerId))
+                .map(user -> new StringBuilder().append(user.name())
+                        .append(userClient.getLocalUser().peerId().equals(peerId) ? " (you)" : "")
+                        .append(lobby.getOwner().equals(peerId) ? " (owner)" : "").toString())
+                .orElse(peerId.id());
     }
 
     @Override

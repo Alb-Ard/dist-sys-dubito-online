@@ -7,7 +7,6 @@ import org.albard.dubito.messaging.messages.GameMessage;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
 import org.albard.dubito.userManagement.User;
-import org.albard.dubito.userManagement.UserService;
 import org.albard.dubito.userManagement.messages.UserListUpdatedMessage;
 import org.albard.dubito.userManagement.messages.UpdateUserMessage;
 

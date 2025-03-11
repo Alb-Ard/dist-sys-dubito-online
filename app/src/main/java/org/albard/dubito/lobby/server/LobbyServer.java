@@ -24,7 +24,7 @@ import org.albard.dubito.messaging.messages.GameMessage;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
 import org.albard.dubito.userManagement.User;
-import org.albard.dubito.userManagement.UserService;
+import org.albard.dubito.userManagement.server.UserService;
 
 public final class LobbyServer {
     private final LobbyService service = new LobbyService();
@@ -52,10 +52,8 @@ public final class LobbyServer {
     }
 
     private void handlePeerRemoved(final User peerInfo) {
-        this.getLobbies().stream()
-                .filter(x -> x.getOwner().equals(peerInfo.peerId()) || x.getParticipants().contains(peerInfo.peerId()))
-                .findFirst()
-                .ifPresent(x -> this.handleMessage(new LeaveLobbyMessage(peerInfo.peerId(), null, x.getId())));
+        this.getLobbies().stream().filter(x -> x.getParticipants().contains(peerInfo.peerId())).findFirst()
+                .ifPresent(x -> this.leaveLobby(x.getId(), peerInfo.peerId()));
     }
 
     private boolean handleMessage(final GameMessage message) {

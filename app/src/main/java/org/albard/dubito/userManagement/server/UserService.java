@@ -1,4 +1,4 @@
-package org.albard.dubito.userManagement;
+package org.albard.dubito.userManagement.server;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -9,6 +9,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.albard.dubito.network.PeerId;
+import org.albard.dubito.userManagement.User;
 
 public final class UserService {
     private final Map<PeerId, User> users = new ConcurrentHashMap<>();

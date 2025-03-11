@@ -7,8 +7,8 @@ import org.albard.dubito.messaging.MessageSerializer;
 import org.albard.dubito.messaging.MessengerFactory;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
-import org.albard.dubito.userManagement.UserService;
 import org.albard.dubito.userManagement.server.UserServer;
+import org.albard.dubito.userManagement.server.UserService;
 
 public class LobbyServerHost {
     public static void main(final String[] args) {

@@ -8,10 +8,10 @@ import java.util.List;
 import org.albard.dubito.network.PeerEndPoint;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
-import org.albard.dubito.userManagement.UserService;
 import org.albard.dubito.userManagement.messages.UpdateUserMessage;
 import org.albard.dubito.userManagement.messages.UserListUpdatedMessage;
 import org.albard.dubito.userManagement.server.UserServer;
+import org.albard.dubito.userManagement.server.UserService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

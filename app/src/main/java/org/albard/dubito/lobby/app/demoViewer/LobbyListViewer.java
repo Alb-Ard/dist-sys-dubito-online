@@ -2,6 +2,8 @@ package org.albard.dubito.lobby.app.demoViewer;
 
 import java.util.Optional;
 
+import javax.swing.WindowConstants;
+
 import org.albard.dubito.lobby.app.demoViewer.models.ConnectionRequestModel;
 import org.albard.dubito.lobby.app.demoViewer.views.ConnectionWindow;
 import org.albard.dubito.lobby.app.demoViewer.views.MainWindow;
@@ -27,6 +29,7 @@ public final class LobbyListViewer {
     private LobbyListViewer() {
         this.connectionWindow = new ConnectionWindow(this.connectionRequestModel);
         this.connectionWindow.addConnectionRequestListener(this::tryConnect);
+        this.connectionWindow.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             this.closeNetwork();
@@ -51,6 +54,7 @@ public final class LobbyListViewer {
                 LobbyClient lobbyClient = new LobbyClient(network);
                 UserClient userClient = new UserClient(network);
                 final MainWindow mainWindow = new MainWindow(lobbyClient, userClient);
+                mainWindow.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
                 mainWindow.setVisible(true);
                 this.mainWindow = Optional.of(mainWindow);
             });
