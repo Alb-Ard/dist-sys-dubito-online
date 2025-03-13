@@ -1,4 +1,4 @@
-package org.albard.dubito.lobby.app.demoViewer.controllers;
+package org.albard.dubito.app.game.controllers;
 
 public interface CurentUserController {
     void setName(final String newName);

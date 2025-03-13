@@ -1,4 +1,4 @@
-package org.albard.dubito.lobby.app.demoViewer.views;
+package org.albard.dubito.app.game.views;
 
 import java.awt.BorderLayout;
 import java.util.Collections;
@@ -15,8 +15,8 @@ import javax.swing.JTextField;
 import javax.swing.event.ListDataEvent;
 import javax.swing.event.ListDataListener;
 
-import org.albard.dubito.lobby.app.demoViewer.models.CurrentUserModel;
-import org.albard.dubito.lobby.app.demoViewer.models.LobbyStateModel;
+import org.albard.dubito.app.game.models.CurrentUserModel;
+import org.albard.dubito.app.game.models.AppStateModel;
 import org.albard.dubito.lobby.models.LobbyDisplay;
 import org.albard.dubito.utils.BoundComponentFactory;
 import org.albard.dubito.utils.SimpleComponentFactory;
@@ -32,11 +32,11 @@ public final class LobbyListView extends JPanel {
 
     private final DefaultListModel<LobbyDisplay> model;
 
-    public LobbyListView(final DefaultListModel<LobbyDisplay> listModel, final LobbyStateModel stateModel,
+    public LobbyListView(final DefaultListModel<LobbyDisplay> listModel, final AppStateModel stateModel,
             final CurrentUserModel userModel) {
         this.setLayout(new BorderLayout(4, 4));
         this.model = listModel;
-        final BeanAdapter<LobbyStateModel> stateModelAdapter = new BeanAdapter<>(stateModel, true);
+        final BeanAdapter<AppStateModel> stateModelAdapter = new BeanAdapter<>(stateModel, true);
         final BeanAdapter<CurrentUserModel> userModelAdapter = new BeanAdapter<>(userModel, true);
         final JButton createLobbyButton = new JButton("Create Lobby");
         final JPanel lobbyList = new JPanel();
@@ -77,8 +77,8 @@ public final class LobbyListView extends JPanel {
                 }
             }
         });
-        stateModelAdapter.addBeanPropertyChangeListener(LobbyStateModel.STATE_PROPERTY,
-                e -> this.setVisible(e.getNewValue() == LobbyStateModel.State.IN_LIST));
+        stateModelAdapter.addBeanPropertyChangeListener(AppStateModel.STATE_PROPERTY,
+                e -> this.setVisible(e.getNewValue() == AppStateModel.State.IN_LOBBY_LIST));
         createLobbyButton.addActionListener(e -> this.createLobbyListeners.forEach(l -> l.run()));
         saveUserButton.addActionListener(e -> this.saveUserNameListeners.forEach(l -> l.accept(userModel.getName())));
     }

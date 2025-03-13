@@ -1,4 +1,4 @@
-package org.albard.dubito.lobby.app.demoViewer.views;
+package org.albard.dubito.app.game.views;
 
 import java.util.Collections;
 import java.util.HashSet;

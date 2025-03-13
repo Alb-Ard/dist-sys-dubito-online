@@ -1,4 +1,4 @@
-package org.albard.dubito.lobby.app.demoViewer.views;
+package org.albard.dubito.app.game.views;
 
 import java.awt.BorderLayout;
 import java.util.Collections;
@@ -15,8 +15,8 @@ import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 
-import org.albard.dubito.lobby.app.demoViewer.models.CurrentLobbyModel;
-import org.albard.dubito.lobby.app.demoViewer.models.LobbyStateModel;
+import org.albard.dubito.app.game.models.CurrentLobbyModel;
+import org.albard.dubito.app.game.models.AppStateModel;
 import org.albard.dubito.lobby.models.LobbyInfo;
 import org.albard.dubito.utils.BoundComponentFactory;
 import org.albard.dubito.utils.SimpleComponentFactory;
@@ -27,10 +27,10 @@ public final class CurrentLobbyView extends JPanel {
     private final Set<Runnable> exitLobbyListeners = Collections.synchronizedSet(new HashSet<>());
     private final Set<Consumer<LobbyInfo>> saveLobbyInfoListeners = Collections.synchronizedSet(new HashSet<>());
 
-    public CurrentLobbyView(final CurrentLobbyModel model, final LobbyStateModel stateModel) {
+    public CurrentLobbyView(final CurrentLobbyModel model, final AppStateModel stateModel) {
         this.setLayout(new BorderLayout(4, 4));
         final BeanAdapter<CurrentLobbyModel> modelAdapter = new BeanAdapter<>(model, true);
-        final BeanAdapter<LobbyStateModel> stateModelAdapter = new BeanAdapter<>(stateModel, true);
+        final BeanAdapter<AppStateModel> stateModelAdapter = new BeanAdapter<>(stateModel, true);
         final JButton backButton = new JButton("< Back");
         final JTextField editableLobbyNameField = BoundComponentFactory.createStringTextField(modelAdapter,
                 CurrentLobbyModel.LOBBY_NAME_PROPERTY);
@@ -51,8 +51,8 @@ public final class CurrentLobbyView extends JPanel {
             adminPanel.setVisible(model.isLocalPeerOwner());
             readOnlyLobbyNameLabel.setVisible(!model.isLocalPeerOwner());
         });
-        stateModelAdapter.addBeanPropertyChangeListener(LobbyStateModel.STATE_PROPERTY,
-                e -> this.setVisible(e.getNewValue() == LobbyStateModel.State.IN_LOBBY));
+        stateModelAdapter.addBeanPropertyChangeListener(AppStateModel.STATE_PROPERTY,
+                e -> this.setVisible(e.getNewValue() == AppStateModel.State.IN_LOBBY));
         saveInfoButton.addActionListener(e -> {
             final LobbyInfo newInfo = new LobbyInfo(model.getLobbyName(), model.getLobbyPassword());
             this.saveLobbyInfoListeners.forEach(l -> l.accept(newInfo));

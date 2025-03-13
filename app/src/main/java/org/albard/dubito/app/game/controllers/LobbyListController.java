@@ -1,4 +1,4 @@
-package org.albard.dubito.lobby.app.demoViewer.controllers;
+package org.albard.dubito.app.game.controllers;
 
 import org.albard.dubito.lobby.models.LobbyDisplay;
 import org.albard.dubito.lobby.models.LobbyId;

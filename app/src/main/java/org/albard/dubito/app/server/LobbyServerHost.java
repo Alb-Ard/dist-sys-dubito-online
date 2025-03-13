@@ -1,4 +1,4 @@
-package org.albard.dubito.lobby.app.server;
+package org.albard.dubito.app.server;
 
 import java.util.concurrent.Semaphore;
 

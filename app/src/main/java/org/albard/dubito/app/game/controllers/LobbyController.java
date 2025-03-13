@@ -1,14 +1,14 @@
-package org.albard.dubito.lobby.app.demoViewer.controllers;
+package org.albard.dubito.app.game.controllers;
 
 import java.util.Optional;
 
 import javax.swing.DefaultListModel;
 import javax.swing.SwingUtilities;
 
-import org.albard.dubito.lobby.app.demoViewer.models.CurrentLobbyModel;
-import org.albard.dubito.lobby.app.demoViewer.models.CurrentUserModel;
-import org.albard.dubito.lobby.app.demoViewer.models.JoinProtectedLobbyModel;
-import org.albard.dubito.lobby.app.demoViewer.models.LobbyStateModel;
+import org.albard.dubito.app.game.models.CurrentLobbyModel;
+import org.albard.dubito.app.game.models.CurrentUserModel;
+import org.albard.dubito.app.game.models.JoinProtectedLobbyModel;
+import org.albard.dubito.app.game.models.AppStateModel;
 import org.albard.dubito.lobby.client.LobbyClient;
 import org.albard.dubito.lobby.models.Lobby;
 import org.albard.dubito.lobby.models.LobbyDisplay;
@@ -19,13 +19,13 @@ import org.albard.dubito.userManagement.client.UserClient;
 
 public final class LobbyController implements LobbyListController, LobbyManagementController, CurentUserController {
     private final LobbyClient lobbyClient;
-    private final LobbyStateModel stateModel;
+    private final AppStateModel stateModel;
     private final JoinProtectedLobbyModel joinLobbyModel;
     private final UserClient userClient;
 
     public LobbyController(final LobbyClient lobbyClient, final UserClient userClient,
             final CurrentLobbyModel currentLobbyModel, final DefaultListModel<LobbyDisplay> lobbyListModel,
-            final JoinProtectedLobbyModel joinLobbyModel, final LobbyStateModel stateModel,
+            final JoinProtectedLobbyModel joinLobbyModel, final AppStateModel stateModel,
             final CurrentUserModel userModel) {
         this.lobbyClient = lobbyClient;
         this.userClient = userClient;
@@ -38,9 +38,9 @@ public final class LobbyController implements LobbyListController, LobbyManageme
         this.lobbyClient
                 .addCurrentLobbyUpdatedListener(l -> SwingUtilities.invokeLater(() -> l.ifPresentOrElse(lobby -> {
                     currentLobbyModel.setFromLobby(lobby, this::getPeerUserName);
-                    stateModel.setState(LobbyStateModel.State.IN_LOBBY);
+                    stateModel.setState(AppStateModel.State.IN_LOBBY);
                 }, () -> {
-                    stateModel.setState(LobbyStateModel.State.IN_LIST);
+                    stateModel.setState(AppStateModel.State.IN_LOBBY_LIST);
                 })));
         this.userClient.addUserListChangedListener(u -> {
             this.lobbyClient.getCurrentLobby().ifPresent(
@@ -71,7 +71,7 @@ public final class LobbyController implements LobbyListController, LobbyManageme
     public void joinLobby(final LobbyDisplay lobby) {
         if (lobby.isPasswordProtected()) {
             this.joinLobbyModel.setLobbyId(lobby.id());
-            this.stateModel.setState(LobbyStateModel.State.REQUESTING_PASSWORD);
+            this.stateModel.setState(AppStateModel.State.REQUESTING_LOBBY_PASSWORD);
         } else {
             this.lobbyClient.requestJoinLobby(lobby.id(), "");
         }
@@ -89,7 +89,7 @@ public final class LobbyController implements LobbyListController, LobbyManageme
 
     @Override
     public void cancelJoinProtectedLobby() {
-        this.stateModel.setState(LobbyStateModel.State.IN_LIST);
+        this.stateModel.setState(AppStateModel.State.IN_LOBBY_LIST);
     }
 
     @Override

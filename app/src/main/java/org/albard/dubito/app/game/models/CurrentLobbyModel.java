@@ -1,4 +1,4 @@
-package org.albard.dubito.lobby.app.demoViewer.models;
+package org.albard.dubito.app.game.models;
 
 import java.util.List;
 import java.util.function.BiFunction;

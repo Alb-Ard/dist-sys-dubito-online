@@ -1,15 +1,15 @@
-package org.albard.dubito.lobby.app.demoViewer.models;
+package org.albard.dubito.app.game.models;
 
 import com.jgoodies.binding.beans.Model;
 
-public final class LobbyStateModel extends Model {
+public final class AppStateModel extends Model {
     public enum State {
-        IN_LIST, REQUESTING_PASSWORD, IN_LOBBY
+        IN_MAIN_MENU, REQUESTING_LOBBY_SERVER, IN_LOBBY_LIST, REQUESTING_LOBBY_PASSWORD, IN_LOBBY
     }
 
     public static final String STATE_PROPERTY = "state";
 
-    private State state;
+    private State state = State.IN_MAIN_MENU;
 
     public State getState() {
         return this.state;
