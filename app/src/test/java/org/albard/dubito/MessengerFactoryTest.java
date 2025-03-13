@@ -16,10 +16,10 @@ import org.junit.jupiter.api.Test;
 public final class MessengerFactoryTest {
     @Test
     void testCreateSender() throws IOException {
-        try (final ServerSocket server = TestUtilities.createAndLaunchServer("127.0.0.1", 9000);
+        try (final ServerSocket server = TestUtilities.createAndLaunchSocketServer("127.0.0.1", 9000);
                 final Socket socket = new Socket("127.0.0.1", 9000)) {
-            final MessengerFactory factory = new MessengerFactory(TestUtilities
-                    .createMockMessageSerializer(new PingMessage(PeerId.createNew(), Set.of()), new byte[0]));
+            final MessengerFactory factory = new MessengerFactory(
+                    TestUtilities.createMessageSerializer(new PingMessage(PeerId.createNew(), Set.of()), new byte[0]));
             final MessageSender sender = factory.createSender(socket);
             Assertions.assertNotNull(sender);
         }
@@ -27,10 +27,10 @@ public final class MessengerFactoryTest {
 
     @Test
     void testCreateReceiver() throws IOException {
-        try (final ServerSocket server = TestUtilities.createAndLaunchServer("127.0.0.1", 9000);
+        try (final ServerSocket server = TestUtilities.createAndLaunchSocketServer("127.0.0.1", 9000);
                 final Socket socket = new Socket("127.0.0.1", 9000)) {
-            final MessengerFactory factory = new MessengerFactory(TestUtilities
-                    .createMockMessageSerializer(new PingMessage(PeerId.createNew(), Set.of()), new byte[0]));
+            final MessengerFactory factory = new MessengerFactory(
+                    TestUtilities.createMessageSerializer(new PingMessage(PeerId.createNew(), Set.of()), new byte[0]));
             final MessageReceiver receiver = factory.createReceiver(socket);
             Assertions.assertNotNull(receiver);
         }

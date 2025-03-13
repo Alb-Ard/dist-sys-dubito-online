@@ -1,11 +1,8 @@
 package org.albard.dubito.lobby.server;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
-import org.albard.dubito.connection.PeerConnection;
 import org.albard.dubito.lobby.messages.CreateLobbyFailedMessage;
 import org.albard.dubito.lobby.messages.CreateLobbyMessage;
 import org.albard.dubito.lobby.messages.JoinLobbyFailedMessage;
@@ -23,25 +20,23 @@ import org.albard.dubito.lobby.models.Lobby;
 import org.albard.dubito.lobby.models.LobbyDisplay;
 import org.albard.dubito.lobby.models.LobbyId;
 import org.albard.dubito.lobby.models.LobbyInfo;
-import org.albard.dubito.messaging.MessageSerializer;
-import org.albard.dubito.messaging.MessengerFactory;
 import org.albard.dubito.messaging.messages.GameMessage;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
+import org.albard.dubito.userManagement.User;
+import org.albard.dubito.userManagement.server.UserService;
 
-public class LobbyServer implements Closeable {
+public final class LobbyServer {
     private final LobbyService service = new LobbyService();
+    private final UserService peerService;
     private final PeerNetwork network;
 
-    private LobbyServer(final PeerNetwork network) {
+    public LobbyServer(final PeerNetwork network, final UserService peerService) {
         this.network = network;
+        this.peerService = peerService;
         this.network.addMessageListener(this::handleMessage);
-        this.network.setPeerConnectedListener(this::handleNewPeer);
-    }
-
-    public static LobbyServer createBound(final String bindAddress, final int bindPort) throws IOException {
-        return new LobbyServer(PeerNetwork.createBound(PeerId.createNew(), bindAddress, bindPort,
-                new MessengerFactory(MessageSerializer.createJson())));
+        this.peerService.addPeerAddedListener(this::handleNewPeer);
+        this.peerService.addPeerRemovedListener(this::handlePeerRemoved);
     }
 
     public int getLobbyCount() {
@@ -52,13 +47,13 @@ public class LobbyServer implements Closeable {
         return List.copyOf(this.service.getLobbies().values());
     }
 
-    @Override
-    public void close() throws IOException {
-        this.network.close();
+    private void handleNewPeer(final User peerInfo) {
+        this.sendLobbyListTo(Set.of(peerInfo.peerId()));
     }
 
-    private void handleNewPeer(final PeerId id, final PeerConnection connection) {
-        this.sendLobbyListTo(Set.of(id));
+    private void handlePeerRemoved(final User peerInfo) {
+        this.getLobbies().stream().filter(x -> x.getParticipants().contains(peerInfo.peerId())).findFirst()
+                .ifPresent(x -> this.leaveLobby(x.getId(), peerInfo.peerId()));
     }
 
     private boolean handleMessage(final GameMessage message) {

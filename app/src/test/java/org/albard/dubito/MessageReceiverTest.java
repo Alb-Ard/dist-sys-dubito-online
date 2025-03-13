@@ -13,17 +13,16 @@ import org.junit.jupiter.api.Test;
 public final class MessageReceiverTest {
     @Test
     void testCreate() {
-        Assertions.assertDoesNotThrow(
-                () -> MessageReceiver.createFromStream(new ByteArrayInputStream(new byte[0]), TestUtilities
-                        .createMockMessageSerializer(TestUtilities.createMockMessage(), new byte[0])::deserialize));
+        Assertions.assertDoesNotThrow(() -> MessageReceiver.createFromStream(new ByteArrayInputStream(new byte[0]),
+                TestUtilities.createMessageSerializer(TestUtilities.createMessage(), new byte[0])::deserialize));
     }
 
     @Test
     void testReceive() throws IOException, InterruptedException {
-        final GameMessage expectedMessage = TestUtilities.createMockMessage();
+        final GameMessage expectedMessage = TestUtilities.createMessage();
         try (final InputStream inputStream = new ByteArrayInputStream(new byte[0])) {
             final MessageReceiver receiver = MessageReceiver.createFromStream(inputStream,
-                    TestUtilities.createMockMessageSerializer(expectedMessage, "Test".getBytes())::deserialize);
+                    TestUtilities.createMessageSerializer(expectedMessage, "Test".getBytes())::deserialize);
             receiver.addMessageListener(m -> {
                 Assertions.assertEquals(expectedMessage, m);
                 return true;

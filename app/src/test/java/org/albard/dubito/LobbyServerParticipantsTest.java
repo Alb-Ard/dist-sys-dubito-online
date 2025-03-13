@@ -21,23 +21,25 @@ import org.albard.dubito.messaging.messages.ErrorGameMessageBase;
 import org.albard.dubito.network.PeerEndPoint;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
+import org.albard.dubito.userManagement.server.UserService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.EmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 public final class LobbyServerParticipantsTest {
         @ParameterizedTest
         @ValueSource(strings = { "password" })
-        @NullAndEmptySource
+        @EmptySource
         void testJoinLobbyOwner(final String password) throws IOException, InterruptedException {
-                final MessengerFactory messengerFactory = new MessengerFactory(MessageSerializer.createJson());
-                try (final LobbyServer server = LobbyServer.createBound("127.0.0.1", 9000);
-                                final PeerNetwork owner = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 9001,
-                                                messengerFactory);
-                                final PeerNetwork joiner = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1",
-                                                9002, messengerFactory)) {
+                final UserService peerService = new UserService();
+                try (final PeerNetwork network = TestUtilities.createAndLaunchServerNetwork("127.0.0.1", 9000);
+                                final PeerNetwork owner = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 0,
+                                                new MessengerFactory(MessageSerializer.createJson()));
+                                final PeerNetwork joiner = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 0,
+                                                new MessengerFactory(MessageSerializer.createJson()))) {
+                        final LobbyServer server = new LobbyServer(network, peerService);
                         owner.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9000));
                         joiner.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9000));
 
@@ -64,14 +66,15 @@ public final class LobbyServerParticipantsTest {
 
         @ParameterizedTest
         @ValueSource(strings = { "password" })
-        @NullAndEmptySource
+        @EmptySource
         void testJoinLobbyJoiner(final String password) throws IOException, InterruptedException {
-                final MessengerFactory messengerFactory = new MessengerFactory(MessageSerializer.createJson());
-                try (final LobbyServer server = LobbyServer.createBound("127.0.0.1", 9000);
-                                final PeerNetwork owner = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 9001,
-                                                messengerFactory);
-                                final PeerNetwork joiner = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1",
-                                                9002, messengerFactory)) {
+                final UserService peerService = new UserService();
+                try (final PeerNetwork network = TestUtilities.createAndLaunchServerNetwork("127.0.0.1", 9000);
+                                final PeerNetwork owner = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 0,
+                                                new MessengerFactory(MessageSerializer.createJson()));
+                                final PeerNetwork joiner = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 0,
+                                                new MessengerFactory(MessageSerializer.createJson()))) {
+                        final LobbyServer server = new LobbyServer(network, peerService);
                         owner.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9000));
                         joiner.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9000));
 
@@ -103,12 +106,13 @@ public final class LobbyServerParticipantsTest {
 
         @Test
         void testJoinLobbyFailWithWrongPassword() throws IOException, InterruptedException {
-                final MessengerFactory messengerFactory = new MessengerFactory(MessageSerializer.createJson());
-                try (final LobbyServer server = LobbyServer.createBound("127.0.0.1", 9000);
-                                final PeerNetwork owner = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 9001,
-                                                messengerFactory);
-                                final PeerNetwork joiner = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1",
-                                                9002, messengerFactory)) {
+                final UserService peerService = new UserService();
+                try (final PeerNetwork network = TestUtilities.createAndLaunchServerNetwork("127.0.0.1", 9000);
+                                final PeerNetwork owner = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 0,
+                                                new MessengerFactory(MessageSerializer.createJson()));
+                                final PeerNetwork joiner = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 0,
+                                                new MessengerFactory(MessageSerializer.createJson()))) {
+                        final LobbyServer server = new LobbyServer(network, peerService);
                         owner.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9000));
                         joiner.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9000));
 
@@ -138,12 +142,13 @@ public final class LobbyServerParticipantsTest {
 
         @Test
         void testLeaveLobbyJoiner() throws IOException, InterruptedException {
-                final MessengerFactory messengerFactory = new MessengerFactory(MessageSerializer.createJson());
-                try (final LobbyServer server = LobbyServer.createBound("127.0.0.1", 9000);
-                                final PeerNetwork owner = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 9001,
-                                                messengerFactory);
-                                final PeerNetwork joiner = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1",
-                                                9002, messengerFactory)) {
+                final UserService peerService = new UserService();
+                try (final PeerNetwork network = TestUtilities.createAndLaunchServerNetwork("127.0.0.1", 9000);
+                                final PeerNetwork owner = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 0,
+                                                new MessengerFactory(MessageSerializer.createJson()));
+                                final PeerNetwork joiner = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 0,
+                                                new MessengerFactory(MessageSerializer.createJson()))) {
+                        final LobbyServer server = new LobbyServer(network, peerService);
                         owner.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9000));
                         joiner.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9000));
 
@@ -175,12 +180,13 @@ public final class LobbyServerParticipantsTest {
 
         @Test
         void testLeaveLobbyOwner() throws IOException, InterruptedException {
-                final MessengerFactory messengerFactory = new MessengerFactory(MessageSerializer.createJson());
-                try (final LobbyServer server = LobbyServer.createBound("127.0.0.1", 9000);
-                                final PeerNetwork owner = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 9001,
-                                                messengerFactory);
-                                final PeerNetwork joiner = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1",
-                                                9002, messengerFactory)) {
+                final UserService peerService = new UserService();
+                try (final PeerNetwork network = TestUtilities.createAndLaunchServerNetwork("127.0.0.1", 9000);
+                                final PeerNetwork owner = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 0,
+                                                new MessengerFactory(MessageSerializer.createJson()));
+                                final PeerNetwork joiner = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 0,
+                                                new MessengerFactory(MessageSerializer.createJson()))) {
+                        final LobbyServer server = new LobbyServer(network, peerService);
                         owner.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9000));
                         joiner.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9000));
 

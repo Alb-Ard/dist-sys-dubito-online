@@ -36,7 +36,7 @@ public final class MessageHandlerChainTest {
     @Test
     void testExecuteChainSuccess() {
         final List<Object> messages = new ArrayList<>();
-        final GameMessage message = TestUtilities.createMockMessage();
+        final GameMessage message = TestUtilities.createMessage();
         final MessageHandlerChain chain = new MessageHandlerChain(
                 List.of(new MockHandler(), m -> messages.add(m), new MockHandler(), m -> messages.add(m)));
         Assertions.assertTrue(chain.handleMessage(message));
@@ -48,6 +48,6 @@ public final class MessageHandlerChainTest {
     void testExecuteChainFailure() {
         final MessageHandlerChain chain = new MessageHandlerChain(
                 List.of(new MockHandler(), new MockHandler(), new MockHandler()));
-        Assertions.assertFalse(chain.handleMessage(TestUtilities.createMockMessage()));
+        Assertions.assertFalse(chain.handleMessage(TestUtilities.createMessage()));
     }
 }

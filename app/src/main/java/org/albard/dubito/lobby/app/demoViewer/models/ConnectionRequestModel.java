@@ -31,6 +31,6 @@ public final class ConnectionRequestModel extends Model {
     public void setPort(final int port) {
         final int oldPort = this.port;
         this.port = port;
-        this.firePropertyChange(ADDRESS_PROPERTY, oldPort, port);
+        this.firePropertyChange(PORT_PROPERTY, oldPort, port);
     }
 }

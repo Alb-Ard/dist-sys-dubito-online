@@ -1,7 +1,5 @@
 package org.albard.dubito.lobby.client;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -22,45 +20,12 @@ import org.albard.dubito.lobby.models.Lobby;
 import org.albard.dubito.lobby.models.LobbyDisplay;
 import org.albard.dubito.lobby.models.LobbyId;
 import org.albard.dubito.lobby.models.LobbyInfo;
-import org.albard.dubito.messaging.MessageSerializer;
-import org.albard.dubito.messaging.MessengerFactory;
 import org.albard.dubito.messaging.messages.GameMessage;
-import org.albard.dubito.network.PeerEndPoint;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
 import org.albard.dubito.utils.Locked;
 
-public final class LobbyClient implements Closeable {
-    private static final class CurrentLobby {
-        private final Optional<LobbyId> id;
-        private final Optional<Lobby> lobby;
-
-        private CurrentLobby(final Optional<LobbyId> id, final Optional<Lobby> lobby) {
-            this.id = id;
-            this.lobby = lobby;
-        }
-
-        public CurrentLobby() {
-            this(Optional.empty(), Optional.empty());
-        }
-
-        public Optional<LobbyId> getId() {
-            return this.id;
-        }
-
-        public Optional<Lobby> getLobby() {
-            return this.lobby;
-        }
-
-        public CurrentLobby setId(final LobbyId newLobbyId) {
-            return new CurrentLobby(Optional.ofNullable(newLobbyId), this.getLobby());
-        }
-
-        public CurrentLobby setLobby(final Lobby newLobby) {
-            return new CurrentLobby(this.getId(), Optional.ofNullable(newLobby));
-        }
-    }
-
+public final class LobbyClient {
     private final PeerNetwork network;
     private final Locked<List<LobbyDisplay>> allLobbies = Locked.of(new ArrayList<>());
     private final Locked<CurrentLobby> currentLobby = Locked.of(new CurrentLobby());
@@ -70,20 +35,6 @@ public final class LobbyClient implements Closeable {
     public LobbyClient(final PeerNetwork network) {
         this.network = network;
         this.network.addMessageListener(this::handleMessage);
-    }
-
-    public static LobbyClient createAndConnect(final String remoteAddress, final int remotePort) throws IOException {
-        final PeerNetwork network = PeerNetwork.createBound(PeerId.createNew(), "0.0.0.0", 0,
-                new MessengerFactory(MessageSerializer.createJson()));
-        if (!network.connectToPeer(PeerEndPoint.createFromValues(remoteAddress, remotePort))) {
-            throw new IOException("Could not connect to server");
-        }
-        return new LobbyClient(network);
-    }
-
-    @Override
-    public void close() throws IOException {
-        this.network.close();
     }
 
     public int getLobbyCount() {
