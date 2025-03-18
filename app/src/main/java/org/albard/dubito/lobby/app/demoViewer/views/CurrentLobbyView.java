@@ -42,7 +42,7 @@ public final class CurrentLobbyView extends JPanel {
         final JComponent adminPanel = SimpleComponentFactory.createHorizontalPanel(new JLabel("Lobby Name:"),
                 editableLobbyNameField, new JLabel("Password:"), editableLobbyPasswordField, saveInfoButton);
         final JList<String> participantList = BoundComponentFactory.createList(modelAdapter,
-                CurrentLobbyModel.PARTICIPANTS_PROPERTY);
+                CurrentLobbyModel.PARTICIPANT_NAMES_PROPERTY);
         participantList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         this.add(SimpleComponentFactory.createHorizontalPanel(backButton, readOnlyLobbyNameLabel, adminPanel),
                 BorderLayout.NORTH);

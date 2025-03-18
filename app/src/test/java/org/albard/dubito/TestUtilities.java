@@ -17,12 +17,13 @@ import org.albard.dubito.messaging.messages.PingMessage;
 import org.albard.dubito.network.PeerEndPoint;
 import org.albard.dubito.network.PeerEndPointPair;
 import org.albard.dubito.network.PeerId;
+import org.albard.dubito.network.PeerNetwork;
 
 public final class TestUtilities {
     private TestUtilities() {
     }
 
-    public static ServerSocket createAndLaunchServer(final String bindAddress, final int bindPort)
+    public static ServerSocket createAndLaunchSocketServer(final String bindAddress, final int bindPort)
             throws UnknownHostException, IOException {
         final ServerSocket server = new ServerSocket(bindPort, 4, InetAddress.getByName(bindAddress));
         Thread.ofVirtual().start(() -> {
@@ -36,15 +37,20 @@ public final class TestUtilities {
         return server;
     }
 
-    public static PeerEndPoint createMockEndPoint(final int port) {
+    public static PeerNetwork createAndLaunchServerNetwork(final String bindAddress, final int bindPort)
+            throws UnknownHostException, IOException {
+        return PeerNetwork.createBound(PeerId.createNew(), bindAddress, bindPort, createMessengerFactory());
+    }
+
+    public static PeerEndPoint createEndPoint(final int port) {
         return PeerEndPoint.createFromValues("127.0.0.1", port);
     }
 
-    public static PeerEndPointPair createMockEndPointPair(final int localPort, final int remotePort) {
-        return new PeerEndPointPair(createMockEndPoint(localPort), createMockEndPoint(remotePort));
+    public static PeerEndPointPair createEndPointPair(final int localPort, final int remotePort) {
+        return new PeerEndPointPair(createEndPoint(localPort), createEndPoint(remotePort));
     }
 
-    public static GameMessage createMockMessage() {
+    public static GameMessage createMessage() {
         return new PingMessage(PeerId.createNew(), Set.of(PeerId.createNew()));
     }
 
@@ -52,7 +58,7 @@ public final class TestUtilities {
         return new MessengerFactory(MessageSerializer.createJson());
     }
 
-    public static MessageSerializer createMockMessageSerializer(final GameMessage deserializedMessage,
+    public static MessageSerializer createMessageSerializer(final GameMessage deserializedMessage,
             final byte[] serializedData) {
         return new MessageSerializer() {
             @Override
