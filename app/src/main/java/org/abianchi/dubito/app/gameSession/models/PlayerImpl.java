@@ -1,4 +1,4 @@
-package org.abianchi.dubito.app.models;
+package org.abianchi.dubito.app.gameSession.models;
 
 
 import java.util.ArrayList;

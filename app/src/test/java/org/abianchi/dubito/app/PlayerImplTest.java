@@ -1,6 +1,6 @@
 package org.abianchi.dubito.app;
 
-import org.abianchi.dubito.app.models.*;
+import org.abianchi.dubito.app.gameSession.models.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

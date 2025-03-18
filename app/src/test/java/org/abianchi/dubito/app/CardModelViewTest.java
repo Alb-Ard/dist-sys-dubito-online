@@ -1,12 +1,9 @@
 package org.abianchi.dubito.app;
 
-import org.abianchi.dubito.app.models.CARDTYPE;
-import org.abianchi.dubito.app.models.Card;
-import org.abianchi.dubito.app.models.CardImpl;
-
-import org.abianchi.dubito.app.views.CardView;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.abianchi.dubito.app.gameSession.models.CARDTYPE;
+import org.abianchi.dubito.app.gameSession.models.Card;
+import org.abianchi.dubito.app.gameSession.models.CardImpl;
+import org.abianchi.dubito.app.gameSession.views.CardView;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -14,8 +11,6 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 public class CardModelViewTest {

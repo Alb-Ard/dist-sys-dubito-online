@@ -1,6 +1,6 @@
 package org.abianchi.dubito.app;
 
-import org.abianchi.dubito.app.views.*;
+import org.abianchi.dubito.app.gameSession.views.*;
 
 import java.awt.*;
 

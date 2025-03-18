@@ -1,6 +1,6 @@
-package org.abianchi.dubito.app.views;
+package org.abianchi.dubito.app.gameSession.views;
 
-import org.abianchi.dubito.app.models.Card;
+import org.abianchi.dubito.app.gameSession.models.Card;
 
 import java.awt.*;
 import java.util.Random;

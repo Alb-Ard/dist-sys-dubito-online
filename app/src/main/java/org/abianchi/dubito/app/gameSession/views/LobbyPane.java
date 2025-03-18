@@ -1,4 +1,4 @@
-package org.abianchi.dubito.app.views;
+package org.abianchi.dubito.app.gameSession.views;
 
 import javax.swing.*;
 
