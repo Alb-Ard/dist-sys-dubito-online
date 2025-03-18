@@ -1,11 +1,8 @@
 package org.abianchi.dubito.app;
 
-import com.fasterxml.jackson.databind.introspect.AnnotatedClassResolver;
 import org.abianchi.dubito.app.gameSession.models.*;
 import org.abianchi.dubito.app.gameSession.controllers.*;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -91,11 +88,38 @@ public class GameSessionTest {
         }
     }
 
-    @Test
-    void gameOver() {
 
+    @Nested
+    class gameOverTest {
+        private final List<Player> gameOverPlayers = new ArrayList<>();
+        private GameSessionController testGameOverController;
+
+
+        @Test
+        void gameOver() {
+            for (int i = 0; i < 3; i++) {
+                this.gameOverPlayers.add(new PlayerImpl());
+            }
+            this.gameOverPlayers.get(2).loseRound();
+            this.gameOverPlayers.get(2).loseRound();
+            this.gameOverPlayers.get(0).loseRound();
+            this.testGameOverController = new GameSessionController(this.gameOverPlayers);
+            List<Card> currentHand = this.testGameOverController.getCurrentTurnPlayer().getHand();
+            List<Card> testLiarCards = new ArrayList<>();
+            CARDTYPE turnCardType = this.testGameOverController.getTurnCardType();
+            for (Card card : currentHand) {
+                if (card.getCardType() != turnCardType && card.getCardType() != CARDTYPE.JOKER) {
+                    testLiarCards.add(card);
+                }
+            }
+            if (testLiarCards.size() > 3) {
+                testLiarCards = testLiarCards.subList(0, 2).stream().toList();
+            }
+            if (testLiarCards.size() > 0) {
+                this.testGameOverController.playCards(testLiarCards);
+                this.testGameOverController.checkLiar();
+                Assertions.assertTrue(this.testGameOverController.gameOver(this.testGameOverController.getCurrentTurnPlayer()));
+            }
+        }
     }
-
-
-
 }

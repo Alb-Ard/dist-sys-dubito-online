@@ -103,11 +103,30 @@ public class GameSessionController {
         }
         if(isLiar) {
             this.previousTurnPlayer.loseRound();
-            this.newRound();
+            if(!gameOver(this.turnPlayer)){
+                this.newRound();
+            } else {
+                System.out.println("Game Over");
+            }
         } else {
             this.turnPlayer.loseRound();
-            this.newRound();
+            if(!gameOver(this.previousTurnPlayer)){
+                this.newRound();
+            } else {
+                System.out.println("Game Over");
+            }
         }
+    }
+
+    public boolean gameOver(Player possibleWinner) {
+        boolean gameOver = true;
+        for(Player sessionPlayer : this.sessionPlayers) {
+            if(sessionPlayer.getLives() != 0 && !sessionPlayer.equals(possibleWinner)) {
+                gameOver = false;
+                break;
+            }
+        }
+        return gameOver;
     }
 
     public Player getCurrentTurnPlayer() {
