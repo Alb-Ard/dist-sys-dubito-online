@@ -13,20 +13,21 @@ import javax.swing.JFrame;
  * change the frame layout and/or its contentPane layout
  */
 public final class Navigator<X> {
-    final Container parent;
-    final CardLayout layout;
+    private final Container parent;
+    private final CardLayout layout;
     private final Function<X, String> keyMapper;
 
     /**
      * Creates a new Navigator for the given JFrame
      * 
-     * @param parent The JFrame to manage
+     * @param parent    The JFrame to manage
+     * @param keyMapper A mapper from a navigator key to a string.
      */
     public Navigator(final Container parent, final Function<X, String> keyMapper) {
-        this.parent = parent;
+        this.parent = getActualParent(parent);
         this.keyMapper = keyMapper;
         this.layout = new CardLayout();
-        this.getActualParent().setLayout(this.layout);
+        this.parent.setLayout(this.layout);
     }
 
     /**
@@ -37,17 +38,28 @@ public final class Navigator<X> {
      * @return This Navigator instance
      */
     public Navigator<X> addScreen(final JComponent screen, final X key) {
-        this.getActualParent().add(screen, this.keyMapper.apply(key));
+        this.parent.add(screen, this.keyMapper.apply(key));
         return this;
     }
 
+    /**
+     * Removes a previously added screen from this Navigator
+     * 
+     * @param screen The screen to remove
+     * @return This Navigator instance
+     */
     public Navigator<X> removeScreen(final JComponent screen) {
-        this.getActualParent().remove(screen);
+        this.parent.remove(screen);
         return this;
     }
 
+    /**
+     * Removes ALL screen from this Navigator
+     * 
+     * @return This Navigator instance
+     */
     public Navigator<X> removeAll() {
-        this.getActualParent().removeAll();
+        this.parent.removeAll();
         return this;
     }
 
@@ -57,13 +69,10 @@ public final class Navigator<X> {
      * @param key The key of the screen to navigate to
      */
     public void navigateTo(final X key) {
-        this.layout.show(this.getActualParent(), this.keyMapper.apply(key));
+        this.layout.show(this.parent, this.keyMapper.apply(key));
     }
 
-    private Container getActualParent() {
-        if (this.parent instanceof JFrame frame) {
-            return frame.getContentPane();
-        }
-        return this.parent;
+    private static Container getActualParent(final Container baseContainer) {
+        return baseContainer instanceof JFrame frame ? frame.getContentPane() : baseContainer;
     }
 }
