@@ -26,7 +26,7 @@ public class PlayerImpl implements Player{
     }
 
     @Override
-    public void loseRound() {
+    public void loseLife() {
         this.lives -= 1;
     }
 

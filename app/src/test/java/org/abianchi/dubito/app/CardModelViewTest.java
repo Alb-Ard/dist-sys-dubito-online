@@ -1,6 +1,6 @@
 package org.abianchi.dubito.app;
 
-import org.abianchi.dubito.app.gameSession.models.CARDTYPE;
+import org.abianchi.dubito.app.gameSession.models.CardType;
 import org.abianchi.dubito.app.gameSession.models.Card;
 import org.abianchi.dubito.app.gameSession.models.CardImpl;
 import org.abianchi.dubito.app.gameSession.views.CardView;
@@ -17,7 +17,7 @@ public class CardModelViewTest {
 
     public static void main(String[] args) {
 
-        Card createdSpecificCard = new CardImpl(Optional.of(CARDTYPE.JOKER));
+        Card createdSpecificCard = new CardImpl(Optional.of(CardType.JOKER));
 
         CardView createdCardView = new CardView(createdSpecificCard);
         EventQueue.invokeLater(new Runnable() {

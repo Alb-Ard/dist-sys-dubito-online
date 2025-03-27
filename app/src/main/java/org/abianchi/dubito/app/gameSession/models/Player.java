@@ -5,6 +5,8 @@ import java.util.List;
 
 public interface Player {
 
+    static final int MAXHANDSIZE = 5;
+
     int getLives();
 
     List<Card> getHand();
@@ -12,6 +14,6 @@ public interface Player {
 
     void receiveNewHand(List<Card> newCards);
 
-    void loseRound();
+    void loseLife();
 
 }

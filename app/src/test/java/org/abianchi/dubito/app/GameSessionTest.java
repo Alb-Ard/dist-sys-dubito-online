@@ -10,7 +10,7 @@ import java.util.List;
 public class GameSessionTest {
 
     private static final int MAXPLAYERS = 4;
-    private static final int MAXHANDSIZE = 5;
+
     private final List<Player> testPlayers  = new ArrayList<>();
     private GameSessionController testController;
 
@@ -20,35 +20,45 @@ public class GameSessionTest {
             this.testPlayers.add(new PlayerImpl());
         }
         this.testController = new GameSessionController(this.testPlayers);
+        this.testController.newRound();
     }
 
     @Test
     void assertStart() {
         List<Player> sessionPlayers = this.testController.getSessionPlayers();
-        Assertions.assertEquals(this.testPlayers.get(0), this.testController.getCurrentTurnPlayer());
-        Assertions.assertEquals(this.testPlayers.get(this.testPlayers.size() - 1), this.testController.getPreviousTurnPlayer());
-        sessionPlayers.forEach(player -> Assertions.assertEquals(player.getHand().size(), MAXHANDSIZE));
+        GameState gameState = this.testController.getCurrentGameState();
+        Assertions.assertEquals(this.testPlayers.get(1), this.testController.getSessionPlayers().get(gameState.getCurrentPlayerIndex()));
+        Assertions.assertEquals(this.testPlayers.get(0), gameState.getPreviousPlayerIndex());
+        //this.testController.getSessionPlayers().forEach(player -> Assertions.assertEquals(player.getHand().size(), Player.MAXHANDSIZE));
+        //Assertions.assertEquals(this.testPlayers.get(0), this.testController.getCurrentTurnPlayer());
+        //Assertions.assertEquals(this.testPlayers.get(this.testPlayers.size() - 1), this.testController.getPreviousTurnPlayer());
+        sessionPlayers.forEach(player -> Assertions.assertEquals(player.getHand().size(), Player.MAXHANDSIZE));
     }
 
     @Test
     void assertPlayCards() {
-        List<Card> currentHand = this.testController.getCurrentTurnPlayer().getHand();
+        GameState currentGameState = this.testController.getCurrentGameState();
+        List<Card> currentHand = this.testController.getSessionPlayers().get(currentGameState.getCurrentPlayerIndex()).getHand();
+        //List<Card> currentHand = this.testController.getCurrentTurnPlayer().getHand();
         List<Card> testPlayedCards = currentHand.subList(0, 2).stream().toList();
-        Player currentPlayer = this.testController.getCurrentTurnPlayer();
+        Player currentPlayer = this.testController.getSessionPlayers().get(currentGameState.getCurrentPlayerIndex());
         this.testController.playCards(testPlayedCards);
-        Assertions.assertEquals(this.testPlayers.get(1), this.testController.getCurrentTurnPlayer());
-        Assertions.assertEquals(currentPlayer, this.testController.getPreviousTurnPlayer());
+        Assertions.assertEquals(this.testPlayers.get(1), this.testController.getSessionPlayers().get(currentGameState.getCurrentPlayerIndex()));
+        Assertions.assertEquals(currentPlayer, this.testController.getSessionPlayers().get(currentGameState.getPreviousPlayerIndex()));
         Assertions.assertEquals(this.testController.getPlayedCards(), testPlayedCards);
-        Assertions.assertEquals(this.testController.getPreviousTurnPlayer().getHand().size(), MAXHANDSIZE - testPlayedCards.size());
+        Assertions.assertEquals(this.testController.getSessionPlayers().get(currentGameState.getPreviousPlayerIndex())
+                .getHand().size(), Player.MAXHANDSIZE - testPlayedCards.size());
     }
 
     @Test
     void assertCallLiar() {
-        List<Card> currentHand = this.testController.getCurrentTurnPlayer().getHand();
+        GameState currentGameState = this.testController.getCurrentGameState();
+        CardValue roundCardType = currentGameState.getRoundCardValue();
+        List<Card> currentHand = this.testController.getSessionPlayers().get(currentGameState.getCurrentPlayerIndex()).getHand();
+        //List<Card> currentHand = this.testController.getCurrentTurnPlayer().getHand();
         List<Card> testLiarCards = new ArrayList<>();
-        CARDTYPE turnCardType = this.testController.getTurnCardType();
         for(Card card : currentHand) {
-            if(card.getCardType() != turnCardType && card.getCardType() != CARDTYPE.JOKER) {
+            if(card.getCardType().getValue() != roundCardType && card.getCardType() != CardType.JOKER) {
                 testLiarCards.add(card);
             }
         }
@@ -59,20 +69,24 @@ public class GameSessionTest {
             this.testController.playCards(testLiarCards);
             this.testController.checkLiar();
             // check here if the player that call liar hasn't lost a life
-            Assertions.assertTrue(this.testController.getPreviousTurnPlayer().getLives() == 2);
+            Assertions.assertTrue(this.testController.getSessionPlayers().get(currentGameState
+                    .getPreviousPlayerIndex()).getLives() == 2);
             // check if new round has moved the turn
-            Assertions.assertEquals(this.testPlayers.get(1), this.testController.getPreviousTurnPlayer());
-            Assertions.assertEquals(this.testPlayers.get(2), this.testController.getCurrentTurnPlayer());
+            Assertions.assertEquals(this.testPlayers.get(1), this.testController.getSessionPlayers().get(currentGameState
+                    .getPreviousPlayerIndex()));
+            Assertions.assertEquals(this.testPlayers.get(2), this.testController.getSessionPlayers().get(currentGameState
+                    .getCurrentPlayerIndex()));
         }
     }
 
     @Test
     void assertWrongCall() {
-        List<Card> currentHand = this.testController.getCurrentTurnPlayer().getHand();
+        GameState currentGameState = this.testController.getCurrentGameState();
+        CardValue roundCardType = currentGameState.getRoundCardValue();
+        List<Card> currentHand = this.testController.getSessionPlayers().get(currentGameState.getCurrentPlayerIndex()).getHand();
         List<Card> testTruthCards = new ArrayList<>();
-        CARDTYPE turnCardType = this.testController.getTurnCardType();
         for(Card card : currentHand) {
-            if(card.getCardType() == turnCardType || card.getCardType() == CARDTYPE.JOKER) {
+            if(card.getCardType().getValue() == roundCardType || card.getCardType() == CardType.JOKER) {
                 testTruthCards.add(card);
             }
         }
@@ -82,9 +96,14 @@ public class GameSessionTest {
         if(testTruthCards.size() > 0 && testTruthCards.size() <= 3) {
             this.testController.playCards(testTruthCards);
             this.testController.checkLiar();
-            Assertions.assertTrue(this.testController.getPreviousTurnPlayer().getLives() < 2);
-            Assertions.assertEquals(this.testPlayers.get(1), this.testController.getPreviousTurnPlayer());
-            Assertions.assertEquals(this.testPlayers.get(2), this.testController.getCurrentTurnPlayer());
+            // check here if the player that call liar hasn't lost a life
+            Assertions.assertTrue(this.testController.getSessionPlayers().get(currentGameState
+                    .getPreviousPlayerIndex()).getLives() < 2);
+            // check if new round has moved the turn
+            Assertions.assertEquals(this.testPlayers.get(1), this.testController.getSessionPlayers().get(currentGameState
+                    .getPreviousPlayerIndex()));
+            Assertions.assertEquals(this.testPlayers.get(2), this.testController.getSessionPlayers().get(currentGameState
+                    .getCurrentPlayerIndex()));
         }
     }
 
@@ -100,15 +119,16 @@ public class GameSessionTest {
             for (int i = 0; i < 3; i++) {
                 this.gameOverPlayers.add(new PlayerImpl());
             }
-            this.gameOverPlayers.get(2).loseRound();
-            this.gameOverPlayers.get(2).loseRound();
-            this.gameOverPlayers.get(0).loseRound();
+            this.gameOverPlayers.get(2).loseLife();
+            this.gameOverPlayers.get(2).loseLife();
+            this.gameOverPlayers.get(0).loseLife();
             this.testGameOverController = new GameSessionController(this.gameOverPlayers);
-            List<Card> currentHand = this.testGameOverController.getCurrentTurnPlayer().getHand();
+            GameState currentGameState = this.testGameOverController.getCurrentGameState();
+            CardValue roundCardType = currentGameState.getRoundCardValue();
+            List<Card> currentHand = this.testGameOverController.getSessionPlayers().get(currentGameState.getCurrentPlayerIndex()).getHand();
             List<Card> testLiarCards = new ArrayList<>();
-            CARDTYPE turnCardType = this.testGameOverController.getTurnCardType();
             for (Card card : currentHand) {
-                if (card.getCardType() != turnCardType && card.getCardType() != CARDTYPE.JOKER) {
+                if (card.getCardType().getValue() != roundCardType && card.getCardType() != CardType.JOKER) {
                     testLiarCards.add(card);
                 }
             }
@@ -118,7 +138,8 @@ public class GameSessionTest {
             if (testLiarCards.size() > 0) {
                 this.testGameOverController.playCards(testLiarCards);
                 this.testGameOverController.checkLiar();
-                Assertions.assertTrue(this.testGameOverController.gameOver(this.testGameOverController.getCurrentTurnPlayer()));
+                Assertions.assertTrue(this.testGameOverController.gameOver(this.testGameOverController.getSessionPlayers()
+                        .get(currentGameState.getCurrentPlayerIndex())));
             }
         }
     }

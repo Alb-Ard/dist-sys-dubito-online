@@ -4,15 +4,15 @@ package org.abianchi.dubito.app.gameSession.models;
 import java.util.Optional;
 
 public class CardImpl implements Card{
-    private CARDTYPE cardtype;
+    private CardType cardtype;
 
-    public CardImpl(Optional<CARDTYPE> cardTypeReceived) {
+    public CardImpl(Optional<CardType> cardTypeReceived) {
 
-        this.cardtype = cardTypeReceived.isPresent() ? cardTypeReceived.get() : CARDTYPE.getRandomCard();
+        this.cardtype = cardTypeReceived.isPresent() ? cardTypeReceived.get() : CardType.getRandomCard();
     }
 
     @Override
-    public CARDTYPE getCardType() {
+    public CardType getCardType() {
         return this.cardtype;
     }
 }

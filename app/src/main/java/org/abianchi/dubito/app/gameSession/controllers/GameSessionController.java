@@ -1,36 +1,38 @@
 package org.abianchi.dubito.app.gameSession.controllers;
 
-import org.abianchi.dubito.app.gameSession.models.CARDTYPE;
-import org.abianchi.dubito.app.gameSession.models.Card;
-import org.abianchi.dubito.app.gameSession.models.CardImpl;
-import org.abianchi.dubito.app.gameSession.models.Player;
+import org.abianchi.dubito.app.gameSession.models.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 public class GameSessionController {
-
-    private static final int MAXHANDSIZE = 5;
     private List<Player> sessionPlayers;
-    private Player turnPlayer;
-    private Player previousTurnPlayer;
+
+    private GameState gameState;
+
+    //private Player turnPlayer;
+    //private Player previousTurnPlayer;
+    //private CardType turnCardType;
     private List<Card> turnPrevPlayerPlayedCards;
-    private CARDTYPE turnCardType;
+
 
     public GameSessionController(List<Player> players) {
         this.sessionPlayers = players;
-        this.newRound();
+        this.gameState = new GameState();
+        //this.newRound();
     }
 
     public void newRound() {
-        this.chooseRandomRoundCard();
+        this.gameState.newRoundCardType();
         this.giveNewHand();
+        this.gameState.nextPlayer(this.getNextAlivePLayingPlayer(this.gameState.getCurrentPlayerIndex()));
         //this.previousTurnPlayer = this.turnPlayer;
-        this.previousTurnPlayer = this.turnPlayer != null ? // check if we are in the first round
+        /*this.previousTurnPlayer = this.turnPlayer != null ? // check if we are in the first round
                 this.turnPlayer : this.sessionPlayers.get(this.sessionPlayers.size() - 1);
         int currentPlayerIndex = this.sessionPlayers.indexOf(this.previousTurnPlayer);
         this.turnPlayer = getNextAlivePLayingPlayer(currentPlayerIndex);
+         */
         /*
         this.turnPlayer = this.sessionPlayers.indexOf(this.previousTurnPlayer) == (this.sessionPlayers.size() - 1) ?
                 this.sessionPlayers.get(0) : this.sessionPlayers.get(this.sessionPlayers.indexOf(this.previousTurnPlayer) + 1);
@@ -43,9 +45,9 @@ public class GameSessionController {
      * @param startIndex The index to start searching from
      * @return The next player with lives > 0, or null if none found
      */
-    private Player getNextAlivePLayingPlayer(int startIndex) {
+    private int getNextAlivePLayingPlayer(int startIndex) {
         if (this.sessionPlayers.isEmpty()) {
-            return null;
+            return -1;
         }
         int currentIndex = startIndex;
         int playersChecked = 0;
@@ -56,20 +58,20 @@ public class GameSessionController {
 
             Player nextPlayer = this.sessionPlayers.get(currentIndex);
             if (nextPlayer.getLives() > 0 && nextPlayer.getHand().size() > 0) {
-                return nextPlayer;
+                return currentIndex;
             }
             playersChecked++;
         }
 
         // No alive players found
-        return null;
+        return -1;
     }
 
     private void giveNewHand() {
         this.sessionPlayers.forEach(player -> {
             if (player.getLives() > 0) {
                 List<Card> newHand = new ArrayList<>();
-                for (int i = 0; i < MAXHANDSIZE; i++) {
+                for (int i = 0; i < Player.MAXHANDSIZE; i++) {
                     newHand.add(new CardImpl(Optional.empty()));
                 }
                 player.receiveNewHand(newHand);
@@ -77,40 +79,39 @@ public class GameSessionController {
         });
     }
 
-    private void chooseRandomRoundCard() {
-        do {
-            this.turnCardType = CARDTYPE.getRandomCard();
-        } while (this.turnCardType == CARDTYPE.JOKER);
-    }
-
     public void playCards(List<Card> playedCards) {
         if(playedCards.size() <= 3) {
             this.turnPrevPlayerPlayedCards = playedCards;
+            this.sessionPlayers.get(this.gameState.getCurrentPlayerIndex()).playCards(playedCards);
+            this.gameState.nextPlayer(this.getNextAlivePLayingPlayer(this.gameState.getCurrentPlayerIndex()));
+            /*
             this.turnPlayer.playCards(playedCards);
             this.previousTurnPlayer = this.turnPlayer;
             int currentPlayerIndex = this.sessionPlayers.indexOf(this.previousTurnPlayer);
             this.turnPlayer = this.getNextAlivePLayingPlayer(currentPlayerIndex);
+             */
         }
     }
 
     public void checkLiar() {
         boolean isLiar = false;
         for(Card card : this.turnPrevPlayerPlayedCards) {
-            if(card.getCardType() != this.turnCardType && card.getCardType() != CARDTYPE.JOKER) {
+            if(card.getCardType().getValue() != this.gameState.getRoundCardValue() && card.getCardType() != CardType.JOKER) {
                 isLiar = true;
                 break;
             }
         }
         if(isLiar) {
-            this.previousTurnPlayer.loseRound();
-            if(!gameOver(this.turnPlayer)){
+            this.sessionPlayers.get(this.gameState.getPreviousPlayerIndex()).loseLife();
+            //this.previousTurnPlayer.loseLife();
+            if(!gameOver(this.sessionPlayers.get(this.gameState.getCurrentPlayerIndex()))){
                 this.newRound();
             } else {
                 System.out.println("Game Over");
             }
         } else {
-            this.turnPlayer.loseRound();
-            if(!gameOver(this.previousTurnPlayer)){
+            this.sessionPlayers.get(this.gameState.getCurrentPlayerIndex()).loseLife();
+            if(!gameOver(this.sessionPlayers.get(this.gameState.getPreviousPlayerIndex()))){
                 this.newRound();
             } else {
                 System.out.println("Game Over");
@@ -129,14 +130,6 @@ public class GameSessionController {
         return gameOver;
     }
 
-    public Player getCurrentTurnPlayer() {
-        return this.turnPlayer;
-    }
-
-    public Player getPreviousTurnPlayer() {
-        return this.previousTurnPlayer;
-    }
-
     public List<Card> getPlayedCards() {
         return this.turnPrevPlayerPlayedCards;
     }
@@ -145,8 +138,8 @@ public class GameSessionController {
         return this.sessionPlayers;
     }
 
-    public CARDTYPE getTurnCardType() {
-        return this.turnCardType;
+    public GameState getCurrentGameState() {
+        return this.gameState;
     }
 
 }

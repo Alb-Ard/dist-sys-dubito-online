@@ -5,5 +5,5 @@ package org.abianchi.dubito.app.gameSession.models;
  */
 
 public interface Card {
-    CARDTYPE getCardType();
+    CardType getCardType();
 }
