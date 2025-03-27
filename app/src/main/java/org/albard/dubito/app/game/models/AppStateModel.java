@@ -4,25 +4,25 @@ import com.jgoodies.binding.beans.Model;
 
 public final class AppStateModel extends Model {
     public enum State {
-        IN_MAIN_MENU(true), REQUESTING_LOBBY_SERVER(true), IN_LOBBY_LIST(false), REQUESTING_LOBBY_PASSWORD(false),
-        IN_LOBBY(false);
+        IN_MAIN_MENU(false), REQUESTING_LOBBY_SERVER(false), IN_LOBBY_LIST(true), REQUESTING_LOBBY_PASSWORD(true),
+        IN_LOBBY(true);
 
-        private boolean isBeforeLobby;
+        private final boolean isConnected;
 
-        private State(boolean isBeforeLobby) {
-            this.isBeforeLobby = isBeforeLobby;
+        private State(boolean isConnected) {
+            this.isConnected = isConnected;
         }
 
-        public boolean isBeforeLobby() {
-            return this.isBeforeLobby;
+        public boolean isConnected() {
+            return this.isConnected;
         }
 
-        public static boolean isTransitionFromBeforeLobby(final State fromState, final State toState) {
-            return fromState.isBeforeLobby() && !toState.isBeforeLobby();
+        public boolean isConnecting(final State toState) {
+            return !this.isConnected() && toState.isConnected();
         }
 
-        public static boolean isTransitionToBeforeLobby(final State fromState, final State toState) {
-            return !fromState.isBeforeLobby() && toState.isBeforeLobby();
+        public boolean isDisconnecting(final State toState) {
+            return this.isConnected() && !toState.isConnected();
         }
     }
 

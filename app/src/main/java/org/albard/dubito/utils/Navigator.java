@@ -2,6 +2,7 @@ package org.albard.dubito.utils;
 
 import java.awt.CardLayout;
 import java.awt.Container;
+import java.util.Set;
 import java.util.function.Function;
 
 import javax.swing.JComponent;
@@ -34,11 +35,23 @@ public final class Navigator<X> {
      * Adds a new screen to this navigator
      * 
      * @param screen The screen to add
-     * @param key    The key that will identify this screen
+     * @param keys   The key that will identify this screen
      * @return This Navigator instance
      */
     public Navigator<X> addScreen(final JComponent screen, final X key) {
         this.parent.add(screen, this.keyMapper.apply(key));
+        return this;
+    }
+
+    /**
+     * Adds a new screen to this navigator
+     * 
+     * @param screen The screen to add
+     * @param keys   The keys that will identify this screen
+     * @return This Navigator instance
+     */
+    public Navigator<X> addScreen(final JComponent screen, final Set<X> keys) {
+        keys.forEach(key -> this.addScreen(screen, key));
         return this;
     }
 

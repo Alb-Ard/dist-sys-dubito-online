@@ -22,14 +22,13 @@ import com.jgoodies.binding.beans.BeanAdapter;
 
 public final class MainLobbyView extends JPanel {
     private final AppStateModel stateModel;
-    private final Navigator<AppStateModel.State> navigator;
+    private final Navigator<State> navigator;
 
     public MainLobbyView(final AppStateModel stateModel) {
         this.stateModel = stateModel;
         this.navigator = new Navigator<>(this, x -> x.toString());
         new BeanAdapter<>(this.stateModel, true).addBeanPropertyChangeListener(AppStateModel.STATE_PROPERTY, e -> {
             final State newState = (State) e.getNewValue();
-            this.setVisible(!newState.isBeforeLobby());
             this.navigator.navigateTo(newState);
         });
 

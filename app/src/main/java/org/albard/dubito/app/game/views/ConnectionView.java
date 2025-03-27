@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
 
-import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JPanel;
@@ -29,10 +28,8 @@ public final class ConnectionView extends JPanel {
         final JTextField portField = BoundComponentFactory.createIntegerTextField(modelAdapter,
                 ConnectionRequestModel.PORT_PROPERTY);
         final JButton connectButton = SimpleComponentFactory.createGameButton("Connect");
-        this.add(Box.createVerticalGlue());
         this.add(SimpleComponentFactory.createHorizontalPanel(addressField, portField));
         this.add(connectButton);
-        this.add(Box.createVerticalGlue());
         connectButton.addActionListener(e -> this.connectionRequestListeners
                 .forEach(l -> l.accept(PeerEndPoint.createFromValues(model.getAddress(), model.getPort()))));
     }

@@ -3,6 +3,7 @@ package org.albard.dubito.app.game.views;
 import java.awt.Dimension;
 import java.io.IOException;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import javax.swing.JFrame;
@@ -36,18 +37,17 @@ public final class MainWindow extends JFrame {
         final BeanAdapter<AppStateModel> modelAdapter = new BeanAdapter<>(this.stateModel, true);
         final ConnectionView connectionView = new ConnectionView(this.connectionModel);
         final MainLobbyView mainLobbyView = new MainLobbyView(this.stateModel);
-        this.navigator.addScreen(mainLobbyView, State.IN_LOBBY).addScreen(mainLobbyView, State.IN_LOBBY_LIST)
-                .addScreen(mainLobbyView, State.REQUESTING_LOBBY_PASSWORD)
-                .addScreen(connectionView, State.REQUESTING_LOBBY_SERVER)
-                .addScreen(new StartPane(() -> this.stateModel.setState(State.REQUESTING_LOBBY_SERVER)),
-                        State.IN_MAIN_MENU);
+        final StartPane mainMenuView = new StartPane(() -> this.stateModel.setState(State.REQUESTING_LOBBY_SERVER));
+        this.navigator
+                .addScreen(mainLobbyView, Set.of(State.IN_LOBBY, State.IN_LOBBY_LIST, State.REQUESTING_LOBBY_PASSWORD))
+                .addScreen(connectionView, State.REQUESTING_LOBBY_SERVER).addScreen(mainMenuView, State.IN_MAIN_MENU);
         modelAdapter.addBeanPropertyChangeListener(AppStateModel.STATE_PROPERTY, e -> SwingUtilities.invokeLater(() -> {
             final State newState = (State) e.getNewValue();
             final State oldState = (State) e.getOldValue();
             System.out.println("App state: " + oldState + " -> " + newState);
-            if (State.isTransitionToBeforeLobby(oldState, newState)) {
+            if (newState.isDisconnecting(oldState)) {
                 this.closeNetwork();
-            } else if (State.isTransitionFromBeforeLobby(oldState, newState)) {
+            } else if (newState.isConnecting(oldState)) {
                 if (!this.createNetwork()) {
                     System.err.println("Network creation FAIL!");
                     SwingUtilities.invokeLater(() -> this.stateModel.setState(oldState));
