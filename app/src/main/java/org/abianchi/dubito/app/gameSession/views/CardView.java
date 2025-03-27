@@ -3,17 +3,20 @@ package org.abianchi.dubito.app.gameSession.views;
 import org.abianchi.dubito.app.gameSession.models.Card;
 import org.abianchi.dubito.app.gameSession.models.CardType;
 
+import javax.imageio.ImageIO;
+import javax.swing.*;
 import java.awt.*;
-import java.util.Random;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.net.URL;
 
-// consigliato fare estensione di CardImage per trasformarlo in un'estensione di swing
-public class CardView {
+public class CardView extends ImageIcon {
 
     private static String IMAGE_PATH = "card_images/";
-    private Image cardImage;
+
+    private String cardImagePath;
 
     public CardView(Card card) {
-        String cardImagePath;
         switch(card.getCardType()){
             case ACE_OF_HEARTS, ACE_OF_SPADES:
                 cardImagePath = IMAGE_PATH + "ace" + chooseSeedImage(card.getCardType());
@@ -28,15 +31,21 @@ public class CardView {
                 cardImagePath = IMAGE_PATH + "joker_card.png";
                 break;
         }
-        this.cardImage = Toolkit.getDefaultToolkit().getImage(cardImagePath);
-    }
+        URL resourceUrl = ClassLoader.getSystemClassLoader().getResource(cardImagePath);
+        if(resourceUrl != null) {
+            try {
+                BufferedImage originalImage = ImageIO.read(resourceUrl);
+                Image correctSizeImage = originalImage.getScaledInstance(90, 150,Image.SCALE_SMOOTH);
+                this.setImage(correctSizeImage);
 
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
 
     private String chooseSeedImage(CardType cardType) {
         return cardType.name().contains("HEARTS") ? "_of_hearts.png" : "_of_spades.png";
     }
 
-    public Image getCardImage() {
-        return this.cardImage;
-    }
 }

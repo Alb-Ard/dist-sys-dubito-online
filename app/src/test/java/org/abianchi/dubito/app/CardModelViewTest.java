@@ -28,24 +28,14 @@ public class CardModelViewTest {
                 } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
                     ex.printStackTrace();
                 }
-
-                String path = "card_images/joker_card.png";
-                final URL resourceUrl = ClassLoader.getSystemClassLoader().getResource(path);
-                if( resourceUrl != null ) {
-                    try {
-                        BufferedImage image = ImageIO.read(resourceUrl);
-                        JLabel label = new JLabel(new ImageIcon(image));
-                        JPanel jPanel = new JPanel();
-                        jPanel.add(label);
-                        JFrame frame = new JFrame("Card Test");
-                        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                        frame.setContentPane(label);
-                        frame.setSize(500, 500);
-                        frame.setVisible(true);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
+                JLabel label = new JLabel(createdCardView);
+                JPanel jPanel = new JPanel();
+                jPanel.add(label);
+                JFrame frame = new JFrame("Card Test");
+                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                frame.setContentPane(label);
+                frame.setSize(500, 500);
+                frame.setVisible(true);
             }
         });
     }
