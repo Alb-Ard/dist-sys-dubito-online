@@ -6,6 +6,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class GameSessionTest {
 
@@ -20,18 +21,14 @@ public class GameSessionTest {
             this.testPlayers.add(new PlayerImpl());
         }
         this.testController = new GameSessionController(this.testPlayers);
-        this.testController.newRound();
     }
 
     @Test
     void assertStart() {
         List<Player> sessionPlayers = this.testController.getSessionPlayers();
         GameState gameState = this.testController.getCurrentGameState();
-        Assertions.assertEquals(this.testPlayers.get(1), this.testController.getSessionPlayers().get(gameState.getCurrentPlayerIndex()));
-        Assertions.assertEquals(this.testPlayers.get(0), gameState.getPreviousPlayerIndex());
-        //this.testController.getSessionPlayers().forEach(player -> Assertions.assertEquals(player.getHand().size(), Player.MAXHANDSIZE));
-        //Assertions.assertEquals(this.testPlayers.get(0), this.testController.getCurrentTurnPlayer());
-        //Assertions.assertEquals(this.testPlayers.get(this.testPlayers.size() - 1), this.testController.getPreviousTurnPlayer());
+        Assertions.assertEquals(this.testPlayers.get(0), this.testController.getSessionPlayers().get(gameState.getCurrentPlayerIndex()));
+        Assertions.assertEquals(-1, gameState.getPreviousPlayerIndex());
         sessionPlayers.forEach(player -> Assertions.assertEquals(player.getHand().size(), Player.MAXHANDSIZE));
     }
 
@@ -39,13 +36,12 @@ public class GameSessionTest {
     void assertPlayCards() {
         GameState currentGameState = this.testController.getCurrentGameState();
         List<Card> currentHand = this.testController.getSessionPlayers().get(currentGameState.getCurrentPlayerIndex()).getHand();
-        //List<Card> currentHand = this.testController.getCurrentTurnPlayer().getHand();
-        List<Card> testPlayedCards = currentHand.subList(0, 2).stream().toList();
+        List<Card> testPlayedCards = new ArrayList<>(currentHand.subList(0, 2));
         Player currentPlayer = this.testController.getSessionPlayers().get(currentGameState.getCurrentPlayerIndex());
         this.testController.playCards(testPlayedCards);
         Assertions.assertEquals(this.testPlayers.get(1), this.testController.getSessionPlayers().get(currentGameState.getCurrentPlayerIndex()));
         Assertions.assertEquals(currentPlayer, this.testController.getSessionPlayers().get(currentGameState.getPreviousPlayerIndex()));
-        Assertions.assertEquals(this.testController.getPlayedCards(), testPlayedCards);
+        Assertions.assertEquals(currentGameState.getTurnPrevPlayerPlayedCards(), testPlayedCards);
         Assertions.assertEquals(this.testController.getSessionPlayers().get(currentGameState.getPreviousPlayerIndex())
                 .getHand().size(), Player.MAXHANDSIZE - testPlayedCards.size());
     }
@@ -63,7 +59,7 @@ public class GameSessionTest {
             }
         }
         if(testLiarCards.size() > 3) {
-            testLiarCards = testLiarCards.subList(0, 2).stream().toList();
+            testLiarCards = new ArrayList<>(testLiarCards.subList(0, 2));
         }
         if(testLiarCards.size() > 0) {
             this.testController.playCards(testLiarCards);

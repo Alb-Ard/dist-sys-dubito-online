@@ -11,33 +11,19 @@ public class GameSessionController {
 
     private GameState gameState;
 
-    //private Player turnPlayer;
-    //private Player previousTurnPlayer;
-    //private CardType turnCardType;
-    private List<Card> turnPrevPlayerPlayedCards;
+    //private List<Card> turnPrevPlayerPlayedCards;
 
 
     public GameSessionController(List<Player> players) {
         this.sessionPlayers = players;
         this.gameState = new GameState();
-        //this.newRound();
+        this.newRound();
     }
 
     public void newRound() {
         this.gameState.newRoundCardType();
         this.giveNewHand();
         this.gameState.nextPlayer(this.getNextAlivePLayingPlayer(this.gameState.getCurrentPlayerIndex()));
-        //this.previousTurnPlayer = this.turnPlayer;
-        /*this.previousTurnPlayer = this.turnPlayer != null ? // check if we are in the first round
-                this.turnPlayer : this.sessionPlayers.get(this.sessionPlayers.size() - 1);
-        int currentPlayerIndex = this.sessionPlayers.indexOf(this.previousTurnPlayer);
-        this.turnPlayer = getNextAlivePLayingPlayer(currentPlayerIndex);
-         */
-        /*
-        this.turnPlayer = this.sessionPlayers.indexOf(this.previousTurnPlayer) == (this.sessionPlayers.size() - 1) ?
-                this.sessionPlayers.get(0) : this.sessionPlayers.get(this.sessionPlayers.indexOf(this.previousTurnPlayer) + 1);
-
-         */
     }
 
     /**
@@ -46,8 +32,8 @@ public class GameSessionController {
      * @return The next player with lives > 0, or null if none found
      */
     private int getNextAlivePLayingPlayer(int startIndex) {
-        if (this.sessionPlayers.isEmpty()) {
-            return -1;
+        if (startIndex == -1) {
+            return 0;
         }
         int currentIndex = startIndex;
         int playersChecked = 0;
@@ -57,7 +43,7 @@ public class GameSessionController {
             currentIndex = (currentIndex + 1) % this.sessionPlayers.size();
 
             Player nextPlayer = this.sessionPlayers.get(currentIndex);
-            if (nextPlayer.getLives() > 0 && nextPlayer.getHand().size() > 0) {
+            if (nextPlayer.getLives() > 0 && !nextPlayer.getHand().isEmpty()) {
                 return currentIndex;
             }
             playersChecked++;
@@ -81,21 +67,15 @@ public class GameSessionController {
 
     public void playCards(List<Card> playedCards) {
         if(playedCards.size() <= 3) {
-            this.turnPrevPlayerPlayedCards = playedCards;
+            this.gameState.setTurnPrevPlayerPlayedCards(playedCards);
             this.sessionPlayers.get(this.gameState.getCurrentPlayerIndex()).playCards(playedCards);
             this.gameState.nextPlayer(this.getNextAlivePLayingPlayer(this.gameState.getCurrentPlayerIndex()));
-            /*
-            this.turnPlayer.playCards(playedCards);
-            this.previousTurnPlayer = this.turnPlayer;
-            int currentPlayerIndex = this.sessionPlayers.indexOf(this.previousTurnPlayer);
-            this.turnPlayer = this.getNextAlivePLayingPlayer(currentPlayerIndex);
-             */
         }
     }
 
     public void checkLiar() {
         boolean isLiar = false;
-        for(Card card : this.turnPrevPlayerPlayedCards) {
+        for(Card card : this.gameState.getTurnPrevPlayerPlayedCards()) {
             if(card.getCardType().getValue() != this.gameState.getRoundCardValue() && card.getCardType() != CardType.JOKER) {
                 isLiar = true;
                 break;
@@ -128,10 +108,6 @@ public class GameSessionController {
             }
         }
         return gameOver;
-    }
-
-    public List<Card> getPlayedCards() {
-        return this.turnPrevPlayerPlayedCards;
     }
 
     public List<Player> getSessionPlayers() {
