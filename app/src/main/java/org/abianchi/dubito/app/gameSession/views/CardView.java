@@ -48,4 +48,8 @@ public class CardView extends ImageIcon {
         return cardType.name().contains("HEARTS") ? "_of_hearts.png" : "_of_spades.png";
     }
 
+    public String getCardImagePath() {
+        return this.cardImagePath;
+    }
+
 }

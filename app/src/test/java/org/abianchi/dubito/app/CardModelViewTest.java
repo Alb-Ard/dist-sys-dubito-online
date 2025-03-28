@@ -4,6 +4,8 @@ import org.abianchi.dubito.app.gameSession.models.CardType;
 import org.abianchi.dubito.app.gameSession.models.Card;
 import org.abianchi.dubito.app.gameSession.models.CardImpl;
 import org.abianchi.dubito.app.gameSession.views.CardView;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -15,11 +17,23 @@ import java.util.Optional;
 
 public class CardModelViewTest {
 
+    Card createdSpecificCard;
+
+    CardView createdCardView;
+
+
+    @Test
+    void samePathTest() {
+        this.createdSpecificCard = new CardImpl(Optional.of(CardType.JOKER));
+        this.createdCardView = new CardView(createdSpecificCard);
+        String jokerPath = "card_images/joker_card.png";
+        Assertions.assertEquals(jokerPath, this.createdCardView.getCardImagePath());
+    }
+
     public static void main(String[] args) {
 
-        Card createdSpecificCard = new CardImpl(Optional.of(CardType.JOKER));
-
-        CardView createdCardView = new CardView(createdSpecificCard);
+        final Card card = new CardImpl(Optional.of(CardType.ACE_OF_HEARTS));
+        final CardView cardView = new CardView(card);
         EventQueue.invokeLater(new Runnable() {
             @Override
             public void run() {
@@ -28,7 +42,7 @@ public class CardModelViewTest {
                 } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
                     ex.printStackTrace();
                 }
-                JLabel label = new JLabel(createdCardView);
+                JLabel label = new JLabel(cardView);
                 JPanel jPanel = new JPanel();
                 jPanel.add(label);
                 JFrame frame = new JFrame("Card Test");

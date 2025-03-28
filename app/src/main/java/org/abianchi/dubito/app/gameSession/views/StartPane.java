@@ -41,6 +41,13 @@ class StartPane extends JPanel {
             }
         });
 
+        start.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                
+            }
+        });
+
     }
 
     @Override
