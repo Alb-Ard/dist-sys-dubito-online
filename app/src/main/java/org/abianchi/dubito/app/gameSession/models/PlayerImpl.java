@@ -37,7 +37,7 @@ public class PlayerImpl implements Player{
 
     @Override
     public List<Card> getHand() {
-        return this.playerHand;
+        return List.copyOf(this.playerHand);
     }
 
 }

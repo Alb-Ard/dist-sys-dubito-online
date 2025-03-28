@@ -22,9 +22,4 @@ public enum CardType {
         return this.value;
     }
 
-    public static CardType getRandomCard() {
-        Random random = new Random();
-        return values()[random.nextInt(values().length)];
-    }
-
 }

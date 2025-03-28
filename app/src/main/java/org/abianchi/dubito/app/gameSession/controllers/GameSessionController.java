@@ -11,18 +11,17 @@ public class GameSessionController {
 
     private GameState gameState;
 
-    //private List<Card> turnPrevPlayerPlayedCards;
 
 
     public GameSessionController(List<Player> players) {
         this.sessionPlayers = players;
         this.gameState = new GameState();
-        this.newRound();
     }
 
     public void newRound() {
         this.gameState.newRoundCardType();
         this.giveNewHand();
+        this.gameState.setTurnPrevPlayerPlayedCards(List.of());
         this.gameState.nextPlayer(this.getNextAlivePLayingPlayer(this.gameState.getCurrentPlayerIndex()));
     }
 
@@ -32,7 +31,8 @@ public class GameSessionController {
      * @return The next player with lives > 0, or null if none found
      */
     private int getNextAlivePLayingPlayer(int startIndex) {
-        if (startIndex == -1) {
+        // this is the first round
+        if (startIndex < 0) {
             return 0;
         }
         int currentIndex = startIndex;
@@ -73,9 +73,13 @@ public class GameSessionController {
         }
     }
 
-    public void checkLiar() {
+    public void callLiar() {
+        List<Card> prevPlayedCards = this.gameState.getTurnPrevPlayerPlayedCards();
+        if(prevPlayedCards.isEmpty()) {
+            return;
+        }
         boolean isLiar = false;
-        for(Card card : this.gameState.getTurnPrevPlayerPlayedCards()) {
+        for(Card card : prevPlayedCards) {
             if(card.getCardType().getValue() != this.gameState.getRoundCardValue() && card.getCardType() != CardType.JOKER) {
                 isLiar = true;
                 break;
@@ -83,7 +87,6 @@ public class GameSessionController {
         }
         if(isLiar) {
             this.sessionPlayers.get(this.gameState.getPreviousPlayerIndex()).loseLife();
-            //this.previousTurnPlayer.loseLife();
             if(!gameOver(this.sessionPlayers.get(this.gameState.getCurrentPlayerIndex()))){
                 this.newRound();
             } else {
@@ -111,11 +114,16 @@ public class GameSessionController {
     }
 
     public List<Player> getSessionPlayers() {
-        return this.sessionPlayers;
+        return List.copyOf(this.sessionPlayers);
     }
 
+    // these getters are only used for testing
     public GameState getCurrentGameState() {
         return this.gameState;
     }
+
+    public Player getPreviousPlayer() { return sessionPlayers.get(this.gameState.getPreviousPlayerIndex());}
+
+    public Player getCurrentPlayer() { return sessionPlayers.get(this.gameState.getCurrentPlayerIndex());}
 
 }

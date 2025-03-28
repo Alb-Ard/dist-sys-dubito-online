@@ -13,7 +13,6 @@ public class GameState {
     public GameState() {
         this.currentPlayerIndex = -1;
         this.previousPlayerIndex = -2;
-        this.roundCardValue = CardType.getRandomCard().getValue();
         this.turnPrevPlayerPlayedCards = new ArrayList<>();
     }
 
@@ -24,7 +23,7 @@ public class GameState {
 
     public void newRoundCardType() {
         do {
-            this.roundCardValue = CardType.getRandomCard().getValue();
+            this.roundCardValue = CardTypeFactory.INSTANCE.createRandom().getValue();
         } while (this.roundCardValue == CardValue.JOKER);
     }
 
@@ -41,7 +40,7 @@ public class GameState {
         return this.previousPlayerIndex;
     }
 
-    public List<Card> getTurnPrevPlayerPlayedCards() {return  this.turnPrevPlayerPlayedCards;}
+    public List<Card> getTurnPrevPlayerPlayedCards() {return  List.copyOf(this.turnPrevPlayerPlayedCards);}
 
     public CardValue getRoundCardValue() {
         return this.roundCardValue;

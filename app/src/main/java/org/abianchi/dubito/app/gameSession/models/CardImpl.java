@@ -8,7 +8,7 @@ public class CardImpl implements Card{
 
     public CardImpl(Optional<CardType> cardTypeReceived) {
 
-        this.cardtype = cardTypeReceived.isPresent() ? cardTypeReceived.get() : CardType.getRandomCard();
+        this.cardtype = cardTypeReceived.isPresent() ? cardTypeReceived.get() : CardTypeFactory.INSTANCE.createRandom();
     }
 
     @Override
