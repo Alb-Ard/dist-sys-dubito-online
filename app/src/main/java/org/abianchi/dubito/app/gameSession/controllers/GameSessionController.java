@@ -11,18 +11,27 @@ public class GameSessionController {
 
     private GameState gameState;
 
+    private List<Card> selectedCards;
+
 
 
     public GameSessionController(List<Player> players) {
         this.sessionPlayers = players;
         this.gameState = new GameState();
+        this.selectedCards = new ArrayList<>();
     }
 
     public void newRound() {
         this.gameState.newRoundCardType();
         this.giveNewHand();
         this.gameState.setTurnPrevPlayerPlayedCards(List.of());
-        this.gameState.nextPlayer(this.getNextAlivePLayingPlayer(this.gameState.getCurrentPlayerIndex()));
+        int nextPlayerIndex = this.getNextAlivePLayingPlayer(this.gameState.getCurrentPlayerIndex());
+        if(nextPlayerIndex == -1 && !gameOver(this.sessionPlayers.get(this.gameState.getCurrentPlayerIndex()))) {
+            this.newRound();
+        } else {
+            this.gameState.nextPlayer(nextPlayerIndex);
+        }
+
     }
 
     /**
@@ -36,7 +45,7 @@ public class GameSessionController {
             return 0;
         }
         int currentIndex = startIndex;
-        int playersChecked = 0;
+        int playersChecked = 1;
 
         // Loop through the list until we've checked all players
         while (playersChecked < this.sessionPlayers.size()) {
@@ -65,11 +74,21 @@ public class GameSessionController {
         });
     }
 
-    public void playCards(List<Card> playedCards) {
-        if(playedCards.size() <= 3) {
-            this.gameState.setTurnPrevPlayerPlayedCards(playedCards);
-            this.sessionPlayers.get(this.gameState.getCurrentPlayerIndex()).playCards(playedCards);
-            this.gameState.nextPlayer(this.getNextAlivePLayingPlayer(this.gameState.getCurrentPlayerIndex()));
+    public void selectCard(Card selectedCard) {
+        this.selectedCards.add(selectedCard);
+    }
+
+    public void playCards() {
+        if(this.selectedCards.size() <= 3) {
+            this.gameState.setTurnPrevPlayerPlayedCards(this.selectedCards);
+            this.sessionPlayers.get(this.gameState.getCurrentPlayerIndex()).playCards(this.selectedCards);
+            this.selectedCards.clear();
+            int nextPlayerIndex = this.getNextAlivePLayingPlayer(this.gameState.getCurrentPlayerIndex());
+            if(nextPlayerIndex == -1 && !gameOver(this.sessionPlayers.get(this.gameState.getCurrentPlayerIndex()))) {
+                this.newRound();
+            } else {
+                this.gameState.nextPlayer(nextPlayerIndex);
+            }
         }
     }
 

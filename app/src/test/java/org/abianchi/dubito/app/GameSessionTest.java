@@ -40,7 +40,8 @@ public class GameSessionTest {
     void assertPlayAdvanceTurn() {
         GameState currentGameState = this.testController.getCurrentGameState();
         Player currentPlayer = this.testController.getCurrentPlayer();
-        this.testController.playCards(List.of(currentPlayer.getHand().get(0)));
+        this.testController.selectCard(currentPlayer.getHand().get(0));
+        this.testController.playCards();
         Assertions.assertEquals(this.testPlayers.get(1), this.testController.getCurrentPlayer());
         Assertions.assertEquals(currentPlayer, this.testController.getPreviousPlayer());
     }
@@ -51,7 +52,10 @@ public class GameSessionTest {
         Player currentPlayer = this.testController.getCurrentPlayer();
         List<Card> currentHand = currentPlayer.getHand();
         List<Card> testPlayedCards = new ArrayList<>(currentHand.subList(0, 2));
-        this.testController.playCards(testPlayedCards);
+        for(Card testCard : testPlayedCards) {
+            this.testController.selectCard(testCard);
+        }
+        this.testController.playCards();
         Assertions.assertEquals(currentGameState.getTurnPrevPlayerPlayedCards(), testPlayedCards);
         Assertions.assertEquals(this.testController.getPreviousPlayer().getHand().size(),
                 Player.MAXHANDSIZE - testPlayedCards.size());
@@ -73,7 +77,10 @@ public class GameSessionTest {
             testLiarCards = new ArrayList<>(testLiarCards.subList(0, 2));
         }
         Player liarPlayer = this.testController.getCurrentPlayer();
-        this.testController.playCards(testLiarCards);
+        for(Card testCard : testLiarCards) {
+            this.testController.selectCard(testCard);
+        }
+        this.testController.playCards();
         this.testController.callLiar();
         Player callLiarPlayer = this.testController.getPreviousPlayer();
         // check here if the player that call liar hasn't lost a life
@@ -99,7 +106,10 @@ public class GameSessionTest {
             testTruthCards = testTruthCards.subList(0, 2).stream().toList();
         }
         Player truthPlayer = this.testController.getCurrentPlayer();
-        this.testController.playCards(testTruthCards);
+        for(Card testCard : testTruthCards) {
+            this.testController.selectCard(testCard);
+        }
+        this.testController.playCards();
         this.testController.callLiar();
         Player callLiarPlayer = this.testController.getPreviousPlayer();
         // check here if the player that call liar hasn't lost a life
@@ -111,9 +121,10 @@ public class GameSessionTest {
     }
 
     @Test
-    void callLiarEmpty() {
+    void assertCallLiarEmpty() {
         GameState currentGameState = this.testController.getCurrentGameState();
-        this.testController.playCards(List.of(this.testController.getCurrentPlayer().getHand().get(0)));
+        this.testController.selectCard(this.testController.getCurrentPlayer().getHand().get(0));
+        this.testController.playCards();
         this.testController.callLiar();
         Player currentPlayer = this.testController.getCurrentPlayer();
         List<Card> currentPlayerHand = List.copyOf(currentPlayer.getHand());
@@ -125,13 +136,13 @@ public class GameSessionTest {
 
 
     @Nested
-    class gameOverTest {
+    class gameOverAndNextRoundTest {
         private final List<Player> gameOverPlayers = new ArrayList<>();
         private GameSessionController testGameOverController;
 
 
         @Test
-        void gameOver() {
+        void assertGameOver() {
             for (int i = 0; i < 3; i++) {
                 this.gameOverPlayers.add(new PlayerImpl());
             }
@@ -153,9 +164,41 @@ public class GameSessionTest {
             if (testLiarCards.size() > 3) {
                 testLiarCards = testLiarCards.subList(0, 2).stream().toList();
             }
-            this.testGameOverController.playCards(testLiarCards);
+            for(Card testCard : testLiarCards) {
+                this.testGameOverController.selectCard(testCard);
+            }
+            this.testGameOverController.playCards();
             this.testGameOverController.callLiar();
             Assertions.assertTrue(this.testGameOverController.gameOver(this.testGameOverController.getCurrentPlayer()));
+        }
+
+        @Test
+        void assertPlayedAllCardsStart() {
+            for (int i = 0; i < 2; i++) {
+                this.gameOverPlayers.add(new PlayerImpl());
+            }
+            this.testGameOverController = new GameSessionController(this.gameOverPlayers);
+            this.testGameOverController.newRound();
+            Player playerThatWillFinish = this.testGameOverController.getCurrentPlayer();
+            List<Card> firstRoundCards = playerThatWillFinish.getHand();
+            List<Card> firstPlayedCards = firstRoundCards.subList(0, 3).stream().toList();
+            for(Card testCard : firstPlayedCards) {
+                this.testGameOverController.selectCard(testCard);
+            }
+            this.testGameOverController.playCards();
+            this.testGameOverController.selectCard(this.testGameOverController.getCurrentPlayer().getHand().get(0));
+            this.testGameOverController.playCards();
+            for(Card finishPlayerCard : playerThatWillFinish.getHand()) {
+                this.testGameOverController.selectCard(finishPlayerCard);
+            }
+            this.testGameOverController.playCards();
+            this.testGameOverController.selectCard(this.testGameOverController.getCurrentPlayer().getHand().get(0));
+            this.testGameOverController.playCards();
+            List<Card> secondRoundCards = playerThatWillFinish.getHand();
+            Assertions.assertEquals(2, this.testGameOverController.getPreviousPlayer().getLives());
+            Assertions.assertEquals(2, this.testGameOverController.getCurrentPlayer().getLives());
+            Assertions.assertEquals(Player.MAXHANDSIZE, secondRoundCards.size());
+            Assertions.assertNotEquals(firstRoundCards, secondRoundCards);
         }
     }
 }

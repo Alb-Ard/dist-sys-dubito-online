@@ -23,7 +23,7 @@ public class CardModelViewTest {
 
 
     @Test
-    void samePathTest() {
+    void assertSamePath() {
         this.createdSpecificCard = new CardImpl(Optional.of(CardType.JOKER));
         this.createdCardView = new CardView(createdSpecificCard);
         String jokerPath = "card_images/joker_card.png";
