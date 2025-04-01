@@ -19,7 +19,10 @@ public class CardView extends ImageIcon {
 
     private Card card;
 
+    private boolean isClicked;
+
     public CardView(Card card) {
+        this.isClicked = false;
         this.card = card;
         switch(this.card.getCardType()){
             case ACE_OF_HEARTS, ACE_OF_SPADES:
@@ -39,7 +42,7 @@ public class CardView extends ImageIcon {
         if(resourceUrl != null) {
             try {
                 BufferedImage originalImage = ImageIO.read(resourceUrl);
-                Image correctSizeImage = originalImage.getScaledInstance(90, 150,Image.SCALE_SMOOTH);
+                Image correctSizeImage = originalImage.getScaledInstance(80, 130,Image.SCALE_SMOOTH);
                 this.setImage(correctSizeImage);
 
             } catch (IOException e) {
@@ -51,6 +54,8 @@ public class CardView extends ImageIcon {
     private String chooseSeedImage(CardType cardType) {
         return cardType.name().contains("HEARTS") ? "_of_hearts.png" : "_of_spades.png";
     }
+
+    public void click() {this.isClicked = !this.isClicked;}
 
     public void rotateCard(boolean clockwise) {
         // Get the current image
@@ -107,6 +112,6 @@ public class CardView extends ImageIcon {
 
     public Card getCard() { return this.card; }
 
-
+    public boolean isClicked() { return this.isClicked; }
 
 }

@@ -78,6 +78,10 @@ public class GameSessionController {
         this.selectedCards.add(selectedCard);
     }
 
+    public void removeSelectedCard(Card card) {
+        this.selectedCards.remove(card);
+    }
+
     public void playCards() {
         if(this.selectedCards.size() <= 3) {
             this.gameState.setTurnPrevPlayerPlayedCards(this.selectedCards);
