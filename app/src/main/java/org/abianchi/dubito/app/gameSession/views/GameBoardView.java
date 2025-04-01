@@ -169,6 +169,7 @@ public class GameBoardView{
             @Override
             public void actionPerformed(ActionEvent e) {
                 if(!cardView.isClicked()) {
+                    cardView.click();
                     controller.selectCard(cardView.getCard());
                 } else {
                     controller.removeSelectedCard(cardView.getCard());
@@ -247,8 +248,10 @@ public class GameBoardView{
         Action throwCardsAction = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                controller.playCards();
-                refreshPlayerCards();
+                if(!controller.getSelectedCards().isEmpty() && controller.getSelectedCards().size() <= 3) {
+                    controller.playCards();
+                    refreshPlayerCards();
+                }
             }
         };
 
@@ -268,8 +271,10 @@ public class GameBoardView{
         actionMap.put("callLiar", callLiarAction);
 
         throwCardsButton.addActionListener(e -> {
-            controller.playCards();
-            refreshPlayerCards();
+            if(!controller.getSelectedCards().isEmpty() && controller.getSelectedCards().size() <= 3) {
+                controller.playCards();
+                refreshPlayerCards();
+            }
         });
 
         callLiarButton.addActionListener(e -> controller.callLiar());

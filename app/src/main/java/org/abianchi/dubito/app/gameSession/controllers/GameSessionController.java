@@ -140,9 +140,12 @@ public class GameSessionController {
         return List.copyOf(this.sessionPlayers);
     }
 
-    // these getters are only used for testing
     public GameState getCurrentGameState() {
         return this.gameState;
+    }
+
+    public List<Card> getSelectedCards() {
+        return this.selectedCards;
     }
 
     public Player getPreviousPlayer() { return sessionPlayers.get(this.gameState.getPreviousPlayerIndex());}
