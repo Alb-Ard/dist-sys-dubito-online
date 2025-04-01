@@ -13,7 +13,7 @@ import java.awt.geom.AffineTransform;
 
 public class CardView extends ImageIcon {
 
-    private static String IMAGE_PATH = "card_images/";
+    private static final String IMAGE_PATH = "card_images/";
 
     private String cardImagePath;
 
