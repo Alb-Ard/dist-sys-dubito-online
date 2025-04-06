@@ -47,15 +47,72 @@ Here you should explain:
 The project will result in a *group* of applications that will let the users host, join and play games of dubito with other users.
 
 The output is comprised of two applications:
-- The LobbyServer, a CLI application that will host a server where users can connect to create and join *lobbies*.
+- The LobbyServer, a CLI application that will host a server where users can connect to create and join lobbies.
 - The GameApp, a Swing graphical application that the users can use to connect to a LobbyServer to create or find lobbies, join them and play the game.
 
 ### Interactions and use cases
-Uses will interact with the system using the GameApp only, on any device that supports running it.
-
-The GameApp should let a user play a game of dubito, both by creating or joining a lobby.
+All uses will be able to:
+- Use the application to create or find a game to play with other users
+- Participate in a game by doing the actions expressed in the rules
 
 ## Requirements
+
+The following sections group the system requirements by type and by domain functionality.
+Each requirement will be followed by its own acceptance criteria(s).
+
+### 1. Functional
+
+#### 1.1 Lobby Management
+
+- 1.1.1: The app must let an user see available lobbies created by other users.
+    - The user must be able to see a list of all lobbies with their name, an indicator if the lobby is password protected and the number of users in the lobby.
+- 1.1.2: The app must let an user join an existing lobby, even if password-protected, while it is not in a lobby.
+    - The user must be able to join a lobby from the list (see Req. 1.1.1) if the lobby has not reached the maximum number of participants.
+    - If the lobby is password protected the app must prompt the user for the password. 
+    - When an user succesfully joins a lobby, all other users should be notifyed of the updated participant count for the lobby.
+    - The funtionality must be available only when the user is not in a lobby already.
+    - The user must not be able to join multiple lobbies concurrently.
+- 1.1.3: The app must let an user create a new lobby, while the user is not in a lobby.
+    - The user must be able create a new lobby that other users will be able to see and join.
+    - The funtionality must be available only when the user is not in a lobby already.
+    - When a user creates a lobby, it becomes also it's owner.
+    - The user can't be whe owner of multiple lobbies concurrently.
+- 1.1.4: The app must let a lobby owner set the lobby name and password.
+    - The the lobby owner must be able to insert or change the lobby name and the password.
+    - The name must not be empty, while the password *may* be empty.
+    - When the changes are applied, all other users (both in the lobby and outside) must receive the updated information.
+- 1.1.5: The app must let a user that is in a lobby leave it.
+    - The app must let a user exit from the lobby it is in, notifying all other users of the updated user count for the lobby.
+    - The funtionality must be available only when the user is in a lobby.
+- 1.1.6: The app must let the lobby owner delete its lobby.
+    - The lobby owner must be able to delete its lobby, notifying all users that the lobby doesn't exist anymore and kicking out the users who where in the lobby.
+- 1.1.7: The app must let the lobby owner start the game with all the lobby users as participants.
+    - The app must let the lobby owner start a game match where the users that are in the lobby become players in the game.
+    - Also, no more players must be able to join the lobby.
+- 1.1.8: The app must show, when an user is in a lobby, the other participants.
+    - The user must be able to see a list of all the participants in the lobby it is currently in, with their name.
+    - The app *may* emphasize who is the local user and who is the lobby owner.
+
+#### 1.2 Gameplay
+
+- 1.2.1 **TODO**
+
+#### 1.3 Miscellaneous
+
+- 1.3.1 The app must let a user set its display name.
+    - The user must be able to set a name that will be shown to other users.
+    - No restriction should be applied if the name is alreday used, so two users can have the same name.
+
+### 2. Non-functional
+
+- 2.1: The lobby management should not have network partition protection systems in place.
+    - If the lobby management system has network problems or is not available, then the users can not access it.
+    - By consequence, if a single user loses connection to the lobby management system, no
+- 2.2: The lobby management must provide always consistency and correctness of data.
+    - The information the users receve from the lobby management system must always be corrent and up-to-date, taking into account network delays.
+- 2.3: 
+
+### 3. Implementation
 
 - The requirements must explain __what__ (not how) the software being produced should do. 
     * you should not focus on the particular problems, but exclusively on what you want the application to do.
