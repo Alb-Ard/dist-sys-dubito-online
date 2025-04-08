@@ -14,11 +14,11 @@ import java.util.Optional;
 public class GameBoardView{
 
     private final Container contentPane;
-    private GameSessionController controller;
-    private JPanel bottomPlayerCards;
-    private JPanel topPlayerCards;
-    private JPanel leftPlayerCards;
-    private JPanel rightPlayerCards;
+    private final GameSessionController controller;
+    private final JPanel bottomPlayerCards;
+    private final JPanel topPlayerCards;
+    private final JPanel leftPlayerCards;
+    private final JPanel rightPlayerCards;
 
     public GameBoardView(GameSessionController controller) {
         this.controller = controller;
@@ -40,40 +40,40 @@ public class GameBoardView{
         centerPanel.add(Box.createVerticalGlue());
         centerPanel.add(centerLabel);
         centerPanel.add(Box.createVerticalGlue());
-        /**  player cards */
-        /** bottom player */
+        /*  player cards */
+        /* bottom player */
         this.bottomPlayerCards = new JPanel();
         for(Card card : this.controller.getSessionPlayers().get(0).getHand()) {
-            JButton buttonCard = getjButton(controller, card, Optional.empty());
+            JButton buttonCard = getCardJButton(controller, card, Optional.empty());
             bottomPlayerCards.add(buttonCard);
         }
         this.addButtonsAndLives(bottomPlayerCards, 0,false);
-        /** top player */
+        /* top player */
         this.topPlayerCards = new JPanel();
         for(Card card : this.controller.getSessionPlayers().get(2).getHand()) {
-            JButton buttonCard = getjButton(controller, card, Optional.empty());
+            JButton buttonCard = getCardJButton(controller, card, Optional.empty());
             topPlayerCards.add(buttonCard);
         }
         this.addButtonsAndLives(topPlayerCards, 2,false);
-        /** left player */
+        /* left player */
         this.leftPlayerCards = new JPanel();
         leftPlayerCards.setLayout(new BoxLayout(leftPlayerCards, BoxLayout.PAGE_AXIS));
         for(Card card : this.controller.getSessionPlayers().get(1).getHand()) {
-            JButton buttonCard = getjButton(controller, card, Optional.of("left"));
+            JButton buttonCard = getCardJButton(controller, card, Optional.of("left"));
             leftPlayerCards.add(buttonCard);
         }
         this.addButtonsAndLives(leftPlayerCards, 1, true);
-        /** right player */
+        /* right player */
         this.rightPlayerCards = new JPanel();
         rightPlayerCards.setLayout(new BoxLayout(rightPlayerCards, BoxLayout.Y_AXIS));
         for(Card card : this.controller.getSessionPlayers().get(3).getHand()) {
-            JButton buttonCard = getjButton(controller, card, Optional.of("right"));
+            JButton buttonCard = getCardJButton(controller, card, Optional.of("right"));
             rightPlayerCards.add(buttonCard);
         }
         this.addButtonsAndLives(rightPlayerCards, 3, true);
 
 
-        /**add everything in pane */
+        /* add everything in pane */
         this.contentPane.add(centerPanel, BorderLayout.CENTER);
         this.contentPane.add(bottomPlayerCards, BorderLayout.SOUTH);
         this.contentPane.add(topPlayerCards, BorderLayout.NORTH);
@@ -97,6 +97,12 @@ public class GameBoardView{
         // Disable all buttons first
         disableAllPlayerControls();
 
+        // Hide all card faces
+        //hideAllCardFaces();
+
+        // Show only the current player's card faces
+        //showCardFaces(currentPlayerIndex);
+
         // Enable only the current player's controls
         JPanel currentPlayerPanel;
         switch (currentPlayerIndex) {
@@ -115,6 +121,7 @@ public class GameBoardView{
         }
     }
 
+    /** helper method to disable everything first */
     private void disableAllPlayerControls() {
         disablePanelControls(bottomPlayerCards);
         disablePanelControls(topPlayerCards);
@@ -122,6 +129,7 @@ public class GameBoardView{
         disablePanelControls(rightPlayerCards);
     }
 
+    /** method to disable everything in a specific panel */
     private void disablePanelControls(JPanel panel) {
         // Disable all components in the panel
         for (Component component : panel.getComponents()) {
@@ -136,6 +144,7 @@ public class GameBoardView{
         }
     }
 
+    /** this method enables control only to the current playing player */
     private void enablePanelControls(JPanel panel) {
         // Enable all components in the panel
         for (Component component : panel.getComponents()) {
@@ -150,7 +159,48 @@ public class GameBoardView{
         }
     }
 
-    private static JButton getjButton(GameSessionController controller, Card card, Optional<String> rotate) {
+    /** helper method to hide all the cards in play */
+    private void hideAllCardFaces() {
+        setCardFacesVisibility(bottomPlayerCards, false);
+        setCardFacesVisibility(leftPlayerCards, false);
+        setCardFacesVisibility(topPlayerCards, false);
+        setCardFacesVisibility(rightPlayerCards, false);
+    }
+
+    /** method to show the cards for the current playing player */
+    private void showCardFaces(int playerIndex) {
+        switch (playerIndex) {
+            case 0: // Bottom player
+                setCardFacesVisibility(bottomPlayerCards, true);
+                break;
+            case 1: // Left player
+                setCardFacesVisibility(leftPlayerCards, true);
+                break;
+            case 2: // Top player
+                setCardFacesVisibility(topPlayerCards, true);
+                break;
+            case 3: // Right player
+                setCardFacesVisibility(rightPlayerCards, true);
+                break;
+        }
+    }
+
+    /** this is the method that enables the visibility of the card */
+    private void setCardFacesVisibility(JPanel panel, boolean visible) {
+        for (Component component : panel.getComponents()) {
+            if (component instanceof JButton) {
+                Icon icon = ((JButton) component).getIcon();
+                if (icon instanceof CardView) {
+                    CardView cardView = (CardView) icon;
+                    cardView.setCardVisibility(visible);
+                    ((JButton) component).repaint();
+                }
+            }
+        }
+    }
+
+    /** method used to add buttons for all the cards */
+    private static JButton getCardJButton(GameSessionController controller, Card card, Optional<String> rotate) {
         CardView cardView = new CardView(card);
         if(rotate.isPresent()) {
             switch (rotate.get()) {
@@ -211,7 +261,7 @@ public class GameBoardView{
 
         // Re-add cards for the player
         for (Card card : playerWhoPlayed.getHand()) {
-            JButton buttonCard = getjButton(controller, card, rotateOption);
+            JButton buttonCard = getCardJButton(controller, card, rotateOption);
             playerPanel.add(buttonCard);
         }
 
@@ -254,7 +304,14 @@ public class GameBoardView{
 
         // Re-add cards for the player
         for (Card card : this.controller.getSessionPlayers().get(playerIndex).getHand()) {
-            JButton buttonCard = getjButton(controller, card, rotateOption);
+            JButton buttonCard = getCardJButton(controller, card, rotateOption);
+            // Set card visibility based on current player
+            /*
+            int currentPlayerIndex = this.controller.getSessionPlayers().indexOf(this.controller.getCurrentPlayer());
+            if (buttonCard.getIcon() instanceof CardView) {
+                ((CardView)buttonCard.getIcon()).setCardVisibility(playerIndex == currentPlayerIndex);
+            }*/
+
             playerPanel.add(buttonCard);
         }
 
@@ -272,7 +329,7 @@ public class GameBoardView{
         disableAllPlayerControls();
         // Update the center panel with current round card value
         JLabel centerLabel = (JLabel) ((JPanel) contentPane.getComponent(0)).getComponent(1);
-        centerLabel.setText("The winner is: Player " + this.controller.getSessionPlayers().indexOf(this.controller.getCurrentPlayer()));
+        centerLabel.setText("The winner is: Player " + this.controller.getWinnerIndex());
     }
 
 

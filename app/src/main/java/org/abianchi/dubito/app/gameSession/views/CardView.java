@@ -21,6 +21,9 @@ public class CardView extends ImageIcon {
 
     private boolean isClicked;
 
+    private boolean isRotatedLeft = false;
+    private boolean isRotatedRight = false;
+
     public CardView(Card card) {
         this.isClicked = false;
         this.card = card;
@@ -58,6 +61,15 @@ public class CardView extends ImageIcon {
     public void click() {this.isClicked = !this.isClicked;}
 
     public void rotateCard(boolean clockwise) {
+        // Set rotation flags
+        if (clockwise) {
+            this.isRotatedLeft = true;
+            this.isRotatedRight = false;
+        } else {
+            this.isRotatedLeft = false;
+            this.isRotatedRight = true;
+        }
+
         // Get the current image
         Image currentImage = this.getImage();
 
@@ -104,6 +116,56 @@ public class CardView extends ImageIcon {
 
         // Set the rotated image as the new image
         this.setImage(rotatedImage);
+    }
+
+    /** method to make the card visible or not, by changing it into the card_back.png image */
+    public void setCardVisibility(boolean visible) {
+        /*
+        String imagePath = visible ? cardImagePath : IMAGE_PATH + "card_back.png";
+        URL resourceUrl = ClassLoader.getSystemClassLoader().getResource(imagePath);
+
+        if(resourceUrl != null) {
+            try {
+                BufferedImage originalImage = ImageIO.read(resourceUrl);
+                Image correctSizeImage = originalImage.getScaledInstance(70, 120, Image.SCALE_SMOOTH);
+                this.setImage(correctSizeImage);
+
+                // Re-apply rotation if needed
+                if (isRotatedLeft) {
+                    rotateCard(true);
+                } else if (isRotatedRight) {
+                    rotateCard(false);
+                }
+
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } */
+        if (visible) {
+            // Show the actual card image
+            URL resourceUrl = ClassLoader.getSystemClassLoader().getResource(cardImagePath);
+            if(resourceUrl != null) {
+                try {
+                    BufferedImage originalImage = ImageIO.read(resourceUrl);
+                    Image correctSizeImage = originalImage.getScaledInstance(70, 120, Image.SCALE_SMOOTH);
+                    this.setImage(correctSizeImage);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        } else {
+            // Show blank card image (card back)
+            URL resourceUrl = ClassLoader.getSystemClassLoader().getResource(IMAGE_PATH + "card_back.png");
+            if(resourceUrl != null) {
+                try {
+                    BufferedImage originalImage = ImageIO.read(resourceUrl);
+                    Image correctSizeImage = originalImage.getScaledInstance(70, 120, Image.SCALE_SMOOTH);
+                    this.setImage(correctSizeImage);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
     }
 
     public String getCardImagePath() {

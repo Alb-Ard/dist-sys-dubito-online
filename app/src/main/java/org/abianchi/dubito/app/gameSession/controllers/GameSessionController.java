@@ -13,6 +13,8 @@ public class GameSessionController {
 
     private List<Card> selectedCards;
 
+    private int winnerIndex;
+
 
 
     public GameSessionController(List<Player> players) {
@@ -112,11 +114,15 @@ public class GameSessionController {
             this.sessionPlayers.get(this.gameState.getPreviousPlayerIndex()).loseLife();
             if(!gameOver(this.sessionPlayers.get(this.gameState.getCurrentPlayerIndex()))){
                 this.newRound();
+            } else {
+                this.winnerIndex = this.gameState.getCurrentPlayerIndex();
             }
         } else {
             this.sessionPlayers.get(this.gameState.getCurrentPlayerIndex()).loseLife();
             if(!gameOver(this.sessionPlayers.get(this.gameState.getPreviousPlayerIndex()))){
                 this.newRound();
+            } else {
+                this.winnerIndex = this.gameState.getPreviousPlayerIndex();
             }
         }
     }
@@ -147,5 +153,7 @@ public class GameSessionController {
     public Player getPreviousPlayer() { return sessionPlayers.get(this.gameState.getPreviousPlayerIndex());}
 
     public Player getCurrentPlayer() { return sessionPlayers.get(this.gameState.getCurrentPlayerIndex());}
+
+    public int getWinnerIndex() { return this.winnerIndex;}
 
 }
