@@ -7,7 +7,9 @@
 
 ```
 "During the preparation of this work, the author(s) used Claude.Ai to generate small 
-pieces of code to develop the Game Board for Dubito Online.
+pieces of code to develop the Game Board for Dubito Online. This was used to help the development
+of methods such as how to properly rotate game card buttons in the GUI and how to deactivate certain
+buttons in the code based on the developed logic.
 After generating the initial prompt, the author(s) then reviewed and edited the
 content as needed and take(s) full responsibility for the content of the
 final report/artifact."
