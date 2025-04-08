@@ -6,9 +6,9 @@
 ### AI Disclaimer (if needed)
 
 ```
-"During the preparation of this work, the author(s) used [NAME TOOL /
-SERVICE] to [REASON].
-After using this tool/service, the author(s) reviewed and edited the
+"During the preparation of this work, the author(s) used Claude.Ai to generate small 
+pieces of code to develop the Game Board for Dubito Online.
+After generating the initial prompt, the author(s) then reviewed and edited the
 content as needed and take(s) full responsibility for the content of the
 final report/artifact."
 ```
