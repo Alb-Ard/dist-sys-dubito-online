@@ -9,8 +9,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 public class GameBoardView{
@@ -49,14 +47,14 @@ public class GameBoardView{
             JButton buttonCard = getjButton(controller, card, Optional.empty());
             bottomPlayerCards.add(buttonCard);
         }
-        this.addButtons(bottomPlayerCards, false);
+        this.addButtonsAndLives(bottomPlayerCards, 0,false);
         /** top player */
         this.topPlayerCards = new JPanel();
         for(Card card : this.controller.getSessionPlayers().get(2).getHand()) {
             JButton buttonCard = getjButton(controller, card, Optional.empty());
             topPlayerCards.add(buttonCard);
         }
-        this.addButtons(topPlayerCards, false);
+        this.addButtonsAndLives(topPlayerCards, 2,false);
         /** left player */
         this.leftPlayerCards = new JPanel();
         leftPlayerCards.setLayout(new BoxLayout(leftPlayerCards, BoxLayout.PAGE_AXIS));
@@ -64,7 +62,7 @@ public class GameBoardView{
             JButton buttonCard = getjButton(controller, card, Optional.of("left"));
             leftPlayerCards.add(buttonCard);
         }
-        this.addButtons(leftPlayerCards, true);
+        this.addButtonsAndLives(leftPlayerCards, 1, true);
         /** right player */
         this.rightPlayerCards = new JPanel();
         rightPlayerCards.setLayout(new BoxLayout(rightPlayerCards, BoxLayout.Y_AXIS));
@@ -72,7 +70,7 @@ public class GameBoardView{
             JButton buttonCard = getjButton(controller, card, Optional.of("right"));
             rightPlayerCards.add(buttonCard);
         }
-        this.addButtons(rightPlayerCards, true);
+        this.addButtonsAndLives(rightPlayerCards, 3, true);
 
 
         /**add everything in pane */
@@ -179,7 +177,8 @@ public class GameBoardView{
         return buttonCard;
     }
 
-    private void refreshPlayerCards() {
+    /** This method refreshes the hand for the player that just played some cards*/
+    private void refreshPreviousPlayerCards() {
         // Get the player that just played
         Player playerWhoPlayed = this.controller.getPreviousPlayer();
 
@@ -218,7 +217,7 @@ public class GameBoardView{
 
         // Re-add buttons with appropriate orientation
         boolean isVertical = (playerIndex == 1 || playerIndex == 3); // Left or right player
-        this.addButtons(playerPanel, isVertical);
+        this.addButtonsAndLives(playerPanel, playerIndex, isVertical);
 
         // Refresh the panel
         playerPanel.revalidate();
@@ -226,18 +225,69 @@ public class GameBoardView{
         updatePlayerTurnUI();
     }
 
-    private void addButtons(JPanel pane, boolean vertical) {
-        /** buttons for player */
+    /** This method refreshes all the player hands after someone has pressed the call liar button*/
+    private void refreshAllPlayerCards() {
+        // Refresh bottom player (index 0)
+        refreshPlayerPanel(bottomPlayerCards, 0, Optional.empty());
+
+        // Refresh left player (index 1)
+        refreshPlayerPanel(leftPlayerCards, 1, Optional.of("left"));
+
+        // Refresh top player (index 2)
+        refreshPlayerPanel(topPlayerCards, 2, Optional.empty());
+
+        // Refresh right player (index 3)
+        refreshPlayerPanel(rightPlayerCards, 3, Optional.of("right"));
+
+        // Update the center panel with current round card value
+        JLabel centerLabel = (JLabel) ((JPanel) contentPane.getComponent(0)).getComponent(1);
+        centerLabel.setText("Round Card is: " + this.controller.getCurrentGameState().getRoundCardValue());
+
+        // Update UI to highlight current player's turn
+        updatePlayerTurnUI();
+    }
+
+    /** Helper method to refresh a specific player's panel */
+    private void refreshPlayerPanel(JPanel playerPanel, int playerIndex, Optional<String> rotateOption) {
+        // Clear the panel
+        playerPanel.removeAll();
+
+        // Re-add cards for the player
+        for (Card card : this.controller.getSessionPlayers().get(playerIndex).getHand()) {
+            JButton buttonCard = getjButton(controller, card, rotateOption);
+            playerPanel.add(buttonCard);
+        }
+
+        // Re-add buttons with appropriate orientation
+        boolean isVertical = (playerIndex == 1 || playerIndex == 3); // Left or right player
+        this.addButtonsAndLives(playerPanel, playerIndex, isVertical);
+
+        // Refresh the panel
+        playerPanel.revalidate();
+        playerPanel.repaint();
+    }
+
+    /** method for the end of the game */
+    private void endGame() {
+        disableAllPlayerControls();
+        // Update the center panel with current round card value
+        JLabel centerLabel = (JLabel) ((JPanel) contentPane.getComponent(0)).getComponent(1);
+        centerLabel.setText("The winner is: Player " + this.controller.getSessionPlayers().indexOf(this.controller.getCurrentPlayer()));
+    }
+
+
+    private void addButtonsAndLives(JPanel pane,int playerIndex ,boolean vertical) {
+        /** buttons and label for player's lives */
         JPanel buttonPanel = new JPanel();
         if(vertical) {
             buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
         }
+        JLabel livesLabel = new JLabel("Lives: " + this.controller.getSessionPlayers().get(playerIndex).getLives());
         JButton throwCardsButton = new JButton("Throw Cards (T)");
         JButton callLiarButton = new JButton("Call Liar (F)");
+        buttonPanel.add(livesLabel);
         buttonPanel.add(throwCardsButton);
         buttonPanel.add(callLiarButton);
-
-
 
         // Add an action map/input map to the content pane
         JComponent rootComponent = (JComponent) this.contentPane;
@@ -250,7 +300,7 @@ public class GameBoardView{
             public void actionPerformed(ActionEvent e) {
                 if(!controller.getSelectedCards().isEmpty() && controller.getSelectedCards().size() <= 3) {
                     controller.playCards();
-                    refreshPlayerCards();
+                    refreshPreviousPlayerCards();
                 }
             }
         };
@@ -259,6 +309,11 @@ public class GameBoardView{
             @Override
             public void actionPerformed(ActionEvent e) {
                 controller.callLiar();
+                if(controller.gameOver(controller.getPreviousPlayer()) || controller.gameOver(controller.getCurrentPlayer())) {
+                    endGame();
+                } else {
+                    refreshAllPlayerCards();
+                }
             }
         };
 
@@ -273,11 +328,18 @@ public class GameBoardView{
         throwCardsButton.addActionListener(e -> {
             if(!controller.getSelectedCards().isEmpty() && controller.getSelectedCards().size() <= 3) {
                 controller.playCards();
-                refreshPlayerCards();
+                refreshPreviousPlayerCards();
             }
         });
 
-        callLiarButton.addActionListener(e -> controller.callLiar());
+        callLiarButton.addActionListener(e -> {
+            controller.callLiar();
+            if(controller.gameOver(controller.getPreviousPlayer()) || controller.gameOver(controller.getCurrentPlayer())) {
+                endGame();
+            } else {
+                refreshAllPlayerCards();
+            }
+        });
 
         pane.add(buttonPanel);
     }

@@ -42,7 +42,7 @@ public class CardView extends ImageIcon {
         if(resourceUrl != null) {
             try {
                 BufferedImage originalImage = ImageIO.read(resourceUrl);
-                Image correctSizeImage = originalImage.getScaledInstance(80, 130,Image.SCALE_SMOOTH);
+                Image correctSizeImage = originalImage.getScaledInstance(70, 120,Image.SCALE_SMOOTH);
                 this.setImage(correctSizeImage);
 
             } catch (IOException e) {

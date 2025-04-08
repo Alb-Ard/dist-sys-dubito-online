@@ -112,15 +112,11 @@ public class GameSessionController {
             this.sessionPlayers.get(this.gameState.getPreviousPlayerIndex()).loseLife();
             if(!gameOver(this.sessionPlayers.get(this.gameState.getCurrentPlayerIndex()))){
                 this.newRound();
-            } else {
-                System.out.println("Game Over");
             }
         } else {
             this.sessionPlayers.get(this.gameState.getCurrentPlayerIndex()).loseLife();
             if(!gameOver(this.sessionPlayers.get(this.gameState.getPreviousPlayerIndex()))){
                 this.newRound();
-            } else {
-                System.out.println("Game Over");
             }
         }
     }
