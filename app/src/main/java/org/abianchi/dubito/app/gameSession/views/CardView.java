@@ -140,7 +140,7 @@ public class CardView extends ImageIcon {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        } */
+        }*/
         if (visible) {
             // Show the actual card image
             URL resourceUrl = ClassLoader.getSystemClassLoader().getResource(cardImagePath);
@@ -149,6 +149,13 @@ public class CardView extends ImageIcon {
                     BufferedImage originalImage = ImageIO.read(resourceUrl);
                     Image correctSizeImage = originalImage.getScaledInstance(70, 120, Image.SCALE_SMOOTH);
                     this.setImage(correctSizeImage);
+                    // check if it must be rotate either left or right
+                    if (this.isRotatedLeft) {
+                        rotateCard(true);
+                    }
+                    if (this.isRotatedRight) {
+                        rotateCard(false);
+                    }
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -161,6 +168,13 @@ public class CardView extends ImageIcon {
                     BufferedImage originalImage = ImageIO.read(resourceUrl);
                     Image correctSizeImage = originalImage.getScaledInstance(70, 120, Image.SCALE_SMOOTH);
                     this.setImage(correctSizeImage);
+                    // check if it must be rotate either left or right
+                    if (this.isRotatedLeft) {
+                        rotateCard(true);
+                    }
+                    if (this.isRotatedRight) {
+                        rotateCard(false);
+                    }
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }

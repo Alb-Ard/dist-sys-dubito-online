@@ -227,56 +227,9 @@ public class GameBoardView{
         return buttonCard;
     }
 
-    /** This method refreshes the hand for the player that just played some cards*/
-    private void refreshPreviousPlayerCards() {
-        // Get the player that just played
-        Player playerWhoPlayed = this.controller.getPreviousPlayer();
 
-        // Find the player's index to determine which panel to refresh
-        int playerIndex = this.controller.getSessionPlayers().indexOf(playerWhoPlayed);
-
-        // Get the appropriate panel based on player's position
-        JPanel playerPanel;
-        Optional<String> rotateOption = Optional.empty();
-
-        switch (playerIndex) {
-            case 1: // Left player
-                playerPanel = (JPanel) contentPane.getComponent(3); // WEST
-                rotateOption = Optional.of("left");
-                break;
-            case 2: // Top player
-                playerPanel = (JPanel) contentPane.getComponent(2); // NORTH
-                break;
-            case 3: // Right player
-                playerPanel = (JPanel) contentPane.getComponent(4); // EAST
-                rotateOption = Optional.of("right");
-                break;
-            default:
-                playerPanel = (JPanel) contentPane.getComponent(1); // SOUTH
-                break;
-        }
-
-        // Clear the panel
-        playerPanel.removeAll();
-
-        // Re-add cards for the player
-        for (Card card : playerWhoPlayed.getHand()) {
-            JButton buttonCard = getCardJButton(controller, card, rotateOption);
-            playerPanel.add(buttonCard);
-        }
-
-        // Re-add buttons with appropriate orientation
-        boolean isVertical = (playerIndex == 1 || playerIndex == 3); // Left or right player
-        this.addButtonsAndLives(playerPanel, playerIndex, isVertical);
-
-        // Refresh the panel
-        playerPanel.revalidate();
-        playerPanel.repaint();
-        updatePlayerTurnUI();
-    }
-
-    /** This method refreshes all the player hands after someone has pressed the call liar button*/
-    private void refreshAllPlayerCards() {
+    /** This method refreshes all the player hands after someone has pressed either throw cards or the call liar button*/
+    private void refreshBoard() {
         // Refresh bottom player (index 0)
         refreshPlayerPanel(bottomPlayerCards, 0, Optional.empty());
 
@@ -310,7 +263,8 @@ public class GameBoardView{
             int currentPlayerIndex = this.controller.getSessionPlayers().indexOf(this.controller.getCurrentPlayer());
             if (buttonCard.getIcon() instanceof CardView) {
                 ((CardView)buttonCard.getIcon()).setCardVisibility(playerIndex == currentPlayerIndex);
-            }*/
+            }
+             */
 
             playerPanel.add(buttonCard);
         }
@@ -357,7 +311,7 @@ public class GameBoardView{
             public void actionPerformed(ActionEvent e) {
                 if(!controller.getSelectedCards().isEmpty() && controller.getSelectedCards().size() <= 3) {
                     controller.playCards();
-                    refreshPreviousPlayerCards();
+                    refreshBoard();
                 }
             }
         };
@@ -369,7 +323,7 @@ public class GameBoardView{
                 if(controller.gameOver(controller.getPreviousPlayer()) || controller.gameOver(controller.getCurrentPlayer())) {
                     endGame();
                 } else {
-                    refreshAllPlayerCards();
+                    refreshBoard();
                 }
             }
         };
@@ -385,7 +339,7 @@ public class GameBoardView{
         throwCardsButton.addActionListener(e -> {
             if(!controller.getSelectedCards().isEmpty() && controller.getSelectedCards().size() <= 3) {
                 controller.playCards();
-                refreshPreviousPlayerCards();
+                refreshBoard();
             }
         });
 
@@ -394,7 +348,7 @@ public class GameBoardView{
             if(controller.gameOver(controller.getPreviousPlayer()) || controller.gameOver(controller.getCurrentPlayer())) {
                 endGame();
             } else {
-                refreshAllPlayerCards();
+                refreshBoard();
             }
         });
 
