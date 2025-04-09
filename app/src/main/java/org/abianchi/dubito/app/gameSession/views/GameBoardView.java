@@ -98,10 +98,10 @@ public class GameBoardView{
         disableAllPlayerControls();
 
         // Hide all card faces
-        //hideAllCardFaces();
+        hideAllCardFaces();
 
         // Show only the current player's card faces
-        //showCardFaces(currentPlayerIndex);
+        showCardFaces(currentPlayerIndex);
 
         // Enable only the current player's controls
         JPanel currentPlayerPanel;
@@ -259,12 +259,10 @@ public class GameBoardView{
         for (Card card : this.controller.getSessionPlayers().get(playerIndex).getHand()) {
             JButton buttonCard = getCardJButton(controller, card, rotateOption);
             // Set card visibility based on current player
-            /*
             int currentPlayerIndex = this.controller.getSessionPlayers().indexOf(this.controller.getCurrentPlayer());
             if (buttonCard.getIcon() instanceof CardView) {
                 ((CardView)buttonCard.getIcon()).setCardVisibility(playerIndex == currentPlayerIndex);
             }
-             */
 
             playerPanel.add(buttonCard);
         }
