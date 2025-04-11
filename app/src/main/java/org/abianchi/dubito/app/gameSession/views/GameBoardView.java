@@ -59,7 +59,7 @@ public class GameBoardView{
         this.leftPlayerCards = new JPanel();
         leftPlayerCards.setLayout(new BoxLayout(leftPlayerCards, BoxLayout.PAGE_AXIS));
         for(Card card : this.controller.getSessionPlayers().get(1).getHand()) {
-            JButton buttonCard = getCardJButton(controller, card, Optional.of("left"));
+            JButton buttonCard = getCardJButton(controller, card, Optional.of(Rotation.LEFT));
             leftPlayerCards.add(buttonCard);
         }
         this.addButtonsAndLives(leftPlayerCards, 1, true);
@@ -67,7 +67,7 @@ public class GameBoardView{
         this.rightPlayerCards = new JPanel();
         rightPlayerCards.setLayout(new BoxLayout(rightPlayerCards, BoxLayout.Y_AXIS));
         for(Card card : this.controller.getSessionPlayers().get(3).getHand()) {
-            JButton buttonCard = getCardJButton(controller, card, Optional.of("right"));
+            JButton buttonCard = getCardJButton(controller, card, Optional.of(Rotation.RIGHT));
             rightPlayerCards.add(buttonCard);
         }
         this.addButtonsAndLives(rightPlayerCards, 3, true);
@@ -107,53 +107,39 @@ public class GameBoardView{
         JPanel currentPlayerPanel;
         switch (currentPlayerIndex) {
             case 0: // Bottom player
-                enablePanelControls(bottomPlayerCards);
+                setPanelControlsEnabled(bottomPlayerCards, true);
                 break;
             case 1: // Left player
-                enablePanelControls(leftPlayerCards);
+                setPanelControlsEnabled(leftPlayerCards, true);
                 break;
             case 2: // Top player
-                enablePanelControls(topPlayerCards);
+                setPanelControlsEnabled(topPlayerCards, true);
                 break;
             case 3: // Right player
-                enablePanelControls(rightPlayerCards);
+                setPanelControlsEnabled(rightPlayerCards, true);
                 break;
         }
     }
 
     /** helper method to disable everything first */
     private void disableAllPlayerControls() {
-        disablePanelControls(bottomPlayerCards);
-        disablePanelControls(topPlayerCards);
-        disablePanelControls(leftPlayerCards);
-        disablePanelControls(rightPlayerCards);
+        setPanelControlsEnabled(bottomPlayerCards, false);
+        setPanelControlsEnabled(topPlayerCards, false);
+        setPanelControlsEnabled(leftPlayerCards, false);
+        setPanelControlsEnabled(rightPlayerCards, false);
     }
 
-    /** method to disable everything in a specific panel */
-    private void disablePanelControls(JPanel panel) {
-        // Disable all components in the panel
-        for (Component component : panel.getComponents()) {
-            if (component instanceof JButton) {
-                component.setEnabled(false);
-            } else if (component instanceof JPanel) {
-                // For button panels
-                for (Component subComponent : ((JPanel) component).getComponents()) {
-                    subComponent.setEnabled(false);
-                }
-            }
-        }
-    }
 
     /** this method enables control only to the current playing player */
-    private void enablePanelControls(JPanel panel) {
+    private void setPanelControlsEnabled(JPanel panel, boolean enabled) {
         // Enable all components in the panel
         for (Component component : panel.getComponents()) {
             if (component instanceof JButton) {
-                component.setEnabled(true);
-            } else if (component instanceof JPanel) {
+                component.setEnabled(enabled);
+            } else if (component instanceof JPanel subPanel) {
                 // For button panels
-                for (Component subComponent : ((JPanel) component).getComponents()) {
-                    subComponent.setEnabled(true);
+                for (Component subComponent : subPanel.getComponents()) {
+                    subComponent.setEnabled(enabled);
                 }
             }
         }
@@ -188,26 +174,22 @@ public class GameBoardView{
     /** this is the method that enables the visibility of the card */
     private void setCardFacesVisibility(JPanel panel, boolean visible) {
         for (Component component : panel.getComponents()) {
-            if (component instanceof JButton) {
-                Icon icon = ((JButton) component).getIcon();
-                if (icon instanceof CardView) {
-                    CardView cardView = (CardView) icon;
+            if (component instanceof JButton button && button.getIcon() instanceof CardView cardView) {
                     cardView.setCardVisibility(visible);
-                    ((JButton) component).repaint();
-                }
+                    button.repaint();
             }
         }
     }
 
     /** method used to add buttons for all the cards */
-    private static JButton getCardJButton(GameSessionController controller, Card card, Optional<String> rotate) {
+    private static JButton getCardJButton(GameSessionController controller, Card card, Optional<Rotation> rotate) {
         CardView cardView = new CardView(card);
         if(rotate.isPresent()) {
             switch (rotate.get()) {
-                case "left":
+                case LEFT:
                     cardView.rotateCard(true);
                     break;
-                case "right":
+                case RIGHT:
                     cardView.rotateCard(false);
                     break;
             }
@@ -234,13 +216,13 @@ public class GameBoardView{
         refreshPlayerPanel(bottomPlayerCards, 0, Optional.empty());
 
         // Refresh left player (index 1)
-        refreshPlayerPanel(leftPlayerCards, 1, Optional.of("left"));
+        refreshPlayerPanel(leftPlayerCards, 1, Optional.of(Rotation.LEFT));
 
         // Refresh top player (index 2)
         refreshPlayerPanel(topPlayerCards, 2, Optional.empty());
 
         // Refresh right player (index 3)
-        refreshPlayerPanel(rightPlayerCards, 3, Optional.of("right"));
+        refreshPlayerPanel(rightPlayerCards, 3, Optional.of(Rotation.RIGHT));
 
         // Update the center panel with current round card value
         JLabel centerLabel = (JLabel) ((JPanel) contentPane.getComponent(0)).getComponent(1);
@@ -251,7 +233,7 @@ public class GameBoardView{
     }
 
     /** Helper method to refresh a specific player's panel */
-    private void refreshPlayerPanel(JPanel playerPanel, int playerIndex, Optional<String> rotateOption) {
+    private void refreshPlayerPanel(JPanel playerPanel, int playerIndex, Optional<Rotation> rotateOption) {
         // Clear the panel
         playerPanel.removeAll();
 

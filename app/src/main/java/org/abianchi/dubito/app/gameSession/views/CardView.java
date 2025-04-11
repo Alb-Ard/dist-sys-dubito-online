@@ -10,6 +10,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
 import java.awt.geom.AffineTransform;
+import java.util.Optional;
 
 public class CardView extends ImageIcon {
 
@@ -21,8 +22,7 @@ public class CardView extends ImageIcon {
 
     private boolean isClicked;
 
-    private boolean isRotatedLeft = false;
-    private boolean isRotatedRight = false;
+    private Optional<Rotation> rotation = Optional.empty();
 
     public CardView(Card card) {
         this.isClicked = false;
@@ -41,15 +41,19 @@ public class CardView extends ImageIcon {
                 cardImagePath = IMAGE_PATH + "joker_card.png";
                 break;
         }
-        URL resourceUrl = ClassLoader.getSystemClassLoader().getResource(cardImagePath);
+        this.changeImage(cardImagePath);
+    }
+
+    private void changeImage(String path) {
+        URL resourceUrl = ClassLoader.getSystemClassLoader().getResource(path);
         if(resourceUrl != null) {
+            this.cardImagePath = path;
             try {
                 BufferedImage originalImage = ImageIO.read(resourceUrl);
                 Image correctSizeImage = originalImage.getScaledInstance(70, 120,Image.SCALE_SMOOTH);
                 this.setImage(correctSizeImage);
-
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            } catch (IOException ex) {
+                ex.printStackTrace();
             }
         }
     }
@@ -63,97 +67,49 @@ public class CardView extends ImageIcon {
     public void rotateCard(boolean clockwise) {
         // Set rotation flags
         if (clockwise) {
-            this.isRotatedLeft = true;
-            this.isRotatedRight = false;
-        } else {
-            this.isRotatedLeft = false;
-            this.isRotatedRight = true;
-        }
+            this.rotation = Optional.of(Rotation.LEFT);
 
-        this.applyRotation(cardImagePath);
+        } else {
+            this.rotation = Optional.of(Rotation.RIGHT);
+        }
+        this.changeImage(cardImagePath);
+        this.applyRotation();
     }
 
     public void setCardVisibility(boolean visible) {
         String imagePath = visible ? cardImagePath : IMAGE_PATH + "card_back.png";
-        if(isRotatedRight || isRotatedLeft) {
-            applyRotation(imagePath);
-        } else {
-            try {
-                // Determine which image to show
-                URL resourceUrl = ClassLoader.getSystemClassLoader().getResource(imagePath);
-
-                if (resourceUrl != null) {
-                    // Load fresh image
-                    BufferedImage originalImage = ImageIO.read(resourceUrl);
-                    Image correctSizeImage = originalImage.getScaledInstance(70, 120, Image.SCALE_SMOOTH);
-
-                    // Convert to a consistent BufferedImage type
-                    BufferedImage bufferedImage = new BufferedImage(
-                            correctSizeImage.getWidth(null),
-                            correctSizeImage.getHeight(null),
-                            BufferedImage.TYPE_INT_ARGB
-                    );
-
-                    Graphics2D g2d = bufferedImage.createGraphics();
-                    g2d.drawImage(correctSizeImage, 0, 0, null);
-                    g2d.dispose();
-
-                    // Set the basic image first
-                    setImage(bufferedImage);
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+        this.changeImage(imagePath);
+        if(this.rotation.isPresent()) {
+            applyRotation();
         }
     }
 
-    private void applyRotation(String imagePath) {
-        try {
-            //  reload the original image and apply all transformations from scratch
-            URL resourceUrl = ClassLoader.getSystemClassLoader().getResource(imagePath);
-            if (resourceUrl != null) {
-                BufferedImage originalImage = ImageIO.read(resourceUrl);
-                Image correctSizeImage = originalImage.getScaledInstance(70, 120, Image.SCALE_SMOOTH);
+    private void applyRotation() {
+        // Now rotate the image
+        Image newImage = this.getImage();
+        int width = newImage.getWidth(null);
+        int height = newImage.getHeight(null);
 
-                // Convert to a consistent BufferedImage type
-                BufferedImage bufferedImage = new BufferedImage(
-                        correctSizeImage.getWidth(null),
-                        correctSizeImage.getHeight(null),
-                        BufferedImage.TYPE_INT_ARGB
-                );
+        // Create a new buffered image for rotation
+        BufferedImage rotatedImage = new BufferedImage(
+                height, width, BufferedImage.TYPE_INT_ARGB
+        );
 
-                Graphics2D g2d = bufferedImage.createGraphics();
-                g2d.drawImage(correctSizeImage, 0, 0, null);
-                g2d.dispose();
+        Graphics2D g2d = rotatedImage.createGraphics();
 
-                // Now rotate the image
-                int width = bufferedImage.getWidth();
-                int height = bufferedImage.getHeight();
+        // Set up rotation transform
+        AffineTransform transform = new AffineTransform();
+        transform.translate(height / 2.0, width / 2.0);
+        double angle = this.rotation.get() == Rotation.LEFT ? Math.PI / 2 : -Math.PI / 2;
+        transform.rotate(angle);
+        transform.translate(-width / 2.0, -height / 2.0);
 
-                // Create a new buffered image for rotation
-                BufferedImage rotatedImage = new BufferedImage(
-                        height, width, BufferedImage.TYPE_INT_ARGB
-                );
+        g2d.setTransform(transform);
+        g2d.drawImage(newImage, 0, 0, null);
+        g2d.dispose();
 
-                g2d = rotatedImage.createGraphics();
-
-                // Set up rotation transform
-                AffineTransform transform = new AffineTransform();
-                transform.translate(height / 2.0, width / 2.0);
-                double angle = this.isRotatedLeft ? Math.PI / 2 : -Math.PI / 2;
-                transform.rotate(angle);
-                transform.translate(-width / 2.0, -height / 2.0);
-
-                g2d.setTransform(transform);
-                g2d.drawImage(bufferedImage, 0, 0, null);
-                g2d.dispose();
-
-                // Set the rotated image
-                setImage(rotatedImage);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        // Set the rotated image
+        setImage(rotatedImage);
     }
 
     public String getCardImagePath() {
