@@ -41,21 +41,27 @@ public class CardView extends ImageIcon {
                 cardImagePath = IMAGE_PATH + "joker_card.png";
                 break;
         }
-        this.changeImage(cardImagePath);
+        this.setImage(loadImageFromPath(cardImagePath));
     }
 
-    private void changeImage(String path) {
+    private static Image loadImageFromPath(String path) {
+        if(path == null) {
+            return null;
+        }
         URL resourceUrl = ClassLoader.getSystemClassLoader().getResource(path);
         if(resourceUrl != null) {
-            this.cardImagePath = path;
             try {
-                BufferedImage originalImage = ImageIO.read(resourceUrl);
-                Image correctSizeImage = originalImage.getScaledInstance(70, 120,Image.SCALE_SMOOTH);
-                this.setImage(correctSizeImage);
+                BufferedImage loadedImage = ImageIO.read(resourceUrl);
+                if(loadedImage == null) {
+                    return null;
+                }
+                Image correctSizeImage = loadedImage.getScaledInstance(70, 120,Image.SCALE_SMOOTH);
+                return correctSizeImage;
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
         }
+        return null;
     }
 
     private String chooseSeedImage(CardType cardType) {
@@ -66,29 +72,22 @@ public class CardView extends ImageIcon {
 
     public void rotateCard(boolean clockwise) {
         // Set rotation flags
-        if (clockwise) {
-            this.rotation = Optional.of(Rotation.LEFT);
-
-        } else {
-            this.rotation = Optional.of(Rotation.RIGHT);
-        }
-        this.changeImage(cardImagePath);
-        this.applyRotation();
+        this.rotation = Optional.of(clockwise ? Rotation.LEFT : Rotation.RIGHT);
+        this.setImage((rotateImage(loadImageFromPath(this.cardImagePath), this.rotation.get())));
     }
 
     public void setCardVisibility(boolean visible) {
         String imagePath = visible ? cardImagePath : IMAGE_PATH + "card_back.png";
-        this.changeImage(imagePath);
-        if(this.rotation.isPresent()) {
-            applyRotation();
-        }
+        Image image = loadImageFromPath(imagePath);
+        this.setImage(this.rotation.isPresent() ? rotateImage(image, this.rotation.get()) : image);
     }
 
-    private void applyRotation() {
-        // Now rotate the image
-        Image newImage = this.getImage();
-        int width = newImage.getWidth(null);
-        int height = newImage.getHeight(null);
+    private static Image rotateImage(Image image, Rotation rotation) {
+        if(image == null) {
+            return null;
+        }
+        int width = image.getWidth(null);
+        int height = image.getHeight(null);
 
         // Create a new buffered image for rotation
         BufferedImage rotatedImage = new BufferedImage(
@@ -100,16 +99,16 @@ public class CardView extends ImageIcon {
         // Set up rotation transform
         AffineTransform transform = new AffineTransform();
         transform.translate(height / 2.0, width / 2.0);
-        double angle = this.rotation.get() == Rotation.LEFT ? Math.PI / 2 : -Math.PI / 2;
+        double angle = rotation == Rotation.LEFT ? Math.PI / 2 : -Math.PI / 2;
         transform.rotate(angle);
         transform.translate(-width / 2.0, -height / 2.0);
 
         g2d.setTransform(transform);
-        g2d.drawImage(newImage, 0, 0, null);
+        g2d.drawImage(image, 0, 0, null);
         g2d.dispose();
 
         // Set the rotated image
-        setImage(rotatedImage);
+        return rotatedImage;
     }
 
     public String getCardImagePath() {
