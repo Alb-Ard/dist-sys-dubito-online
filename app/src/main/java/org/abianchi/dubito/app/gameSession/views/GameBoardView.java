@@ -199,11 +199,11 @@ public class GameBoardView{
             @Override
             public void actionPerformed(ActionEvent e) {
                 if(!cardView.isClicked()) {
-                    cardView.click();
                     controller.selectCard(cardView.getCard());
                 } else {
                     controller.removeSelectedCard(cardView.getCard());
                 }
+                cardView.click();
             }
         });
         return buttonCard;
