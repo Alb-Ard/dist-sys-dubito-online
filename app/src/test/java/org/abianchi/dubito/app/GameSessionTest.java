@@ -6,6 +6,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class GameSessionTest {
 
@@ -20,7 +21,7 @@ public class GameSessionTest {
             this.testPlayers.add(new PlayerImpl());
         }
         CardTypeFactory.INSTANCE.setSeed(14000);
-        this.testController = new GameSessionController(this.testPlayers);
+        this.testController = new GameSessionController(this.testPlayers, Optional.empty());
         this.testController.newRound();
     }
 
@@ -150,7 +151,7 @@ public class GameSessionTest {
             this.gameOverPlayers.get(2).loseLife();
             this.gameOverPlayers.get(0).loseLife();
             CardTypeFactory.INSTANCE.setSeed(14000);
-            this.testGameOverController = new GameSessionController(this.gameOverPlayers);
+            this.testGameOverController = new GameSessionController(this.gameOverPlayers, Optional.empty());
             this.testGameOverController.newRound();
             GameState currentGameState = this.testGameOverController.getCurrentGameState();
             CardValue roundCardType = currentGameState.getRoundCardValue();
@@ -177,7 +178,7 @@ public class GameSessionTest {
             for (int i = 0; i < 2; i++) {
                 this.gameOverPlayers.add(new PlayerImpl());
             }
-            this.testGameOverController = new GameSessionController(this.gameOverPlayers);
+            this.testGameOverController = new GameSessionController(this.gameOverPlayers, Optional.empty());
             this.testGameOverController.newRound();
             Player playerThatWillFinish = this.testGameOverController.getCurrentPlayer();
             List<Card> firstRoundCards = playerThatWillFinish.getHand();

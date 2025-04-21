@@ -27,6 +27,10 @@ public class GameState {
         } while (this.roundCardValue == CardValue.JOKER);
     }
 
+    public void setRoundCardType(CardValue value) {
+        this.roundCardValue = value;
+    }
+
     public void setTurnPrevPlayerPlayedCards(List<Card> playedCards) {
         this.turnPrevPlayerPlayedCards.clear();
         this.turnPrevPlayerPlayedCards.addAll(playedCards);

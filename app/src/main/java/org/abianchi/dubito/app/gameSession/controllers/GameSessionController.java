@@ -8,6 +8,7 @@ import java.util.Optional;
 
 public class GameSessionController {
     private List<Player> sessionPlayers;
+    private Optional<Player> localPlayer;
 
     private GameState gameState;
 
@@ -17,14 +18,17 @@ public class GameSessionController {
 
 
 
-    public GameSessionController(List<Player> players) {
+    public GameSessionController(List<Player> players, Optional<Player> localPlayer) {
         this.sessionPlayers = players;
+        this.localPlayer = localPlayer;
         this.gameState = new GameState();
         this.selectedCards = new ArrayList<>();
     }
 
     public void newRound() {
-        this.gameState.newRoundCardType();
+        if(canGenerateRoundCard()) {
+            this.gameState.newRoundCardType();
+        }
         this.giveNewHand();
         this.gameState.setTurnPrevPlayerPlayedCards(List.of());
         int nextPlayerIndex = this.getNextAlivePLayingPlayer(this.gameState.getCurrentPlayerIndex());
@@ -33,7 +37,10 @@ public class GameSessionController {
         } else {
             this.gameState.nextPlayer(nextPlayerIndex);
         }
+    }
 
+    protected boolean canGenerateRoundCard() {
+        return true;
     }
 
     /**
@@ -65,15 +72,23 @@ public class GameSessionController {
     }
 
     private void giveNewHand() {
-        this.sessionPlayers.forEach(player -> {
-            if (player.getLives() > 0) {
-                List<Card> newHand = new ArrayList<>();
-                for (int i = 0; i < Player.MAXHANDSIZE; i++) {
-                    newHand.add(new CardImpl(Optional.empty()));
-                }
-                player.receiveNewHand(newHand);
+        if(this.localPlayer.isPresent()) {
+            List<Card> newHand = new ArrayList<>();
+            for (int i = 0; i < Player.MAXHANDSIZE; i++) {
+                newHand.add(new CardImpl(Optional.empty()));
             }
-        });
+            this.localPlayer.get().receiveNewHand(newHand);
+        } else {
+            this.sessionPlayers.forEach(player -> {
+                if (player.getLives() > 0) {
+                    List<Card> newHand = new ArrayList<>();
+                    for (int i = 0; i < Player.MAXHANDSIZE; i++) {
+                        newHand.add(new CardImpl(Optional.empty()));
+                    }
+                    player.receiveNewHand(newHand);
+                }
+            });
+        }
     }
 
     public void selectCard(Card selectedCard) {
@@ -155,5 +170,7 @@ public class GameSessionController {
     public Player getCurrentPlayer() { return sessionPlayers.get(this.gameState.getCurrentPlayerIndex());}
 
     public int getWinnerIndex() { return this.winnerIndex;}
+
+    protected List<Player> getPlayers() { return this.sessionPlayers;}
 
 }

@@ -15,6 +15,8 @@ public class GameBoardView{
 
     private final Container contentPane;
     private final GameSessionController controller;
+
+    private final JFrame frame;
     private final JPanel bottomPlayerCards;
     private final JPanel topPlayerCards;
     private final JPanel leftPlayerCards;
@@ -24,7 +26,7 @@ public class GameBoardView{
         this.controller = controller;
 
         final BorderLayout borderLayout = new BorderLayout();
-        JFrame frame = new JFrame("Dubito Online");
+        this.frame = new JFrame("Dubito Online");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.contentPane = frame.getContentPane();
         this.contentPane.setLayout(borderLayout);
@@ -84,8 +86,7 @@ public class GameBoardView{
 
         frame.pack();
         frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
-
+        //frame.setVisible(true);
     }
 
 
@@ -211,7 +212,7 @@ public class GameBoardView{
 
 
     /** This method refreshes all the player hands after someone has pressed either throw cards or the call liar button*/
-    private void refreshBoard() {
+    public void refreshBoard() {
         // Refresh bottom player (index 0)
         refreshPlayerPanel(bottomPlayerCards, 0, Optional.empty());
 
@@ -333,6 +334,10 @@ public class GameBoardView{
         });
 
         pane.add(buttonPanel);
+    }
+
+    public void setBoardVisible(boolean visible) {
+        this.frame.setVisible(visible);
     }
 
 }
