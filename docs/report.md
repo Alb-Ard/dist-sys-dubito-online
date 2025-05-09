@@ -31,20 +31,6 @@ The game rules are the following:
 
 ## Concept
 
-Here you should explain:
-- The type of product developed with that project, for example (non-exhaustive):
-    - Application (with GUI, be it mobile, web, or desktop)
-    - Command-line application (CLI could be used by humans or scripts)
-    - Library
-    - Web-service(s)
-
-- Use case collection
-    - _where_ are the users?
-    - _when_ and _how frequently_ do they interact with the system?
-    - _how_ do they _interact_ with the system? which _devices_ are they using?
-    - does the system need to _store_ user's __data__? _which_? _where_?
-    - most likely, there will be _multiple_ __roles__
-
 ### Artifacts
 The project will result in a *group* of applications that will let the users host, join and play games of dubito with other users.
 
@@ -57,7 +43,28 @@ All uses will be able to:
 - Use the application to create or find a game to play with other users
 - Participate in a game by doing the actions expressed in the rules
 
+Additionally, users who create games will become their *owners*, which will give them additional funcionality to manage the game(s) they create.
+
 ## Requirements
+
+- The requirements must explain __what__ (not how) the software being produced should do. 
+    * you should not focus on the particular problems, but exclusively on what you want the application to do.
+
+- Requirements must be clearly identified, and possibly numbered
+
+- Requirements are divided into:
+    - **Functional**: some functionality the software should provide to the user
+    - **Non-functional**: requirements that do not directly concern behavioural aspects, such as consistency, availability, etc.
+    - **Implementation**: constrain the entire phase of system realization, for instance by requiring the use of a specific programming language and/or a specific software tool
+        + these constraints should be adequately justified by political / economic / administrative reasons...
+        + ... otherwise, implementation choices should emerge _as a consequence of_ design
+
+- If there are domain-specific terms, these should be explained in a glossary
+
+- Each requirement must have its own __acceptance criteria__
+    + these will be important for the validation phase
+
+---
 
 The following sections group the system requirements by type and by domain functionality.
 Each requirement will be followed by its own acceptance criteria(s).
@@ -109,29 +116,16 @@ Each requirement will be followed by its own acceptance criteria(s).
 
 - 2.1: The lobby management should not have network partition protection systems in place.
     - If the lobby management system has network problems or is not available, then the users can not access it.
-    - By consequence, if a single user loses connection to the lobby management system, no
+    - By consequence, if a single user loses connection to the lobby management system, it's the user responsibility to find the issue.
 - 2.2: The lobby management must provide always consistency and correctness of data.
     - The information the users receve from the lobby management system must always be corrent and up-to-date, taking into account network delays.
-- 2.3: 
+- 2.3: The game management should not have network partition protection systems in place.
+    - If a users loses connection to the game, he won't be able to connect back.
 
 ### 3. Implementation
 
-- The requirements must explain __what__ (not how) the software being produced should do. 
-    * you should not focus on the particular problems, but exclusively on what you want the application to do.
-
-- Requirements must be clearly identified, and possibly numbered
-
-- Requirements are divided into:
-    - **Functional**: some functionality the software should provide to the user
-    - **Non-functional**: requirements that do not directly concern behavioural aspects, such as consistency, availability, etc.
-    - **Implementation**: constrain the entire phase of system realization, for instance by requiring the use of a specific programming language and/or a specific software tool
-        + these constraints should be adequately justified by political / economic / administrative reasons...
-        + ... otherwise, implementation choices should emerge _as a consequence of_ design
-
-- If there are domain-specific terms, these should be explained in a glossary
-
-- Each requirement must have its own __acceptance criteria__
-    + these will be important for the validation phase
+- 3.1: The application(s) will be developed using the Java language and the Swing framework, since they are what the development team are most familiar with.
+- 3.2: The network management will be implemented from scratch, so that the behaviour of the applications can be controlled more precisely.
 
 ## Design
 
