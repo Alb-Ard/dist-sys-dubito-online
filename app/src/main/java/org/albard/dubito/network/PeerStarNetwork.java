@@ -3,7 +3,6 @@ package org.albard.dubito.network;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -20,11 +19,10 @@ public final class PeerStarNetwork implements PeerNetwork {
 
     private BiConsumer<PeerId, PeerConnection> peerConnectedlistener;
 
-    private PeerStarNetwork(final PeerId localPeerId, final PeerNetwork baseNetwork) {
+    private PeerStarNetwork(final PeerNetwork baseNetwork) {
         this.baseNetwork = baseNetwork;
         this.baseNetwork.setPeerConnectedListener((id, connection) -> {
             try {
-                System.out.println("Peer connected to ID: " + id);
                 if (PeerStarNetwork.this.peerConnectedlistener != null) {
                     PeerStarNetwork.this.peerConnectedlistener.accept(id, connection);
                 }
@@ -37,8 +35,7 @@ public final class PeerStarNetwork implements PeerNetwork {
 
     public static PeerNetwork createBound(final PeerId localPeerId, final String bindAddress, final int bindPort,
             final MessengerFactory messengerFactory) throws IOException {
-        return new PeerStarNetwork(localPeerId,
-                PeerNetwork.createBound(localPeerId, bindAddress, bindPort, messengerFactory));
+        return new PeerStarNetwork(PeerNetwork.createBound(localPeerId, bindAddress, bindPort, messengerFactory));
     }
 
     @Override
@@ -58,13 +55,17 @@ public final class PeerStarNetwork implements PeerNetwork {
 
     @Override
     public boolean connectToPeer(final PeerEndPoint peerEndPoint) {
-        if(this.baseNetwork.connectToPeer(peerEndPoint)) {
-            Map.Entry<PeerId,PeerConnection> newPeer = this.getPeers().entrySet().stream().filter(el -> el.getValue().getRemoteEndPoint().equals(peerEndPoint))
-                    .findFirst().get();
-            this.sendMessage(new ConnectionRouteMessage(this.getLocalPeerId(), Set.of(newPeer.getKey()), this.getBindEndPoint()));
-            return true;
+        if (!this.baseNetwork.connectToPeer(peerEndPoint)) {
+            return false;
         }
-        return false;
+        return this.getPeers().entrySet().stream().filter(el -> el.getValue().getRemoteEndPoint().equals(peerEndPoint))
+                .findFirst().map(newPeer -> {
+                    System.out.println(this.getLocalPeerId() + ": Sending my server endpoint to " + newPeer.getKey()
+                            + " IP:" + peerEndPoint);
+                    this.sendMessage(new ConnectionRouteMessage(this.getLocalPeerId(), Set.of(newPeer.getKey()),
+                            this.getBindEndPoint()));
+                    return true;
+                }).orElse(false);
     }
 
     @Override
@@ -108,24 +109,22 @@ public final class PeerStarNetwork implements PeerNetwork {
     }
 
     private void propagatePeer(final PeerEndPoint peerEndPoint) {
-        Optional<Map.Entry<PeerId,PeerConnection>> existingPeer = this.getPeers().entrySet().stream().filter(el -> el.getValue().getRemoteEndPoint().equals(peerEndPoint))
-                .findFirst(); // verifico se esiste già questa connessione
-        if(existingPeer.isPresent()) {
-            /*
-            per fare sì che questo Peer si colleghi al resto, recupero tutti quelli connessi a me, rimuovo dalla lista
-            me stesso e il nuovo Peer e invio un messaggio per connettere il nuovo Peer a tutti gli altri
-            (ovviamente non mando un nuovo messaggio di connessione a me stesso o al Peer nuovo stesso)
-             */
-            Set<PeerId> receipients = new HashSet<>(PeerStarNetwork.this.getPeers().keySet());
-            receipients.remove(this.getLocalPeerId());
-            receipients.remove(existingPeer.get().getKey());
-            System.out.println(this.getLocalPeerId() + ": Propagating connection " + existingPeer.get().getKey() + " to " + receipients + " IP:" + peerEndPoint);
-            this.sendMessage(new ConnectionRouteMessage(this.getLocalPeerId(), receipients, peerEndPoint));
-            return;
-        }
-        if(this.baseNetwork.connectToPeer(peerEndPoint)) {
-            Map.Entry<PeerId,PeerConnection> newPeer = this.getPeers().entrySet().stream().filter(el -> el.getValue().getRemoteEndPoint().equals(peerEndPoint))
-                    .findFirst().get();
-        }
+        this.getPeers().entrySet().stream().filter(el -> el.getValue().getRemoteEndPoint().equals(peerEndPoint))
+                .findFirst().ifPresentOrElse(existingPeer -> {
+                    final Set<PeerId> receipients = new HashSet<>(this.getPeers().keySet());
+                    receipients.remove(this.getLocalPeerId());
+                    receipients.remove(existingPeer.getKey());
+                    System.out.println(this.getLocalPeerId() + ": Propagating connection " + existingPeer.getKey()
+                            + " to " + receipients + " IP:" + peerEndPoint);
+                    this.sendMessage(new ConnectionRouteMessage(this.getLocalPeerId(), receipients, peerEndPoint));
+                }, () -> {
+                    System.out.println(this.getLocalPeerId() + ": Connecting to propagated connection " + peerEndPoint);
+                    // This failing might not be an error:
+                    // Since we are propagating connections between hosts, and connections
+                    // can't be uniquely identified without receiving their id, when a duplicated
+                    // id is received it could just be that we are connecting to an host that
+                    // is already connected to me but with a different EndPoint.
+                    this.baseNetwork.connectToPeer(peerEndPoint);
+                });
     }
 }

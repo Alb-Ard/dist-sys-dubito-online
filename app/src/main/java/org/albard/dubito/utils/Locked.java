@@ -6,15 +6,20 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 public final class Locked<T> {
-    private final Lock lock = new ReentrantLock();
+    private final Lock lock;
     private T value;
 
-    private Locked(final T value) {
+    private Locked(final T value, final Lock lock) {
         this.value = value;
+        this.lock = lock;
     }
 
     public static <T> Locked<T> of(final T value) {
-        return new Locked<T>(value);
+        return new Locked<T>(value, new ReentrantLock());
+    }
+
+    public static <T> Locked<T> withExistingLock(final T value, final Lock lock) {
+        return new Locked<T>(value, lock);
     }
 
     public boolean compareAndSet(Predicate<T> condition, Function<T, T> setter) {

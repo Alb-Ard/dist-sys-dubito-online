@@ -32,7 +32,8 @@ public final class PeerEndPoint {
 
     public static PeerEndPoint createFromAddress(SocketAddress address) {
         if (address instanceof InetSocketAddress socketAddress) {
-            return new PeerEndPoint(socketAddress.getHostString(), socketAddress.getPort());
+            final String[] hostParts = socketAddress.getHostString().split("/");
+            return new PeerEndPoint(hostParts[hostParts.length - 1], socketAddress.getPort());
         }
         return null;
     }
