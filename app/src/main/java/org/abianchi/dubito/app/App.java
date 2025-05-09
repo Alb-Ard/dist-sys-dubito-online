@@ -22,6 +22,21 @@ import java.util.stream.Collectors;
 
 public class App {
 
+    private static void waitForPlayers(PeerNetwork network) throws InterruptedException {
+        while(network.getPeers().size() < 4) {
+            Thread.sleep(1000);
+        }
+    }
+
+    private static void connectWithRetries(PeerNetwork network, String ip, int port) throws InterruptedException {
+        /* il metodo connectToPeer mi fa ritornare un valore booleano, se inserito dentro
+        il while mi permette di ritentare la connessione molteplici volte
+         */
+        while(!network.connectToPeer(PeerEndPoint.createFromValues(ip, port))) {
+            Thread.sleep(1000);
+        }
+    }
+
     public static void main(final String[] args) throws IOException, InterruptedException {
         // devo sapere l'owner, lo prendo dagli args
         boolean isOwner = Arrays.stream(args).anyMatch(el -> el.startsWith("--owner"));
@@ -33,10 +48,10 @@ public class App {
         // collegherà a tutti gli altri rimasti
         final PeerNetwork network = PeerStarNetwork.createBound(localId, "0.0.0.0",isOwner ? 9000 : 0,
                 new MessengerFactory(MessageSerializer.createJson()));
-        if (!isOwner && !network.connectToPeer(PeerEndPoint.createFromValues(ownerEndPoint[0],Integer.parseInt(ownerEndPoint[1])))) {
-            return;
+        if (!isOwner) {
+            connectWithRetries(network, ownerEndPoint[0], Integer.parseInt(ownerEndPoint[1]));
         }
-        Thread.sleep(3000); // breve pausa per far collegare tutti i players
+        waitForPlayers(network); // breve pausa per far collegare tutti i players
         final List<OnlinePlayer> players = network.getPeers().keySet().stream()
                 .map(OnlinePlayerImpl::new).collect(Collectors.toList());
 

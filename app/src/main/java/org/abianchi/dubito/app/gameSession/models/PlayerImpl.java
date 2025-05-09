@@ -16,7 +16,12 @@ public class PlayerImpl implements Player{
 
     @Override
     public void playCards(List<Card> selectedCards) {
-        this.playerHand.removeAll(selectedCards);
+        for (Card cardToRemove : selectedCards) {
+            int indexToRemove = this.playerHand.indexOf(cardToRemove);
+            if (indexToRemove >= 0) {
+                this.playerHand.remove(indexToRemove);
+            }
+        }
     }
 
     @Override

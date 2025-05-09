@@ -4,7 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.albard.dubito.messaging.handlers.RouteMessageHandler;
-import org.albard.dubito.messaging.messages.RouteAddedMessage;
+import org.albard.dubito.messaging.messages.ConnectionRouteMessage;
 import org.albard.dubito.messaging.messages.RouteRemovedMessage;
 import org.albard.dubito.network.PeerEndPoint;
 import org.albard.dubito.network.PeerId;
@@ -24,7 +24,7 @@ public final class RouteMessageHandlerTest {
         final RouteMessageHandler handler = new RouteMessageHandler(e -> {
         }, i -> {
         });
-        Assertions.assertTrue(handler.handleMessage(new RouteAddedMessage(PeerId.createNew(),
+        Assertions.assertTrue(handler.handleMessage(new ConnectionRouteMessage(PeerId.createNew(),
                 Set.of(PeerId.createNew()), TestUtilities.createEndPoint(1))));
     }
 
@@ -46,7 +46,7 @@ public final class RouteMessageHandlerTest {
         }, i -> {
         });
         final PeerEndPoint newPeerEndPoint = PeerEndPoint.createFromValues("127.0.0.1", 9000);
-        handler.handleMessage(new RouteAddedMessage(newPeerId, Set.of(), newPeerEndPoint));
+        handler.handleMessage(new ConnectionRouteMessage(newPeerId, Set.of(), newPeerEndPoint));
         Assertions.assertEquals(1, receivedPeers.size());
         Assertions.assertEquals(receivedPeers.stream().findFirst().get(), newPeerEndPoint);
     }

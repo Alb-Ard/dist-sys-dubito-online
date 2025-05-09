@@ -3,7 +3,7 @@ package org.albard.dubito.messaging.handlers;
 import java.util.function.Consumer;
 
 import org.albard.dubito.messaging.messages.GameMessage;
-import org.albard.dubito.messaging.messages.RouteAddedMessage;
+import org.albard.dubito.messaging.messages.ConnectionRouteMessage;
 import org.albard.dubito.messaging.messages.RouteRemovedMessage;
 import org.albard.dubito.network.PeerEndPoint;
 import org.albard.dubito.network.PeerId;
@@ -20,7 +20,7 @@ public final class RouteMessageHandler implements MessageHandler {
 
     @Override
     public boolean handleMessage(final GameMessage message) {
-        if (message instanceof RouteAddedMessage routeMessage) {
+        if (message instanceof ConnectionRouteMessage routeMessage) {
             if (this.routeAddedListener != null) {
                 this.routeAddedListener.accept(routeMessage.getRouteEndPoint());
             }

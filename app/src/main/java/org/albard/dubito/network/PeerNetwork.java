@@ -29,4 +29,6 @@ public interface PeerNetwork extends Closeable, Messenger {
     void setPeerConnectedListener(final BiConsumer<PeerId, PeerConnection> listener);
 
     void setPeerDisconnectedListener(final Consumer<PeerId> listener);
+
+    PeerEndPoint getBindEndPoint();
 }

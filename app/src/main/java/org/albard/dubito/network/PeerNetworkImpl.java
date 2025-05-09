@@ -80,6 +80,7 @@ public final class PeerNetworkImpl implements PeerNetwork {
 
     @Override
     public boolean connectToPeer(final PeerEndPoint peerEndPoint) {
+        System.out.println("Connecting to " + peerEndPoint);
         if (this.containsPeerAtEndPoint(peerEndPoint)) {
             return true;
         }
@@ -130,6 +131,11 @@ public final class PeerNetworkImpl implements PeerNetwork {
     }
 
     @Override
+    public PeerEndPoint getBindEndPoint() {
+        return this.connectionReceiver.getBindEndPoint();
+    }
+
+    @Override
     public void close() {
         System.out.println("Closing...");
         final Set<PeerId> connectedPeers = Set.copyOf(this.connections.keySet());
@@ -169,6 +175,7 @@ public final class PeerNetworkImpl implements PeerNetwork {
     }
 
     private boolean addConnection(final PeerId id, final PeerConnection connection) {
+        System.out.println("Adding connection: " + id);
         if (id == null) {
             System.err.println("Provided Id for connection " + connection.getRemoteEndPoint()
                     + " is null (maybe Id exchange failed...)");
@@ -180,7 +187,7 @@ public final class PeerNetworkImpl implements PeerNetwork {
         }
         final PeerConnection oldConnection = this.connections.putIfAbsent(id, connection);
         if (oldConnection != null) {
-            System.err.println("A connection with the same PeerId is already present");
+            System.err.println("A connection with the same PeerId is already present " + id);
             try {
                 connection.close();
             } catch (final IOException ex) {
