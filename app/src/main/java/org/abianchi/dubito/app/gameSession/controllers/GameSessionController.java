@@ -6,8 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class GameSessionController {
-    private List<Player> sessionPlayers;
+public class GameSessionController<X extends Player> {
+    private List<X> sessionPlayers;
 
     private GameState gameState;
 
@@ -15,7 +15,7 @@ public class GameSessionController {
 
     private int winnerIndex;
 
-    public GameSessionController(List<Player> players) {
+    public GameSessionController(List<X> players) {
         this.sessionPlayers = players;
         this.gameState = new GameState();
         this.selectedCards = new ArrayList<>();
@@ -169,7 +169,7 @@ public class GameSessionController {
         return this.winnerIndex;
     }
 
-    protected List<Player> getPlayers() {
+    protected List<X> getPlayers() {
         return this.sessionPlayers;
     }
 

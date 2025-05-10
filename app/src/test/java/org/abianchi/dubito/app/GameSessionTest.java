@@ -12,7 +12,7 @@ public class GameSessionTest {
     private static final int MAXPLAYERS = 4;
 
     private final List<Player> testPlayers = new ArrayList<>();
-    private GameSessionController testController;
+    private GameSessionController<Player> testController;
 
     @BeforeEach
     void setUp() {
@@ -20,7 +20,7 @@ public class GameSessionTest {
             this.testPlayers.add(new PlayerImpl());
         }
         CardTypeFactory.INSTANCE.setSeed(14000);
-        this.testController = new GameSessionController(this.testPlayers);
+        this.testController = new GameSessionController<>(this.testPlayers);
         this.testController.newRound();
     }
 
@@ -41,8 +41,8 @@ public class GameSessionTest {
         Player currentPlayer = this.testController.getCurrentPlayer().get();
         this.testController.selectCard(currentPlayer.getHand().get(0));
         this.testController.playCards();
-        Assertions.assertEquals(this.testPlayers.get(1), this.testController.getCurrentPlayer());
-        Assertions.assertEquals(currentPlayer, this.testController.getPreviousPlayer());
+        Assertions.assertEquals(this.testPlayers.get(1), this.testController.getCurrentPlayer().get());
+        Assertions.assertEquals(currentPlayer, this.testController.getPreviousPlayer().get());
     }
 
     @Test
@@ -88,7 +88,7 @@ public class GameSessionTest {
         Assertions.assertEquals(1, liarPlayer.getLives());
         // check if new round has moved the turn
         Assertions.assertEquals(this.testPlayers.get(1), callLiarPlayer);
-        Assertions.assertEquals(this.testPlayers.get(2), this.testController.getCurrentPlayer());
+        Assertions.assertEquals(this.testPlayers.get(2), this.testController.getCurrentPlayer().get());
     }
 
     @Test
@@ -116,8 +116,8 @@ public class GameSessionTest {
         Assertions.assertEquals(1, callLiarPlayer.getLives());
         Assertions.assertEquals(2, truthPlayer.getLives());
         // check if new round has moved the turn
-        Assertions.assertEquals(this.testPlayers.get(1), this.testController.getPreviousPlayer());
-        Assertions.assertEquals(this.testPlayers.get(2), this.testController.getCurrentPlayer());
+        Assertions.assertEquals(this.testPlayers.get(1), this.testController.getPreviousPlayer().get());
+        Assertions.assertEquals(this.testPlayers.get(2), this.testController.getCurrentPlayer().get());
     }
 
     @Test
@@ -129,14 +129,14 @@ public class GameSessionTest {
         List<Card> currentPlayerHand = List.copyOf(currentPlayer.getHand());
         this.testController.callLiar();
         Assertions.assertEquals(2, currentPlayer.getLives());
-        Assertions.assertEquals(this.testController.getCurrentPlayer(), currentPlayer);
+        Assertions.assertEquals(this.testController.getCurrentPlayer().get(), currentPlayer);
         Assertions.assertIterableEquals(this.testController.getCurrentPlayer().get().getHand(), currentPlayerHand);
     }
 
     @Nested
     class gameOverAndNextRoundTest {
         private final List<Player> gameOverPlayers = new ArrayList<>();
-        private GameSessionController testGameOverController;
+        private GameSessionController<Player> testGameOverController;
 
         @Test
         void assertGameOver() {
@@ -147,7 +147,7 @@ public class GameSessionTest {
             this.gameOverPlayers.get(2).loseLife();
             this.gameOverPlayers.get(0).loseLife();
             CardTypeFactory.INSTANCE.setSeed(14000);
-            this.testGameOverController = new GameSessionController(this.gameOverPlayers);
+            this.testGameOverController = new GameSessionController<>(this.gameOverPlayers);
             this.testGameOverController.newRound();
             GameState currentGameState = this.testGameOverController.getCurrentGameState();
             CardValue roundCardType = currentGameState.getRoundCardValue();
@@ -175,7 +175,7 @@ public class GameSessionTest {
             for (int i = 0; i < 2; i++) {
                 this.gameOverPlayers.add(new PlayerImpl());
             }
-            this.testGameOverController = new GameSessionController(this.gameOverPlayers);
+            this.testGameOverController = new GameSessionController<>(this.gameOverPlayers);
             this.testGameOverController.newRound();
             Player playerThatWillFinish = this.testGameOverController.getCurrentPlayer().get();
             List<Card> firstRoundCards = playerThatWillFinish.getHand();

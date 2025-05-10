@@ -13,7 +13,7 @@ import java.util.Optional;
 public class GameBoardView {
 
     private final Container contentPane;
-    private final GameSessionController controller;
+    private final GameSessionController<?> controller;
 
     private final JFrame frame;
     private final JPanel bottomPlayerCards;
@@ -21,7 +21,7 @@ public class GameBoardView {
     private final JPanel leftPlayerCards;
     private final JPanel rightPlayerCards;
 
-    public GameBoardView(GameSessionController controller) {
+    public GameBoardView(GameSessionController<?> controller) {
         this.controller = controller;
 
         final BorderLayout borderLayout = new BorderLayout();
@@ -180,18 +180,9 @@ public class GameBoardView {
     }
 
     /** method used to add buttons for all the cards */
-    private static JButton getCardJButton(GameSessionController controller, Card card, Optional<Rotation> rotate) {
+    private static JButton getCardJButton(GameSessionController<?> controller, Card card, Optional<Rotation> rotate) {
         CardView cardView = new CardView(card);
-        if (rotate.isPresent()) {
-            switch (rotate.get()) {
-                case LEFT:
-                    cardView.rotateCard(true);
-                    break;
-                case RIGHT:
-                    cardView.rotateCard(false);
-                    break;
-            }
-        }
+        cardView.setRotation(rotate);
         JButton buttonCard = new JButton(cardView);
         buttonCard.addActionListener(new ActionListener() {
             @Override
@@ -242,16 +233,15 @@ public class GameBoardView {
         for (Card card : this.controller.getSessionPlayers().get(playerIndex).getHand()) {
             JButton buttonCard = getCardJButton(controller, card, rotateOption);
             // Set card visibility based on current player
-            if (buttonCard.getIcon() instanceof CardView) {
-                ((CardView) buttonCard.getIcon()).setCardVisibility(playerIndex == currentPlayerIndex);
+            if (buttonCard.getIcon() instanceof CardView cardImage) {
+                cardImage.setCardVisibility(playerIndex == currentPlayerIndex);
             }
 
             playerPanel.add(buttonCard);
         }
 
         // Re-add buttons with appropriate orientation
-        boolean isVertical = (playerIndex == 1 || playerIndex == 3); // Left or right player
-        this.addButtonsAndLives(playerPanel, playerIndex, isVertical);
+        this.addButtonsAndLives(playerPanel, playerIndex, rotateOption.isPresent());
 
         // Refresh the panel
         playerPanel.revalidate();

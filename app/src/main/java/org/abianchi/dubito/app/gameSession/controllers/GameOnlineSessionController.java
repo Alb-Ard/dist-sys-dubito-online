@@ -16,17 +16,17 @@ import org.albard.dubito.network.PeerNetwork;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
-public class GameOnlineSessionController extends GameSessionController implements MessageHandler {
+public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSessionController<X>
+        implements MessageHandler {
     private final PeerNetwork sessionNetwork;
     private final boolean isOwner;
     private final Runnable onChanged;
     private final OnlinePlayer localPlayer;
 
-    public GameOnlineSessionController(List<OnlinePlayer> players, PeerNetwork network,
+    public GameOnlineSessionController(List<X> players, PeerNetwork network,
             boolean isOwner, Runnable onChanged) {
-        super(players.stream().map(el -> (Player) el).collect(Collectors.toList()));
+        super(players);
         this.sessionNetwork = network;
         this.isOwner = isOwner;
         this.onChanged = onChanged;
@@ -40,7 +40,8 @@ public class GameOnlineSessionController extends GameSessionController implement
         // sender di messaggio avvisa che ha pescato una nuova mano
         if (message instanceof NewHandDrawnMessage handDrawnMessage) {
             Player player = this.getPlayerById(message.getSender());
-            player.receiveNewHand(handDrawnMessage.getNewHand());
+            player.receiveNewHand(handDrawnMessage.getNewHand().stream().map(Card::ofType)
+                    .toList());
             // devo qua segnalare il refresh della view (senza avere un riferimento alla
             // view)
             // devo rendere osservable questo Controller (GameOnlineSessionController) un
@@ -51,7 +52,8 @@ public class GameOnlineSessionController extends GameSessionController implement
         }
         // sender ha lanciato le carte
         if (message instanceof CardsThrownMessage cardsThrownMessage) {
-            cardsThrownMessage.getThrownCards().forEach(this::selectCard);
+            cardsThrownMessage.getThrownCards().stream().map(Card::ofType)
+                    .forEach(this::selectCard);
             this.playCards();
             this.onChanged.run();
             return true;
@@ -80,7 +82,8 @@ public class GameOnlineSessionController extends GameSessionController implement
                     this.getCurrentGameState().getRoundCardValue()));
         }
         sessionNetwork.sendMessage(new NewHandDrawnMessage(sessionNetwork.getLocalPeerId(), null,
-                this.getPlayerById(sessionNetwork.getLocalPeerId()).getHand()));
+                this.localPlayer.getHand().stream().map(e -> e.getCardType())
+                        .toList()));
     }
 
     @Override
@@ -90,7 +93,7 @@ public class GameOnlineSessionController extends GameSessionController implement
 
     @Override
     protected void giveNewHand() {
-        // When new hands are given, I only want to genereta a hand for my local player
+        // When new hands are given, I only want to generate a hand for my local player
         List<Card> newHand = new ArrayList<>();
         for (int i = 0; i < Player.MAXHANDSIZE; i++) {
             newHand.add(new CardImpl(Optional.empty()));
@@ -104,7 +107,8 @@ public class GameOnlineSessionController extends GameSessionController implement
         // fare localmente il resto
         if (this.isCurrentPlayerLocal()) {
             sessionNetwork.sendMessage(new CardsThrownMessage(sessionNetwork.getLocalPeerId(), null,
-                    this.getSelectedCards()));
+                    this.getSelectedCards().stream().map(e -> e.getCardType())
+                            .toList()));
         }
         super.playCards();
     }
@@ -120,14 +124,13 @@ public class GameOnlineSessionController extends GameSessionController implement
 
     // con questo prendiamo il primo player della sessione con lo specifico Id
     // passato
-    private OnlinePlayer getPlayerById(PeerId id) {
-        return this.getPlayers().stream().map(p -> (OnlinePlayer) p)
+    private X getPlayerById(PeerId id) {
+        return this.getPlayers().stream()
                 .filter(el -> el.getOnlineId().equals(id)).findFirst().get();
     }
 
     private boolean isCurrentPlayerLocal() {
-        return this.getCurrentPlayer().map(p -> (OnlinePlayer) p)
-                .map(p -> p.getOnlineId().equals(sessionNetwork.getLocalPeerId()))
+        return this.getCurrentPlayer().map(this.localPlayer::equals)
                 .orElse(false);
     }
 }

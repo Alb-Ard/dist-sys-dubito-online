@@ -68,7 +68,8 @@ public class App {
 
         // stabilisco la GameBoardView e il GameSessionController (versione online)
         final GameBoardView[] view = new GameBoardView[1];
-        final GameSessionController controller = new GameOnlineSessionController(players, network, isOwner,
+        final GameSessionController<OnlinePlayer> controller = new GameOnlineSessionController<>(players, network,
+                isOwner,
                 new Runnable() {
                     @Override
                     public void run() {
