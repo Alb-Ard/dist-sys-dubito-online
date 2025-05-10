@@ -7,12 +7,8 @@ import org.abianchi.dubito.app.gameSession.views.CardView;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.net.URL;
 import java.util.Optional;
 
 public class CardModelViewTest {
@@ -20,7 +16,6 @@ public class CardModelViewTest {
     Card createdSpecificCard;
 
     CardView createdCardView;
-
 
     @Test
     void assertSamePath() {
@@ -39,7 +34,8 @@ public class CardModelViewTest {
             public void run() {
                 try {
                     UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-                } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
+                } catch (ClassNotFoundException | InstantiationException | IllegalAccessException
+                        | UnsupportedLookAndFeelException ex) {
                     ex.printStackTrace();
                 }
                 JLabel label = new JLabel(cardView);

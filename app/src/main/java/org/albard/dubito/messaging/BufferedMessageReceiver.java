@@ -34,6 +34,7 @@ public final class BufferedMessageReceiver implements MessageReceiver, Observabl
                     if (readByteCount <= 0) {
                         break;
                     }
+                    System.out.println("Received  " + readByteCount + "b");
                     final byte[] messageBuffer = new byte[readByteCount];
                     System.arraycopy(buffer, 0, messageBuffer, 0, readByteCount);
                     deserializer.apply(messageBuffer).ifPresent(message -> {

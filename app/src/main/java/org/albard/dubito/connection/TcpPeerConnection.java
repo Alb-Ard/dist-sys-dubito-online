@@ -56,6 +56,7 @@ public final class TcpPeerConnection implements PeerConnection {
 
     @Override
     public void sendMessage(final GameMessage message) {
+        System.out.println(this + ": Sending message " + message.getClass().getSimpleName());
         this.messageSender.sendMessage(message);
     }
 

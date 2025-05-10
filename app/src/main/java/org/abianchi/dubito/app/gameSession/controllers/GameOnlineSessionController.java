@@ -1,7 +1,8 @@
 package org.abianchi.dubito.app.gameSession.controllers;
 
+import org.abianchi.dubito.app.gameSession.models.Card;
+import org.abianchi.dubito.app.gameSession.models.CardImpl;
 import org.abianchi.dubito.app.gameSession.models.OnlinePlayer;
-import org.abianchi.dubito.app.gameSession.models.OnlinePlayerImpl;
 import org.abianchi.dubito.app.gameSession.models.Player;
 import org.abianchi.dubito.messages.CallLiarMessage;
 import org.abianchi.dubito.messages.CardsThrownMessage;
@@ -12,51 +13,55 @@ import org.albard.dubito.messaging.messages.GameMessage;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class GameOnlineSessionController extends GameSessionController implements MessageHandler {
-
     private final PeerNetwork sessionNetwork;
     private final boolean isOwner;
     private final Runnable onChanged;
+    private final OnlinePlayer localPlayer;
+
     public GameOnlineSessionController(List<OnlinePlayer> players, PeerNetwork network,
-               boolean isOwner, Runnable onChanged) {
-        super(players.stream().map(el -> (Player)el).collect(Collectors.toList()),
-                players.stream().filter(el -> el.getOnlineId().equals(network.getLocalPeerId()))
-                .map(el -> (Player)el).findFirst());
+            boolean isOwner, Runnable onChanged) {
+        super(players.stream().map(el -> (Player) el).collect(Collectors.toList()));
         this.sessionNetwork = network;
         this.isOwner = isOwner;
         this.onChanged = onChanged;
+        this.localPlayer = players.stream().filter(el -> el.getOnlineId().equals(network.getLocalPeerId())).findFirst()
+                .get();
         this.sessionNetwork.addMessageListener(this::handleMessage);
     }
-
 
     @Override
     public boolean handleMessage(GameMessage message) {
         // sender di messaggio avvisa che ha pescato una nuova mano
-        if(message instanceof NewHandDrawnMessage handDrawnMessage) {
+        if (message instanceof NewHandDrawnMessage handDrawnMessage) {
             Player player = this.getPlayerById(message.getSender());
             player.receiveNewHand(handDrawnMessage.getNewHand());
-            // devo qua segnalare il refresh della view (senza avere un riferimento alla view)
-            // devo rendere osservable questo Controller (GameOnlineSessionController) un observable
+            // devo qua segnalare il refresh della view (senza avere un riferimento alla
+            // view)
+            // devo rendere osservable questo Controller (GameOnlineSessionController) un
+            // observable
             // uso Runnable
             this.onChanged.run();
             return true;
         }
         // sender ha lanciato le carte
-        if(message instanceof CardsThrownMessage cardsThrownMessage) {
+        if (message instanceof CardsThrownMessage cardsThrownMessage) {
             cardsThrownMessage.getThrownCards().forEach(this::selectCard);
             this.playCards();
             this.onChanged.run();
             return true;
         }
-        if(message instanceof CallLiarMessage callLiarMessage) {
+        if (message instanceof CallLiarMessage) {
             this.callLiar();
             this.onChanged.run();
             return true;
         }
-        if(message instanceof RoundCardGeneratedMessage roundCardGeneratedMessage) {
+        if (message instanceof RoundCardGeneratedMessage roundCardGeneratedMessage) {
             this.getCurrentGameState().setRoundCardType(roundCardGeneratedMessage.getRoundCard());
             this.onChanged.run();
             return true;
@@ -64,12 +69,13 @@ public class GameOnlineSessionController extends GameSessionController implement
         return false;
     }
 
-    // devo fare override di newRound per inviare i messaggi (invio a tutti il messaggio che questo utente ha una nuova mano di carte
+    // devo fare override di newRound per inviare i messaggi (invio a tutti il
+    // messaggio che questo utente ha una nuova mano di carte
     @Override
     public void newRound() {
         super.newRound(); // fa tutti i cambiamenti locali
         // se sono owner, setto la carta del round
-        if(this.canGenerateRoundCard()) {
+        if (this.canGenerateRoundCard()) {
             this.sessionNetwork.sendMessage(new RoundCardGeneratedMessage(sessionNetwork.getLocalPeerId(), null,
                     this.getCurrentGameState().getRoundCardValue()));
         }
@@ -83,10 +89,20 @@ public class GameOnlineSessionController extends GameSessionController implement
     }
 
     @Override
+    protected void giveNewHand() {
+        // When new hands are given, I only want to genereta a hand for my local player
+        List<Card> newHand = new ArrayList<>();
+        for (int i = 0; i < Player.MAXHANDSIZE; i++) {
+            newHand.add(new CardImpl(Optional.empty()));
+        }
+        this.localPlayer.receiveNewHand(newHand);
+    }
+
+    @Override
     public void playCards() {
-        // gestisco prima il messaggio per indicare che ho giocato le carte, per poi fare localmente il resto
-        OnlinePlayer currentPlayer = (OnlinePlayer)this.getCurrentPlayer();
-        if(currentPlayer.getOnlineId().equals(sessionNetwork.getLocalPeerId())) {
+        // gestisco prima il messaggio per indicare che ho giocato le carte, per poi
+        // fare localmente il resto
+        if (this.isCurrentPlayerLocal()) {
             sessionNetwork.sendMessage(new CardsThrownMessage(sessionNetwork.getLocalPeerId(), null,
                     this.getSelectedCards()));
         }
@@ -96,16 +112,22 @@ public class GameOnlineSessionController extends GameSessionController implement
     @Override
     public void callLiar() {
         // gestione messaggio callLiar come con playCard
-        OnlinePlayer currentPlayer = (OnlinePlayer)this.getCurrentPlayer();
-        if(currentPlayer.getOnlineId().equals(sessionNetwork.getLocalPeerId())) {
+        if (this.isCurrentPlayerLocal()) {
             sessionNetwork.sendMessage(new CallLiarMessage(sessionNetwork.getLocalPeerId(), null));
         }
         super.callLiar();
     }
 
-    // con questo prendiamo il primo player della sessione con lo specifico Id passato
+    // con questo prendiamo il primo player della sessione con lo specifico Id
+    // passato
     private OnlinePlayer getPlayerById(PeerId id) {
-        return this.getPlayers().stream().map(p -> (OnlinePlayer)p)
+        return this.getPlayers().stream().map(p -> (OnlinePlayer) p)
                 .filter(el -> el.getOnlineId().equals(id)).findFirst().get();
+    }
+
+    private boolean isCurrentPlayerLocal() {
+        return this.getCurrentPlayer().map(p -> (OnlinePlayer) p)
+                .map(p -> p.getOnlineId().equals(sessionNetwork.getLocalPeerId()))
+                .orElse(false);
     }
 }

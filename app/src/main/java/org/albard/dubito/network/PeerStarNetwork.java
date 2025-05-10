@@ -60,8 +60,9 @@ public final class PeerStarNetwork implements PeerNetwork {
         }
         return this.getPeers().entrySet().stream().filter(el -> el.getValue().getRemoteEndPoint().equals(peerEndPoint))
                 .findFirst().map(newPeer -> {
-                    System.out.println(this.getLocalPeerId() + ": Sending my server endpoint to " + newPeer.getKey()
-                            + " IP:" + peerEndPoint);
+                    System.out.println(this.getLocalPeerId() + ": Sending my server endpoint " + this.getBindEndPoint()
+                            + " to " + newPeer.getKey()
+                            + " at " + peerEndPoint);
                     this.sendMessage(new ConnectionRouteMessage(this.getLocalPeerId(), Set.of(newPeer.getKey()),
                             this.getBindEndPoint()));
                     return true;
@@ -108,15 +109,16 @@ public final class PeerStarNetwork implements PeerNetwork {
         return this.baseNetwork.getLocalPeerId();
     }
 
-    private void propagatePeer(final PeerEndPoint peerEndPoint) {
-        this.getPeers().entrySet().stream().filter(el -> el.getValue().getRemoteEndPoint().equals(peerEndPoint))
-                .findFirst().ifPresentOrElse(existingPeer -> {
+    private void propagatePeer(final PeerId peerId, final PeerEndPoint peerEndPoint) {
+        System.out.println(this.getLocalPeerId() + ": Received peer " + peerId + " route " + peerEndPoint);
+        this.getPeers().entrySet().stream().filter(e -> e.getKey().equals(peerId))
+                .findFirst().ifPresentOrElse(e -> {
                     final Set<PeerId> receipients = new HashSet<>(this.getPeers().keySet());
                     receipients.remove(this.getLocalPeerId());
-                    receipients.remove(existingPeer.getKey());
-                    System.out.println(this.getLocalPeerId() + ": Propagating connection " + existingPeer.getKey()
-                            + " to " + receipients + " IP:" + peerEndPoint);
-                    this.sendMessage(new ConnectionRouteMessage(this.getLocalPeerId(), receipients, peerEndPoint));
+                    receipients.remove(peerId);
+                    System.out.println(this.getLocalPeerId() + ": Propagating connection " + peerId
+                            + " at " + peerEndPoint + " to " + receipients);
+                    this.sendMessage(new ConnectionRouteMessage(peerId, receipients, peerEndPoint));
                 }, () -> {
                     System.out.println(this.getLocalPeerId() + ": Connecting to propagated connection " + peerEndPoint);
                     // This failing might not be an error:
