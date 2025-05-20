@@ -72,7 +72,7 @@ public class GameSessionController<X extends Player> {
         this.sessionPlayers.forEach(player -> {
             if (player.getLives() > 0) {
                 List<Card> newHand = new ArrayList<>();
-                for (int i = 0; i < Player.MAXHANDSIZE; i++) {
+                for (int i = 0; i < Player.MAX_HAND_SIZE; i++) {
                     newHand.add(new CardImpl(Optional.empty()));
                 }
                 player.receiveNewHand(newHand);

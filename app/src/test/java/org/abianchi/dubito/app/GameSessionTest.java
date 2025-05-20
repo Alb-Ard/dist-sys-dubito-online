@@ -31,7 +31,7 @@ public class GameSessionTest {
         Assertions.assertEquals(this.testPlayers.get(0), sessionPlayers.get(gameState.getCurrentPlayerIndex()));
         Assertions.assertEquals(-1, gameState.getPreviousPlayerIndex());
         sessionPlayers.forEach(player -> {
-            Assertions.assertEquals(player.getHand().size(), Player.MAXHANDSIZE);
+            Assertions.assertEquals(player.getHand().size(), Player.MAX_HAND_SIZE);
             player.getHand().forEach(Assertions::assertNotNull);
         });
     }
@@ -57,7 +57,7 @@ public class GameSessionTest {
         this.testController.playCards();
         Assertions.assertEquals(currentGameState.getTurnPrevPlayerPlayedCards(), testPlayedCards);
         Assertions.assertEquals(this.testController.getPreviousPlayer().get().getHand().size(),
-                Player.MAXHANDSIZE - testPlayedCards.size());
+                Player.MAX_HAND_SIZE - testPlayedCards.size());
         // testPlayedCards.forEach(card ->
         // Assertions.assertFalse(currentPlayer.getHand().contains(card)));
     }
@@ -197,7 +197,7 @@ public class GameSessionTest {
             List<Card> secondRoundCards = playerThatWillFinish.getHand();
             Assertions.assertEquals(2, this.testGameOverController.getPreviousPlayer().get().getLives());
             Assertions.assertEquals(2, this.testGameOverController.getCurrentPlayer().get().getLives());
-            Assertions.assertEquals(Player.MAXHANDSIZE, secondRoundCards.size());
+            Assertions.assertEquals(Player.MAX_HAND_SIZE, secondRoundCards.size());
             Assertions.assertNotEquals(firstRoundCards, secondRoundCards);
         }
     }

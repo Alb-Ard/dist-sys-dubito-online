@@ -1,7 +1,7 @@
 package org.abianchi.dubito.app.gameSession.controllers;
 
 import org.abianchi.dubito.app.gameSession.models.Card;
-import org.abianchi.dubito.app.gameSession.models.CardImpl;
+import org.abianchi.dubito.app.gameSession.models.CardValue;
 import org.abianchi.dubito.app.gameSession.models.OnlinePlayer;
 import org.abianchi.dubito.app.gameSession.models.Player;
 import org.abianchi.dubito.messages.CallLiarMessage;
@@ -15,7 +15,6 @@ import org.albard.dubito.network.PeerNetwork;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSessionController<X>
         implements MessageHandler {
@@ -39,6 +38,8 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
     public boolean handleMessage(GameMessage message) {
         // sender di messaggio avvisa che ha pescato una nuova mano
         if (message instanceof NewHandDrawnMessage handDrawnMessage) {
+            System.out.println("Player " + handDrawnMessage.getSender() + " has drawn a new hand: "
+                    + handDrawnMessage.getNewHand());
             Player player = this.getPlayerById(message.getSender());
             player.receiveNewHand(handDrawnMessage.getNewHand().stream().map(Card::ofType)
                     .toList());
@@ -52,6 +53,8 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
         }
         // sender ha lanciato le carte
         if (message instanceof CardsThrownMessage cardsThrownMessage) {
+            System.out.println("Player " + cardsThrownMessage.getSender() + " has throw cards: "
+                    + cardsThrownMessage.getThrownCards());
             cardsThrownMessage.getThrownCards().stream().map(Card::ofType)
                     .forEach(this::selectCard);
             this.playCards();
@@ -59,11 +62,14 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
             return true;
         }
         if (message instanceof CallLiarMessage) {
+            System.out.println("Player " + message.getSender() + " has called liar");
             this.callLiar();
             this.onChanged.run();
             return true;
         }
         if (message instanceof RoundCardGeneratedMessage roundCardGeneratedMessage) {
+            System.out.println("Player " + roundCardGeneratedMessage.getSender() + " has set the round card to "
+                    + roundCardGeneratedMessage.getRoundCard());
             this.getCurrentGameState().setRoundCardType(roundCardGeneratedMessage.getRoundCard());
             this.onChanged.run();
             return true;
@@ -78,12 +84,16 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
         super.newRound(); // fa tutti i cambiamenti locali
         // se sono owner, setto la carta del round
         if (this.canGenerateRoundCard()) {
+            final CardValue roundCardValue = this.getCurrentGameState().getRoundCardValue();
+            System.out.println("Setting round card to " + roundCardValue);
             this.sessionNetwork.sendMessage(new RoundCardGeneratedMessage(sessionNetwork.getLocalPeerId(), null,
-                    this.getCurrentGameState().getRoundCardValue()));
+                    roundCardValue));
         }
+        final var newHand = this.localPlayer.getHand().stream().map(e -> e.getCardType())
+                .toList();
+        System.out.println("Sending my new hand: " + newHand);
         sessionNetwork.sendMessage(new NewHandDrawnMessage(sessionNetwork.getLocalPeerId(), null,
-                this.localPlayer.getHand().stream().map(e -> e.getCardType())
-                        .toList()));
+                newHand));
     }
 
     @Override
@@ -95,16 +105,17 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
     protected void giveNewHand() {
         // When new hands are given, I only want to generate a hand for my local player
         List<Card> newHand = new ArrayList<>();
-        for (int i = 0; i < Player.MAXHANDSIZE; i++) {
-            newHand.add(new CardImpl(Optional.empty()));
+        for (int i = 0; i < Player.MAX_HAND_SIZE; i++) {
+            newHand.add(Card.random());
         }
         this.localPlayer.receiveNewHand(newHand);
     }
 
     @Override
     public void playCards() {
-        // gestisco prima il messaggio per indicare che ho giocato le carte, per poi
-        // fare localmente il resto
+        // gestisco prima il messaggio per indicare che ho giocato le carte (in modo che
+        // l'elenco di carte selezionate non venga resettato), per poi fare localmente
+        // il resto
         if (this.isCurrentPlayerLocal()) {
             sessionNetwork.sendMessage(new CardsThrownMessage(sessionNetwork.getLocalPeerId(), null,
                     this.getSelectedCards().stream().map(e -> e.getCardType())
