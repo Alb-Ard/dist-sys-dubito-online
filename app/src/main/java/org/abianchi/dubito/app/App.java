@@ -35,7 +35,7 @@ public class App {
          * dentro
          * il while mi permette di ritentare la connessione molteplici volte
          */
-        while (!network.connectToPeer(PeerEndPoint.createFromValues(ip, port))) {
+        while (!network.connectToPeer(PeerEndPoint.ofValues(ip, port))) {
             Thread.sleep(1000);
         }
     }

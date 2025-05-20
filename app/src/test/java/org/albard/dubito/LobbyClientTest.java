@@ -31,7 +31,7 @@ public final class LobbyClientTest {
                         TestUtilities.createMessengerFactory())) {
             new LobbyServer(network, peerService);
             final LobbyClient client = new LobbyClient(clientNetwork);
-            clientNetwork.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9000));
+            clientNetwork.connectToPeer(PeerEndPoint.ofValues("127.0.0.1", 9000));
             Assertions.assertEquals(0, client.getLobbyCount());
             Assertions.assertEquals(0, client.getLobbies().size());
             Assertions.assertFalse(client.getCurrentLobby().isPresent());
@@ -46,7 +46,7 @@ public final class LobbyClientTest {
                         TestUtilities.createMessengerFactory())) {
             new LobbyServer(network, peerService);
             final LobbyClient client = new LobbyClient(clientNetwork);
-            clientNetwork.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9000));
+            clientNetwork.connectToPeer(PeerEndPoint.ofValues("127.0.0.1", 9000));
 
             final LobbyInfo info = new LobbyInfo("Test lobby", "");
             client.requestNewLobby(info);

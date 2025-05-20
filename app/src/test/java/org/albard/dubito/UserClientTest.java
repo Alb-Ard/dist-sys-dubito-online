@@ -21,11 +21,11 @@ public final class UserClientTest {
     }
 
     @Test
-    void testStartEmpty() throws UnknownHostException, IOException {
+    void testStartWithLocalUserOnly() throws UnknownHostException, IOException {
         try (final PeerNetwork clientNetwork = TestUtilities.createAndLaunchServerNetwork("127.0.0.1", 9001)) {
             final UserClient client = new UserClient(clientNetwork);
-            Assertions.assertEquals(0, client.getUserCount());
-            Assertions.assertNull(client.getLocalUser());
+            Assertions.assertEquals(1, client.getUserCount());
+            Assertions.assertEquals(clientNetwork.getLocalPeerId(), client.getLocalUser().peerId());
         }
     }
 
@@ -36,7 +36,7 @@ public final class UserClientTest {
                 final PeerNetwork clientNetwork = TestUtilities.createAndLaunchServerNetwork("127.0.0.1", 9001)) {
             new UserServer(serverNetwork, service);
             final UserClient client = new UserClient(clientNetwork);
-            Assertions.assertTrue(clientNetwork.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9000)));
+            Assertions.assertTrue(clientNetwork.connectToPeer(PeerEndPoint.ofValues("127.0.0.1", 9000)));
             Thread.sleep(Duration.ofSeconds(1));
 
             Assertions.assertNotNull(client.getLocalUser());
@@ -54,7 +54,7 @@ public final class UserClientTest {
                 final PeerNetwork clientNetwork = TestUtilities.createAndLaunchServerNetwork("127.0.0.1", 9001)) {
             new UserServer(serverNetwork, service);
             final UserClient client = new UserClient(clientNetwork);
-            clientNetwork.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9000));
+            clientNetwork.connectToPeer(PeerEndPoint.ofValues("127.0.0.1", 9000));
             Thread.sleep(Duration.ofSeconds(1));
 
             client.requestSetName("NewName");
@@ -74,8 +74,8 @@ public final class UserClientTest {
             new UserServer(serverNetwork, service);
             final UserClient client1 = new UserClient(client1Network);
             final UserClient client2 = new UserClient(client2Network);
-            client1Network.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9000));
-            client2Network.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9000));
+            client1Network.connectToPeer(PeerEndPoint.ofValues("127.0.0.1", 9000));
+            client2Network.connectToPeer(PeerEndPoint.ofValues("127.0.0.1", 9000));
             Thread.sleep(Duration.ofSeconds(1));
 
             Assertions.assertEquals(2, client1.getUserCount());
@@ -99,8 +99,8 @@ public final class UserClientTest {
             new UserServer(serverNetwork, service);
             final UserClient client1 = new UserClient(client1Network);
             final UserClient client2 = new UserClient(client2Network);
-            client1Network.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9000));
-            client2Network.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9000));
+            client1Network.connectToPeer(PeerEndPoint.ofValues("127.0.0.1", 9000));
+            client2Network.connectToPeer(PeerEndPoint.ofValues("127.0.0.1", 9000));
             Thread.sleep(Duration.ofSeconds(1));
 
             client2Network.close();

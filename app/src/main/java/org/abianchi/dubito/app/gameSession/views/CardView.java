@@ -73,12 +73,15 @@ public class CardView extends ImageIcon {
     public void setRotation(Optional<Rotation> rotation) {
         // Set rotation flags
         this.rotation = rotation;
-        final Image image = loadImageFromPath(this.cardImagePath);
-        this.setImage(this.rotation.map(r -> rotateImage(image, r)).orElse(image));
+        this.setImageFromPath(this.cardImagePath);
     }
 
     public void setCardVisibility(boolean visible) {
         String imagePath = visible ? cardImagePath : IMAGE_PATH + "card_back.png";
+        this.setImageFromPath(imagePath);
+    }
+
+    private void setImageFromPath(String imagePath) {
         final Image image = loadImageFromPath(imagePath);
         this.setImage(this.rotation.map(r -> rotateImage(image, r)).orElse(image));
     }

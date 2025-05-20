@@ -33,7 +33,7 @@ public final class PeerStarNetworkTest {
 
         try (final PeerNetwork app1 = PeerStarNetwork.createBound(app1Id, "127.0.0.1", 9000, messengerFactory);
                 final PeerNetwork app2 = PeerStarNetwork.createBound(app2Id, "127.0.0.1", 9001, messengerFactory)) {
-            Assertions.assertTrue(app1.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9001)));
+            Assertions.assertTrue(app1.connectToPeer(PeerEndPoint.ofValues("127.0.0.1", 9001)));
         }
     }
 
@@ -54,15 +54,15 @@ public final class PeerStarNetworkTest {
             }
 
             for (int i = 0; i < appCount - 1; i++) {
-                apps.get(i).connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", appBindPorts.get(i + 1)));
+                apps.get(i).connectToPeer(PeerEndPoint.ofValues("127.0.0.1", appBindPorts.get(i + 1)));
             }
 
-            Thread.sleep(Duration.ofSeconds(3));
+            Thread.sleep(Duration.ofSeconds(appCount + 1));
 
             for (int i = 0; i < appCount; i++) {
                 final PeerNetwork app = apps.get(i);
                 final PeerId appId = appIds.get(i);
-                Assertions.assertEquals(appCount - 1, app.getPeerCount());
+                Assertions.assertEquals(appCount - 1, app.getPeerCount(), "Not enough peers connected to peer " + i);
                 final List<PeerId> remoteAppIds = appIds.stream().filter(x -> !appId.equals(x)).toList();
                 remoteAppIds.forEach(x -> Assertions.assertTrue(app.getPeers().keySet().contains(x)));
             }
@@ -92,8 +92,8 @@ public final class PeerStarNetworkTest {
 
             final PeerNetwork app3 = PeerStarNetwork.createBound(app3Id, "127.0.0.1", 9002, messengerFactory);
 
-            app1.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9001));
-            app2.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9002));
+            app1.connectToPeer(PeerEndPoint.ofValues("127.0.0.1", 9001));
+            app2.connectToPeer(PeerEndPoint.ofValues("127.0.0.1", 9002));
 
             Thread.sleep(Duration.ofSeconds(3));
 

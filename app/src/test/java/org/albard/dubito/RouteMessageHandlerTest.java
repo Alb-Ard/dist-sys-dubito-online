@@ -47,7 +47,7 @@ public final class RouteMessageHandlerTest {
             receivedPeers.put(i, e);
         }, i -> {
         });
-        final PeerEndPoint newPeerEndPoint = PeerEndPoint.createFromValues("127.0.0.1", 9000);
+        final PeerEndPoint newPeerEndPoint = PeerEndPoint.ofValues("127.0.0.1", 9000);
         handler.handleMessage(new ConnectionRouteMessage(newPeerId, Set.of(), newPeerEndPoint));
         Assertions.assertEquals(1, receivedPeers.size());
         Assertions.assertEquals(receivedPeers.entrySet().stream().findFirst().get().getKey(), newPeerId);

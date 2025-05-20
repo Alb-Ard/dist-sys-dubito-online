@@ -2,7 +2,9 @@ package org.albard.dubito.network;
 
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -58,13 +60,21 @@ public final class PeerStarNetwork implements PeerNetwork {
         if (!this.baseNetwork.connectToPeer(peerEndPoint)) {
             return false;
         }
-        return this.getPeers().entrySet().stream().filter(el -> el.getValue().getRemoteEndPoint().equals(peerEndPoint))
+        final Set<Entry<PeerId, PeerConnection>> peers = this.getPeers().entrySet();
+        return peers.stream().filter(el -> el.getValue().getRemoteEndPoint().equals(peerEndPoint))
                 .findFirst().map(newPeer -> {
-                    System.out.println(this.getLocalPeerId() + ": Sending my server endpoint " + this.getBindEndPoint()
-                            + " to " + newPeer.getKey()
-                            + " at " + peerEndPoint);
-                    this.sendMessage(new ConnectionRouteMessage(this.getLocalPeerId(), Set.of(newPeer.getKey()),
-                            this.getBindEndPoint()));
+                    // In case connection was succesfull, then:
+                    // - Send my server end point to the new peer, so that he can propagate it to
+                    // its network
+                    this.sendPeerServerEndPoint(this.getLocalPeerId(), this.getBindEndPoint(),
+                            Set.of(newPeer.getKey()));
+                    // - Send the new peer end point to my network so that my peers can connect to
+                    // it
+                    final List<PeerId> receipients = peers.stream()
+                            .filter(el -> !el.getValue().getRemoteEndPoint().equals(peerEndPoint))
+                            .map(el -> el.getKey())
+                            .toList();
+                    this.sendPeerServerEndPoint(newPeer.getKey(), peerEndPoint, Set.copyOf(receipients));
                     return true;
                 }).orElse(false);
     }
@@ -107,6 +117,15 @@ public final class PeerStarNetwork implements PeerNetwork {
     @Override
     public PeerId getLocalPeerId() {
         return this.baseNetwork.getLocalPeerId();
+    }
+
+    private void sendPeerServerEndPoint(final PeerId ownerId, final PeerEndPoint endPoint,
+            final Set<PeerId> receipients) {
+        System.out.println(
+                this.getLocalPeerId() + ": Sending peer " + ownerId + " server endpoint " + endPoint
+                        + " to " + receipients);
+        this.sendMessage(new ConnectionRouteMessage(ownerId, Set.copyOf(receipients),
+                endPoint));
     }
 
     private void propagatePeer(final PeerId peerId, final PeerEndPoint peerEndPoint) {

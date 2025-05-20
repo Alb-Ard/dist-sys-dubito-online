@@ -58,7 +58,7 @@ public final class TcpPeerConnectionReceiver implements PeerConnectionReceiver {
 
     @Override
     public PeerEndPoint getBindEndPoint() {
-        return PeerEndPoint.createFromAddress(this.listeningSocket.getLocalSocketAddress());
+        return PeerEndPoint.ofAddress(this.listeningSocket.getLocalSocketAddress());
     }
 
     private void start() throws IOException {

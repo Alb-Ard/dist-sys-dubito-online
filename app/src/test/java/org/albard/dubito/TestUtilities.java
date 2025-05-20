@@ -43,7 +43,7 @@ public final class TestUtilities {
     }
 
     public static PeerEndPoint createEndPoint(final int port) {
-        return PeerEndPoint.createFromValues("127.0.0.1", port);
+        return PeerEndPoint.ofValues("127.0.0.1", port);
     }
 
     public static PeerEndPointPair createEndPointPair(final int localPort, final int remotePort) {

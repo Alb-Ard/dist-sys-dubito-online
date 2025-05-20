@@ -40,7 +40,7 @@ public final class UserServerTest {
                 final PeerNetwork client = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 9001,
                         TestUtilities.createMessengerFactory())) {
             final UserServer server = new UserServer(network, service);
-            client.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9000));
+            client.connectToPeer(PeerEndPoint.ofValues("127.0.0.1", 9000));
             Thread.sleep(Duration.ofSeconds(1));
 
             Assertions.assertEquals(1, server.getUserCount());
@@ -58,7 +58,7 @@ public final class UserServerTest {
             final UserServer server = new UserServer(network, service);
             final List<UserListUpdatedMessage> updateReceived = TestUtilities
                     .addMessageListener(UserListUpdatedMessage.class, client);
-            client.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9000));
+            client.connectToPeer(PeerEndPoint.ofValues("127.0.0.1", 9000));
             Thread.sleep(Duration.ofSeconds(1));
 
             Assertions.assertEquals(1, updateReceived.size());
@@ -78,7 +78,7 @@ public final class UserServerTest {
             final UserServer server = new UserServer(network, service);
             final List<UserListUpdatedMessage> updateReceived = TestUtilities
                     .addMessageListener(UserListUpdatedMessage.class, client);
-            client.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9000));
+            client.connectToPeer(PeerEndPoint.ofValues("127.0.0.1", 9000));
             Thread.sleep(Duration.ofSeconds(1));
 
             client.sendMessage(new UpdateUserMessage(client.getLocalPeerId(), null, "MyName"));
@@ -99,7 +99,7 @@ public final class UserServerTest {
                 final PeerNetwork client = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 9001,
                         TestUtilities.createMessengerFactory())) {
             final UserServer server = new UserServer(network, service);
-            client.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9000));
+            client.connectToPeer(PeerEndPoint.ofValues("127.0.0.1", 9000));
             Thread.sleep(Duration.ofSeconds(1));
 
             client.close();

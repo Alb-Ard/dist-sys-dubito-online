@@ -3,7 +3,6 @@ package org.albard.dubito.network;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.net.UnknownHostException;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -18,19 +17,19 @@ public final class PeerEndPoint {
         this.port = port;
     }
 
-    public static PeerEndPoint createFromValues(final String host, final int port) {
+    public static PeerEndPoint ofValues(final String host, final int port) {
         try {
-            final InetAddress hostAddress = InetAddress.getByName(host);
-            if (host == null || host.length() <= 0 || hostAddress == null || port < 0) {
+            if (host == null || host.length() <= 0 || port < 0) {
                 return null;
             }
-            return new PeerEndPoint(host, port);
-        } catch (UnknownHostException e) {
+            final InetAddress hostAddress = InetAddress.getByName(host);
+            return hostAddress == null ? null : new PeerEndPoint(host, port);
+        } catch (final Exception e) {
             return null;
         }
     }
 
-    public static PeerEndPoint createFromAddress(SocketAddress address) {
+    public static PeerEndPoint ofAddress(final SocketAddress address) {
         if (address instanceof InetSocketAddress socketAddress) {
             final String[] hostParts = socketAddress.getHostString().split("/");
             return new PeerEndPoint(hostParts[hostParts.length - 1], socketAddress.getPort());

@@ -34,7 +34,7 @@ public final class ConnectionWindow extends JFrame {
         this.getRootPane().add(SimpleComponentFactory.createHorizontalPanel(addressField, portField));
         this.getRootPane().add(connectButton);
         connectButton.addActionListener(e -> this.connectionRequestListeners
-                .forEach(l -> l.accept(PeerEndPoint.createFromValues(model.getAddress(), model.getPort()))));
+                .forEach(l -> l.accept(PeerEndPoint.ofValues(model.getAddress(), model.getPort()))));
     }
 
     public void addConnectionRequestListener(final Consumer<PeerEndPoint> listener) {

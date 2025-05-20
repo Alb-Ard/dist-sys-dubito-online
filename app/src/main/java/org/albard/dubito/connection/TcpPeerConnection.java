@@ -82,7 +82,7 @@ public final class TcpPeerConnection implements PeerConnection {
 
     @Override
     public PeerEndPoint getRemoteEndPoint() {
-        return PeerEndPoint.createFromAddress(this.socket.getRemoteSocketAddress());
+        return PeerEndPoint.ofAddress(this.socket.getRemoteSocketAddress());
     }
 
     @Override

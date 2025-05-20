@@ -46,7 +46,7 @@ public final class PeerNetworkTest {
             receiver.setPeerConnectedListener(t -> Assertions.assertNotNull(remotePeerExchanger.exchangeIds(t)));
             final PeerNetwork network = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 9000,
                     receiver.getMessengerFactory());
-            Assertions.assertTrue(network.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9001)));
+            Assertions.assertTrue(network.connectToPeer(PeerEndPoint.ofValues("127.0.0.1", 9001)));
             Assertions.assertEquals(1, network.getPeerCount());
             network.close();
         }
@@ -56,7 +56,7 @@ public final class PeerNetworkTest {
     void testConnectToOfflinePeer() throws IOException {
         final MessengerFactory messengerFactory = TestUtilities.createMessengerFactory();
         final PeerNetwork network = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 9000, messengerFactory);
-        Assertions.assertFalse(network.connectToPeer(PeerEndPoint.createFromValues("127.0.0.1", 9001)));
+        Assertions.assertFalse(network.connectToPeer(PeerEndPoint.ofValues("127.0.0.1", 9001)));
         Assertions.assertEquals(0, network.getPeerCount());
         network.close();
     }
