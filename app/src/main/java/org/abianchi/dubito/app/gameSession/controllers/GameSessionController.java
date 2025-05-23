@@ -35,6 +35,10 @@ public class GameSessionController<X extends Player> {
         }
     }
 
+    public boolean isActivePlayer(final int index) {
+        return index == this.gameState.getCurrentPlayerIndex();
+    }
+
     protected boolean canGenerateRoundCard() {
         return true;
     }

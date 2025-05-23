@@ -97,6 +97,10 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
     }
 
     @Override
+    public boolean isActivePlayer(final int index) {
+        return super.isActivePlayer(index) && index >= 0 && this.getPlayers().get(index).equals(this.localPlayer);
+    }
+    @Override
     protected boolean canGenerateRoundCard() {
         return this.isOwner;
     }

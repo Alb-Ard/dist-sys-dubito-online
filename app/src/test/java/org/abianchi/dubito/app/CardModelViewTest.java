@@ -24,29 +24,4 @@ public class CardModelViewTest {
         String jokerPath = "card_images/joker_card.png";
         Assertions.assertEquals(jokerPath, this.createdCardView.getCardImagePath());
     }
-
-    public static void main(String[] args) {
-
-        final Card card = new CardImpl(Optional.of(CardType.ACE_OF_HEARTS));
-        final CardView cardView = new CardView(card);
-        EventQueue.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-                } catch (ClassNotFoundException | InstantiationException | IllegalAccessException
-                        | UnsupportedLookAndFeelException ex) {
-                    ex.printStackTrace();
-                }
-                JLabel label = new JLabel(cardView);
-                JPanel jPanel = new JPanel();
-                jPanel.add(label);
-                JFrame frame = new JFrame("Card Test");
-                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                frame.setContentPane(label);
-                frame.setSize(500, 500);
-                frame.setVisible(true);
-            }
-        });
-    }
 }

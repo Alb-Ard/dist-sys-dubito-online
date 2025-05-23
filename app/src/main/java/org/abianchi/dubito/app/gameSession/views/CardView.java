@@ -6,18 +6,16 @@ import org.abianchi.dubito.app.gameSession.models.CardType;
 import javax.swing.*;
 import java.util.Optional;
 
-public class CardView extends ImageIcon {
+public class CardView extends JToggleButton {
     private static final String IMAGE_FOLDER_PATH = "card_images/";
     private static final String CARD_BACK_IMAGE_FILE_PATH = IMAGE_FOLDER_PATH + "card_back.png";
 
     private final Card card;
     private final String cardImagePath;
 
-    private boolean isClicked;
     private Optional<Rotation> rotation;
 
-    public CardView(Card card) {
-        this.isClicked = false;
+    public CardView(final Card card) {
         this.rotation = Optional.empty();
         this.card = card;
         switch (this.card.getCardType()) {
@@ -41,10 +39,6 @@ public class CardView extends ImageIcon {
         return cardType.name().contains("HEARTS") ? "_of_hearts.png" : "_of_spades.png";
     }
 
-    public void click() {
-        this.isClicked = !this.isClicked;
-    }
-
     public void setRotation(Optional<Rotation> rotation) {
         // Set rotation flags
         this.rotation = rotation;
@@ -59,8 +53,12 @@ public class CardView extends ImageIcon {
     private void setImageFromPath(final String imagePath) {
         ImageUtilities.loadImageFromPath(imagePath, 70, 150).ifPresentOrElse(image -> SwingUtilities
                 .invokeLater(
-                        () -> this
-                                .setImage(this.rotation.map(r -> ImageUtilities.rotateImage(image, r)).orElse(image))),
+                        () -> { try {
+                            this.setIcon(new ImageIcon(this.rotation.map(r -> ImageUtilities.rotateImage(image, r)).orElse(image)));
+                        } catch(Exception ex) {
+                            ex.printStackTrace();
+                        }
+                        }),
                 () -> System.err.println("Image not found: " + imagePath));
     }
 
@@ -70,9 +68,5 @@ public class CardView extends ImageIcon {
 
     public Card getCard() {
         return this.card;
-    }
-
-    public boolean isClicked() {
-        return this.isClicked;
     }
 }

@@ -5,12 +5,15 @@ import org.abianchi.dubito.app.gameSession.models.Card;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 import java.util.Optional;
 
 public class GameBoardView {
+    private static final int BOTTOM_INDEX = 0;
+    private static final int LEFT_INDEX = 1;
+    private static final int TOP_INDEX = 2;
+    private static final int RIGHT_INDEX = 3;
+
 
     private final Container contentPane;
     private final GameSessionController<?> controller;
@@ -21,11 +24,11 @@ public class GameBoardView {
     private final JPanel leftPlayerCards;
     private final JPanel rightPlayerCards;
 
-    public GameBoardView(GameSessionController<?> controller) {
+    public GameBoardView(GameSessionController<?> controller, String title) {
         this.controller = controller;
 
         final BorderLayout borderLayout = new BorderLayout();
-        this.frame = new JFrame("Dubito Online");
+        this.frame = new JFrame(title);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.contentPane = frame.getContentPane();
         this.contentPane.setLayout(borderLayout);
@@ -44,34 +47,34 @@ public class GameBoardView {
         /* player cards */
         /* bottom player */
         this.bottomPlayerCards = new JPanel();
-        for (Card card : this.controller.getSessionPlayers().get(0).getHand()) {
-            JButton buttonCard = getCardJButton(controller, card, Optional.empty());
+        for (Card card : this.controller.getSessionPlayers().get(BOTTOM_INDEX).getHand()) {
+            CardView buttonCard = getCardJButton(controller, card, Optional.empty());
             bottomPlayerCards.add(buttonCard);
         }
-        this.addButtonsAndLives(bottomPlayerCards, 0, false);
+        this.addButtonsAndLives(bottomPlayerCards, BOTTOM_INDEX, false);
         /* top player */
         this.topPlayerCards = new JPanel();
-        for (Card card : this.controller.getSessionPlayers().get(2).getHand()) {
-            JButton buttonCard = getCardJButton(controller, card, Optional.empty());
+        for (Card card : this.controller.getSessionPlayers().get(TOP_INDEX).getHand()) {
+            CardView buttonCard = getCardJButton(controller, card, Optional.empty());
             topPlayerCards.add(buttonCard);
         }
-        this.addButtonsAndLives(topPlayerCards, 2, false);
+        this.addButtonsAndLives(topPlayerCards, TOP_INDEX, false);
         /* left player */
         this.leftPlayerCards = new JPanel();
         leftPlayerCards.setLayout(new BoxLayout(leftPlayerCards, BoxLayout.PAGE_AXIS));
-        for (Card card : this.controller.getSessionPlayers().get(1).getHand()) {
-            JButton buttonCard = getCardJButton(controller, card, Optional.of(Rotation.LEFT));
+        for (Card card : this.controller.getSessionPlayers().get(LEFT_INDEX).getHand()) {
+            CardView buttonCard = getCardJButton(controller, card, Optional.of(Rotation.LEFT));
             leftPlayerCards.add(buttonCard);
         }
-        this.addButtonsAndLives(leftPlayerCards, 1, true);
+        this.addButtonsAndLives(leftPlayerCards, LEFT_INDEX, true);
         /* right player */
         this.rightPlayerCards = new JPanel();
         rightPlayerCards.setLayout(new BoxLayout(rightPlayerCards, BoxLayout.Y_AXIS));
-        for (Card card : this.controller.getSessionPlayers().get(3).getHand()) {
-            JButton buttonCard = getCardJButton(controller, card, Optional.of(Rotation.RIGHT));
+        for (Card card : this.controller.getSessionPlayers().get(RIGHT_INDEX).getHand()) {
+            CardView buttonCard = getCardJButton(controller, card, Optional.of(Rotation.RIGHT));
             rightPlayerCards.add(buttonCard);
         }
-        this.addButtonsAndLives(rightPlayerCards, 3, true);
+        this.addButtonsAndLives(rightPlayerCards, RIGHT_INDEX, true);
 
         /* add everything in pane */
         this.contentPane.add(centerPanel, BorderLayout.CENTER);
@@ -84,7 +87,6 @@ public class GameBoardView {
 
         frame.pack();
         frame.setLocationRelativeTo(null);
-        // frame.setVisible(true);
     }
 
     private void updatePlayerTurnUI() {
@@ -96,7 +98,9 @@ public class GameBoardView {
 
         // Get current player from controller
         int currentPlayerIndex = this.controller.getCurrentGameState().getCurrentPlayerIndex();
-        if (currentPlayerIndex < 0) {
+
+        // se il giocatore non è attivo, nasconde tutte le carte nella view
+        if(!this.controller.isActivePlayer(currentPlayerIndex)) {
             return;
         }
 
@@ -105,16 +109,16 @@ public class GameBoardView {
 
         // Enable only the current player's controls
         switch (currentPlayerIndex) {
-            case 0: // Bottom player
+            case BOTTOM_INDEX: // Bottom player
                 setPanelControlsEnabled(bottomPlayerCards, true);
                 break;
-            case 1: // Left player
+            case LEFT_INDEX: // Left player
                 setPanelControlsEnabled(leftPlayerCards, true);
                 break;
-            case 2: // Top player
+            case TOP_INDEX: // Top player
                 setPanelControlsEnabled(topPlayerCards, true);
                 break;
-            case 3: // Right player
+            case RIGHT_INDEX: // Right player
                 setPanelControlsEnabled(rightPlayerCards, true);
                 break;
         }
@@ -154,16 +158,16 @@ public class GameBoardView {
     /** method to show the cards for the current playing player */
     private void showCardFaces(int playerIndex) {
         switch (playerIndex) {
-            case 0: // Bottom player
+            case BOTTOM_INDEX: // Bottom player
                 setCardFacesVisibility(bottomPlayerCards, true);
                 break;
-            case 1: // Left player
+            case LEFT_INDEX: // Left player
                 setCardFacesVisibility(leftPlayerCards, true);
                 break;
-            case 2: // Top player
+            case TOP_INDEX: // Top player
                 setCardFacesVisibility(topPlayerCards, true);
                 break;
-            case 3: // Right player
+            case RIGHT_INDEX: // Right player
                 setCardFacesVisibility(rightPlayerCards, true);
                 break;
         }
@@ -172,30 +176,28 @@ public class GameBoardView {
     /** this is the method that enables the visibility of the card */
     private void setCardFacesVisibility(JPanel panel, boolean visible) {
         for (Component component : panel.getComponents()) {
-            if (component instanceof JButton button && button.getIcon() instanceof CardView cardView) {
+            if (component instanceof CardView cardView) {
                 cardView.setCardVisibility(visible);
-                button.repaint();
+                cardView.repaint();
             }
         }
     }
 
     /** method used to add buttons for all the cards */
-    private static JButton getCardJButton(GameSessionController<?> controller, Card card, Optional<Rotation> rotate) {
-        CardView cardView = new CardView(card);
+    private static CardView getCardJButton(GameSessionController<?> controller, Card card, Optional<Rotation> rotate) {
+        final CardView cardView = new CardView(card);
         cardView.setRotation(rotate);
-        JButton buttonCard = new JButton(cardView);
-        buttonCard.addActionListener(new ActionListener() {
+        cardView.addItemListener(new ItemListener() {
             @Override
-            public void actionPerformed(ActionEvent e) {
-                if (!cardView.isClicked()) {
+            public void itemStateChanged(final ItemEvent event) {
+                if (event.getStateChange() == ItemEvent.SELECTED) {
                     controller.selectCard(cardView.getCard());
                 } else {
                     controller.removeSelectedCard(cardView.getCard());
                 }
-                cardView.click();
             }
         });
-        return buttonCard;
+        return cardView;
     }
 
     /**
@@ -204,16 +206,16 @@ public class GameBoardView {
      */
     public void refreshBoard() {
         // Refresh bottom player (index 0)
-        refreshPlayerPanel(bottomPlayerCards, 0, Optional.empty());
+        refreshPlayerPanel(bottomPlayerCards, BOTTOM_INDEX, Optional.empty());
 
         // Refresh left player (index 1)
-        refreshPlayerPanel(leftPlayerCards, 1, Optional.of(Rotation.LEFT));
+        refreshPlayerPanel(leftPlayerCards, LEFT_INDEX, Optional.of(Rotation.LEFT));
 
         // Refresh top player (index 2)
-        refreshPlayerPanel(topPlayerCards, 2, Optional.empty());
+        refreshPlayerPanel(topPlayerCards, TOP_INDEX, Optional.empty());
 
         // Refresh right player (index 3)
-        refreshPlayerPanel(rightPlayerCards, 3, Optional.of(Rotation.RIGHT));
+        refreshPlayerPanel(rightPlayerCards, RIGHT_INDEX, Optional.of(Rotation.RIGHT));
 
         // Update the center panel with current round card value
         JLabel centerLabel = (JLabel) ((JPanel) contentPane.getComponent(0)).getComponent(1);
@@ -231,11 +233,9 @@ public class GameBoardView {
         // Re-add cards for the player
         int currentPlayerIndex = this.controller.getCurrentGameState().getCurrentPlayerIndex();
         for (Card card : this.controller.getSessionPlayers().get(playerIndex).getHand()) {
-            JButton buttonCard = getCardJButton(controller, card, rotateOption);
+            CardView buttonCard = getCardJButton(controller, card, rotateOption);
             // Set card visibility based on current player
-            if (buttonCard.getIcon() instanceof CardView cardImage) {
-                cardImage.setCardVisibility(playerIndex == currentPlayerIndex);
-            }
+            buttonCard.setCardVisibility(playerIndex == currentPlayerIndex);
 
             playerPanel.add(buttonCard);
         }

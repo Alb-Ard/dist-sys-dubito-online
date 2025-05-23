@@ -18,18 +18,19 @@ public final class ImageUtilities {
         if (path == null) {
             return Optional.empty();
         }
-        URL resourceUrl = ClassLoader.getSystemClassLoader().getResource(path);
-        if (resourceUrl != null) {
-            try {
-                BufferedImage loadedImage = ImageIO.read(resourceUrl);
-                if (loadedImage == null) {
-                    return null;
-                }
-                Image correctSizeImage = loadedImage.getScaledInstance(width, height, Image.SCALE_SMOOTH);
-                return Optional.of(correctSizeImage);
-            } catch (IOException ex) {
-                ex.printStackTrace();
+        try {
+            URL resourceUrl = ClassLoader.getSystemClassLoader().getResource(path);
+            if (resourceUrl != null) {
+                    BufferedImage loadedImage = ImageIO.read(resourceUrl);
+                    if (loadedImage == null) {
+                        return Optional.empty();
+                    }
+                    Image correctSizeImage = loadedImage.getScaledInstance(width, height, Image.SCALE_SMOOTH);
+                    return Optional.of(correctSizeImage);
+
             }
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
         return Optional.empty();
     }

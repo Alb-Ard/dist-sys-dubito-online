@@ -5,15 +5,18 @@ import org.abianchi.dubito.app.gameSession.controllers.GameSessionController;
 import org.abianchi.dubito.app.gameSession.models.OnlinePlayer;
 import org.abianchi.dubito.app.gameSession.models.OnlinePlayerImpl;
 import org.abianchi.dubito.app.gameSession.views.*;
+import org.abianchi.dubito.messages.PlayerOrderMessage;
 import org.albard.dubito.messaging.MessageSerializer;
 import org.albard.dubito.messaging.MessengerFactory;
 import org.albard.dubito.network.PeerEndPoint;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
 import org.albard.dubito.network.PeerStarNetwork;
+import org.albard.dubito.utils.Locked;
 
 import java.awt.*;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Semaphore;
@@ -40,6 +43,23 @@ public class App {
         }
     }
 
+    private static List<PeerId> waitForPlayerOrder(PeerNetwork network) throws InterruptedException {
+        final PlayerOrderMessage[] orderMessages = new PlayerOrderMessage[1];
+        network.addOnceMessageListener(message -> {
+            if(message instanceof PlayerOrderMessage orderMessage) {
+                System.out.println("player order has been received: " + orderMessage.getPlayers() );
+                orderMessages[0] = orderMessage;
+                return true;
+            }
+            return false;
+        });
+        while (orderMessages[0] == null) {
+            System.out.println("Waiting for player order");
+            Thread.sleep(1000);
+        }
+        return orderMessages[0].getPlayers();
+    }
+
     public static void main(final String[] args) throws IOException, InterruptedException {
         // devo sapere l'owner, lo prendo dagli args
         boolean isOwner = Arrays.stream(args).anyMatch(el -> el.startsWith("--owner"));
@@ -61,23 +81,34 @@ public class App {
         }
         waitForPlayers(network);
 
+        // se sono l'owner, creo la lista dei peers ottenuti per assegnare un ordine ai vari giocatori
+        // nel caso degli altri giocatori, aspetto di ricevere la lista ordinata dei giocatori
+        final List<PeerId> playerPeers = new ArrayList<>();
+        if (isOwner) {
+            playerPeers.add(network.getLocalPeerId());
+            playerPeers.addAll(network.getPeers().keySet());
+            Thread.sleep(2000); // per evitare che il messaggio venga perso
+            network.sendMessage(new PlayerOrderMessage(network.getLocalPeerId(), null, playerPeers));
+        } else {
+            playerPeers.addAll(waitForPlayerOrder(network));
+        }
+
         // Create remote players list, then add the local player as first
-        final List<OnlinePlayer> players = network.getPeers().keySet().stream()
+        final List<OnlinePlayer> players = playerPeers.stream()
                 .map(OnlinePlayerImpl::new).collect(Collectors.toList());
-        players.add(0, new OnlinePlayerImpl(network.getLocalPeerId()));
 
         // stabilisco la GameBoardView e il GameSessionController (versione online)
-        final GameBoardView[] view = new GameBoardView[1];
+        // lo racchiudo in un Locked per evitare un costante refresh della board fatto da più peers
+        // sto essenzialmente cercando di dare un ordine ai refresh della board
+        final Locked<GameBoardView> view = Locked.of(null);
         final GameSessionController<OnlinePlayer> controller = new GameOnlineSessionController<>(players, network,
-                isOwner,
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        // qui svolgo la refresh della view
-                        view[0].refreshBoard();
-                    }
+                isOwner,() -> {
+                    view.exchange(v -> {
+                        v.refreshBoard();
+                        return v;
+                    });
                 });
-        view[0] = new GameBoardView(controller);
+        view.exchange(v -> new GameBoardView(controller, network.getLocalPeerId().id()));
 
         // Here we wait for all players to setup their controller/view
         Thread.sleep(5000);
@@ -86,7 +117,10 @@ public class App {
         EventQueue.invokeLater(new Runnable() {
             @Override
             public void run() {
-                view[0].setBoardVisible(true);
+                view.exchange(v -> {
+                            v.setBoardVisible(true);
+                            return v;
+                        });
             }
         });
         final Semaphore shutdownLock = new Semaphore(0);
