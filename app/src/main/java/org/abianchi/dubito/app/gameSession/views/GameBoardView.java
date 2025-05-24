@@ -35,14 +35,17 @@ public class GameBoardView {
         this.contentPane.setPreferredSize(new Dimension(1200, 800));
 
         /** center */
-        JLabel centerLabel = new JLabel("Round Card is: " + this.controller.getCurrentGameState().getRoundCardValue());
-        centerLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JLabel roundValueLabel = new JLabel("Round Card is: " + this.controller.getCurrentGameState().getRoundCardValue());
+        JLabel cardsPlayedLabel = new JLabel("Previous Player played " +
+                this.controller.getCurrentGameState().getTurnPrevPlayerPlayedCards().size() + " cards");
+        roundValueLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         JPanel centerPanel = new JPanel();
         centerPanel.setSize(new Dimension(900, 900));
         centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
         centerPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
         centerPanel.add(Box.createVerticalGlue());
-        centerPanel.add(centerLabel);
+        centerPanel.add(roundValueLabel);
+        centerPanel.add(cardsPlayedLabel);
         centerPanel.add(Box.createVerticalGlue());
         /* player cards */
         /* bottom player */
