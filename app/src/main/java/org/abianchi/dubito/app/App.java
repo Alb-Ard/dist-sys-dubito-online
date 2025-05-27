@@ -24,10 +24,10 @@ import java.util.stream.Collectors;
 
 public class App {
 
-    private static void waitForPlayers(PeerNetwork network) throws InterruptedException {
+    private static void waitForPlayers(PeerNetwork network, int nPlayers) throws InterruptedException {
         // Wait for all OTHER peers to connect (the local peer is not in this list)
-        while (network.getPeerCount() < 3) {
-            System.out.println("Waiting for players: " + (network.getPeerCount() + 1) + "/4");
+        while (network.getPeerCount() < nPlayers - 1) {
+            System.out.println("Waiting for players: " + (network.getPeerCount() + 1) + "/" + nPlayers);
             Thread.sleep(1000);
         }
     }
@@ -79,7 +79,9 @@ public class App {
         if (!isOwner) {
             connectWithRetries(network, ownerEndPoint[0], Integer.parseInt(ownerEndPoint[1]));
         }
-        waitForPlayers(network);
+        int nPlayers = Integer.parseInt(Arrays.stream(args).filter(el -> el.startsWith("--player-count")).findFirst()
+                .map(el -> el.split("=")[1]).get());
+        waitForPlayers(network, nPlayers);
 
         // se sono l'owner, creo la lista dei peers ottenuti per assegnare un ordine ai vari giocatori
         // nel caso degli altri giocatori, aspetto di ricevere la lista ordinata dei giocatori

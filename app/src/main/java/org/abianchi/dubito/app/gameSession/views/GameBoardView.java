@@ -26,6 +26,7 @@ public class GameBoardView {
 
     public GameBoardView(GameSessionController<?> controller, String title) {
         this.controller = controller;
+        int nPlayers = this.controller.getSessionPlayers().size();
 
         final BorderLayout borderLayout = new BorderLayout();
         this.frame = new JFrame(title);
@@ -48,6 +49,7 @@ public class GameBoardView {
         centerPanel.add(cardsPlayedLabel);
         centerPanel.add(Box.createVerticalGlue());
         /* player cards */
+        /* panels created based on number of players */
         /* bottom player */
         this.bottomPlayerCards = new JPanel();
         for (Card card : this.controller.getSessionPlayers().get(BOTTOM_INDEX).getHand()) {
@@ -55,13 +57,6 @@ public class GameBoardView {
             bottomPlayerCards.add(buttonCard);
         }
         this.addButtonsAndLives(bottomPlayerCards, BOTTOM_INDEX, false);
-        /* top player */
-        this.topPlayerCards = new JPanel();
-        for (Card card : this.controller.getSessionPlayers().get(TOP_INDEX).getHand()) {
-            CardView buttonCard = getCardJButton(controller, card, Optional.empty());
-            topPlayerCards.add(buttonCard);
-        }
-        this.addButtonsAndLives(topPlayerCards, TOP_INDEX, false);
         /* left player */
         this.leftPlayerCards = new JPanel();
         leftPlayerCards.setLayout(new BoxLayout(leftPlayerCards, BoxLayout.PAGE_AXIS));
@@ -70,20 +65,34 @@ public class GameBoardView {
             leftPlayerCards.add(buttonCard);
         }
         this.addButtonsAndLives(leftPlayerCards, LEFT_INDEX, true);
+
+        /* top player */
+        this.topPlayerCards = new JPanel();
+        if(nPlayers == 3) {
+            for (Card card : this.controller.getSessionPlayers().get(TOP_INDEX).getHand()) {
+                CardView buttonCard = getCardJButton(controller, card, Optional.empty());
+                topPlayerCards.add(buttonCard);
+            }
+            this.addButtonsAndLives(topPlayerCards, TOP_INDEX, false);
+        }
         /* right player */
         this.rightPlayerCards = new JPanel();
-        rightPlayerCards.setLayout(new BoxLayout(rightPlayerCards, BoxLayout.Y_AXIS));
-        for (Card card : this.controller.getSessionPlayers().get(RIGHT_INDEX).getHand()) {
-            CardView buttonCard = getCardJButton(controller, card, Optional.of(Rotation.RIGHT));
-            rightPlayerCards.add(buttonCard);
+        if(nPlayers == 4) {
+            rightPlayerCards.setLayout(new BoxLayout(rightPlayerCards, BoxLayout.Y_AXIS));
+            for (Card card : this.controller.getSessionPlayers().get(RIGHT_INDEX).getHand()) {
+                CardView buttonCard = getCardJButton(controller, card, Optional.of(Rotation.RIGHT));
+                rightPlayerCards.add(buttonCard);
+            }
+            this.addButtonsAndLives(rightPlayerCards, RIGHT_INDEX, true);
         }
-        this.addButtonsAndLives(rightPlayerCards, RIGHT_INDEX, true);
 
-        /* add everything in pane */
+        /* add everything to panel */
+
+        // add for 2 players as a start
         this.contentPane.add(centerPanel, BorderLayout.CENTER);
         this.contentPane.add(bottomPlayerCards, BorderLayout.SOUTH);
-        this.contentPane.add(topPlayerCards, BorderLayout.NORTH);
         this.contentPane.add(leftPlayerCards, BorderLayout.WEST);
+        this.contentPane.add(topPlayerCards, BorderLayout.NORTH);
         this.contentPane.add(rightPlayerCards, BorderLayout.EAST);
 
         this.updatePlayerTurnUI();
