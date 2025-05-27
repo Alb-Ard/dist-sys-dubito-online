@@ -33,7 +33,7 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
         this.localPlayer = players.stream().filter(el -> el.getOnlineId().equals(network.getLocalPeerId())).findFirst()
                 .get();
         this.sessionNetwork.addMessageListener(this::handleMessage);
-        this.sessionNetwork.setPeerConnectedListener(this::setPeerDisconnectedListener);
+        this.sessionNetwork.setPeerDisconnectedListener(this::setPeerDisconnectedListener);
     }
 
     @Override
@@ -96,6 +96,7 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
         System.out.println("Sending my new hand: " + newHand);
         sessionNetwork.sendMessage(new NewHandDrawnMessage(sessionNetwork.getLocalPeerId(), null,
                 newHand));
+        this.onChanged.run();
     }
 
     @Override
@@ -112,7 +113,7 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
 
     }
 
-    private void setPeerDisconnectedListener(PeerId peerId, PeerConnection peerConnection) {
+    private void setPeerDisconnectedListener(PeerId peerId) {
     }
 
 
@@ -137,6 +138,7 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
                             .toList()));
         }
         super.playCards();
+        this.onChanged.run();
     }
 
     @Override
@@ -146,6 +148,7 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
             sessionNetwork.sendMessage(new CallLiarMessage(sessionNetwork.getLocalPeerId(), null));
         }
         super.callLiar();
+        this.onChanged.run();
     }
 
     // con questo prendiamo il primo player della sessione con lo specifico Id

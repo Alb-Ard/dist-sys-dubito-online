@@ -7,11 +7,11 @@ import java.util.List;
 import java.util.Optional;
 
 public class GameSessionController<X extends Player> {
-    private List<X> sessionPlayers;
+    private final List<X> sessionPlayers;
 
-    private GameState gameState;
+    private final GameState gameState;
 
-    private List<Card> selectedCards;
+    private final List<Card> selectedCards;
 
     private int winnerIndex;
 
@@ -54,18 +54,15 @@ public class GameSessionController<X extends Player> {
         if (startIndex < 0) {
             return 0;
         }
-        int currentIndex = startIndex;
-        int playersChecked = 1;
 
         // Loop through the list until we've checked all players
-        while (playersChecked < this.sessionPlayers.size()) {
-            currentIndex = (currentIndex + 1) % this.sessionPlayers.size();
+        for (int playersChecked = 1 ; playersChecked < this.sessionPlayers.size() ; playersChecked ++) {
+            final int currentIndex = (startIndex + playersChecked) % this.sessionPlayers.size();
 
-            Player nextPlayer = this.sessionPlayers.get(currentIndex);
+            final Player nextPlayer = this.sessionPlayers.get(currentIndex);
             if (nextPlayer.getLives() > 0 && !nextPlayer.getHand().isEmpty()) {
                 return currentIndex;
             }
-            playersChecked++;
         }
 
         // No alive players found
@@ -77,7 +74,7 @@ public class GameSessionController<X extends Player> {
             if (player.getLives() > 0) {
                 List<Card> newHand = new ArrayList<>();
                 for (int i = 0; i < Player.MAX_HAND_SIZE; i++) {
-                    newHand.add(new CardImpl(Optional.empty()));
+                    newHand.add(Card.random());
                 }
                 player.receiveNewHand(newHand);
             }
@@ -149,6 +146,10 @@ public class GameSessionController<X extends Player> {
 
     public void removePlayer(int removedPlayer) {
         this.sessionPlayers.get(removedPlayer).setLives(0);
+        // copre il caso in cui va via il giocatore non attivo e la partita deve continuare
+        if(removedPlayer != this.getCurrentGameState().getCurrentPlayerIndex() && this.sessionPlayers.isEmpty()) {
+            return;
+        }
         if (!gameOver(this.sessionPlayers.get(this.gameState.getCurrentPlayerIndex()))) {
             this.newRound();
         } else {

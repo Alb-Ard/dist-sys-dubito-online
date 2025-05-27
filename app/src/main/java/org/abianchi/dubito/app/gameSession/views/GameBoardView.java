@@ -1,7 +1,9 @@
 package org.abianchi.dubito.app.gameSession.views;
 
+import com.jgoodies.binding.value.DefaultComponentValueModel;
 import org.abianchi.dubito.app.gameSession.controllers.GameSessionController;
 import org.abianchi.dubito.app.gameSession.models.Card;
+import org.albard.dubito.utils.Debouncer;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -11,22 +13,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
-import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.ActionMap;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.InputMap;
-import javax.swing.JButton;
-import javax.swing.JComponent;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.KeyStroke;
+import javax.swing.*;
 
 public class GameBoardView {
     private static final List<String> PLAYER_POSITIONS = List.of(BorderLayout.SOUTH, BorderLayout.WEST,
@@ -36,9 +30,13 @@ public class GameBoardView {
 
     private final Container contentPane;
     private final GameSessionController<?> controller;
+    private final Lock refreshLock = new ReentrantLock();
+    private final Debouncer refreshBouncer = new Debouncer(Duration.ofMillis(150));
 
     private final JFrame frame;
     private final List<JPanel> playerCardPanels = new ArrayList<>();
+
+    private final JPanel centerPanel;
 
     public GameBoardView(GameSessionController<?> controller, String title) {
         this.controller = controller;
@@ -57,28 +55,30 @@ public class GameBoardView {
         JLabel cardsPlayedLabel = new JLabel("Previous Player played "
                 + this.controller.getCurrentGameState().getTurnPrevPlayerPlayedCards().size() + " cards");
         roundValueLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        JPanel centerPanel = new JPanel();
-        centerPanel.setSize(new Dimension(900, 900));
-        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
-        centerPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        centerPanel.add(Box.createVerticalGlue());
-        centerPanel.add(roundValueLabel);
-        centerPanel.add(cardsPlayedLabel);
-        centerPanel.add(Box.createVerticalGlue());
+        this.centerPanel = new JPanel();
+        this.centerPanel.setSize(new Dimension(900, 900));
+        this.centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
+        this.centerPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        this.centerPanel.add(Box.createVerticalGlue());
+        this.centerPanel.add(roundValueLabel);
+        this.centerPanel.add(cardsPlayedLabel);
+        this.centerPanel.add(Box.createVerticalGlue());
         /* player cards */
         /* panels created based on number of players */
         for (int i = 0; i < nPlayers; i++) {
             final JPanel playerCards = new JPanel();
+            final Optional<Rotation> rotation = PLAYER_ROTATIONS.get(i);
+            playerCards.setLayout(new BoxLayout(playerCards, rotation.map(x -> BoxLayout.PAGE_AXIS).orElse(BoxLayout.LINE_AXIS)));
             for (Card card : this.controller.getSessionPlayers().get(i).getHand()) {
-                CardView buttonCard = getCardJButton(controller, card, PLAYER_ROTATIONS.get(i));
+                CardView buttonCard = getCardJButton(controller, card, rotation);
                 playerCards.add(buttonCard);
             }
-            this.addButtonsAndLives(playerCards, i, false);
+            this.addButtonsAndLives(playerCards, i, rotation.isPresent());
             this.contentPane.add(playerCards, PLAYER_POSITIONS.get(i));
             playerCardPanels.add(playerCards);
         }
 
-        this.contentPane.add(centerPanel, BorderLayout.CENTER);
+        this.contentPane.add(this.centerPanel, BorderLayout.CENTER);
 
         this.updatePlayerTurnUI();
 
@@ -117,7 +117,7 @@ public class GameBoardView {
     private void setPanelControlsEnabled(JPanel panel, boolean enabled) {
         // Enable all components in the panel
         for (Component component : panel.getComponents()) {
-            if (component instanceof JButton) {
+            if (component instanceof AbstractButton) {
                 component.setEnabled(enabled);
             } else if (component instanceof JPanel subPanel) {
                 // For button panels
@@ -135,6 +135,7 @@ public class GameBoardView {
 
     /** method to show the cards for the current playing player */
     private void showCardFaces(int playerIndex) {
+        System.out.println("Shown card for player " + playerIndex);
         setCardFacesVisibility(playerCardPanels.get(playerIndex), true);
     }
 
@@ -170,17 +171,31 @@ public class GameBoardView {
      * throw cards or the call liar button
      */
     public void refreshBoard() {
-        // Refresh players
-        for (int i = 0; i < playerCardPanels.size(); i++) {
-            refreshPlayerPanel(playerCardPanels.get(i), i, PLAYER_ROTATIONS.get(i));
-        }
+        // prima di eseguire un'azione, aspetto un tot di tempo in base al valore passato dentro il Debounce
+        // se qualcuno nel frattempo vuole provare ad eseguire la stessa azione, dai precedenza all'ultimo e il mio lavoro
+        // viene cancellato
+        this.refreshBouncer.Debounce(() -> {
+            // provo a fare una lock per il refresh della board, in ogni caso poi rilascio il lavoro di refresh anche in caso
+            // ottengo un'eccezione
+            if(this.refreshLock.tryLock()) {
+                try {
+                    System.out.println(this.controller.getCurrentGameState() + " - " + this.controller.getSessionPlayers());
+                    // Refresh players
+                    for (int i = 0; i < playerCardPanels.size(); i++) {
+                        refreshPlayerPanel(playerCardPanels.get(i), i, PLAYER_ROTATIONS.get(i));
+                    }
 
-        // Update the center panel with current round card value
-        JLabel centerLabel = (JLabel) ((JPanel) contentPane.getComponent(0)).getComponent(1);
-        centerLabel.setText("Round Card is: " + this.controller.getCurrentGameState().getRoundCardValue());
+                    // Update the center panel with current round card value
+                    JLabel centerLabel = (JLabel) this.centerPanel.getComponent(1);
+                    centerLabel.setText("Round Card is: " + this.controller.getCurrentGameState().getRoundCardValue());
 
-        // Update UI to highlight current player's turn
-        updatePlayerTurnUI();
+                    // Update UI to highlight current player's turn
+                    updatePlayerTurnUI();
+                } finally {
+                    this.refreshLock.unlock();
+                }
+            }
+        });
     }
 
     /** Helper method to refresh a specific player's panel */
@@ -210,7 +225,7 @@ public class GameBoardView {
     private void endGame() {
         disableAllPlayerControls();
         // Update the center panel with current round card value
-        JLabel centerLabel = (JLabel) ((JPanel) contentPane.getComponent(0)).getComponent(1);
+        JLabel centerLabel = (JLabel)this.centerPanel.getComponent(1);
         centerLabel.setText("The winner is: Player " + this.controller.getWinnerIndex());
     }
 

@@ -48,4 +48,9 @@ public class PlayerImpl implements Player{
         return List.copyOf(this.playerHand);
     }
 
+    @Override
+    public String toString() {
+        return "PlayerImpl [playerHand=" + playerHand + ", lives=" + lives + "]";
+    }
+
 }

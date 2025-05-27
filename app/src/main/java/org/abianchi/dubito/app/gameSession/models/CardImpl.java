@@ -30,4 +30,9 @@ public class CardImpl implements Card{
     public int hashCode() {
         return Objects.hash(cardtype);
     }
+
+    @Override
+    public String toString() {
+        return cardtype.toString();
+    }
 }

@@ -49,4 +49,11 @@ public class GameState {
     public CardValue getRoundCardValue() {
         return this.roundCardValue;
     }
+
+    @Override
+    public String toString() {
+        return "GameState [currentPlayerIndex=" + currentPlayerIndex + ", previousPlayerIndex=" + previousPlayerIndex
+                + ", roundCardValue=" + roundCardValue + ", turnPrevPlayerPlayedCards=" + turnPrevPlayerPlayedCards
+                + "]";
+    }
 }

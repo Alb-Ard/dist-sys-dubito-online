@@ -4,6 +4,8 @@ import org.abianchi.dubito.app.gameSession.controllers.GameOnlineSessionControll
 import org.abianchi.dubito.app.gameSession.controllers.GameSessionController;
 import org.abianchi.dubito.app.gameSession.models.OnlinePlayer;
 import org.abianchi.dubito.app.gameSession.models.OnlinePlayerImpl;
+import org.abianchi.dubito.app.gameSession.models.Player;
+import org.abianchi.dubito.app.gameSession.models.PlayerImpl;
 import org.abianchi.dubito.app.gameSession.views.*;
 import org.abianchi.dubito.messages.PlayerOrderMessage;
 import org.albard.dubito.messaging.MessageSerializer;
@@ -61,6 +63,38 @@ public class App {
     }
 
     public static void main(final String[] args) throws IOException, InterruptedException {
+        //offline version
+        /*
+        final List<Player> players = List.of(new PlayerImpl(), new PlayerImpl());
+        final Locked<GameBoardView> view = Locked.of(null);
+        final GameSessionController<Player> controller = new GameSessionController<>(players);
+        controller.newRound();
+        view.exchange(v -> new GameBoardView(controller, "Dubito"));
+
+        // Here we wait for all players to setup their controller/view
+        Thread.sleep(5000);
+
+
+        EventQueue.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                view.exchange(v -> {
+                    v.setBoardVisible(true);
+                    return v;
+                });
+            }
+        });
+        final Semaphore shutdownLock = new Semaphore(0);
+        Runtime.getRuntime().addShutdownHook(new Thread(shutdownLock::release));
+        // aspetto qui che il programma venga chiuso (quando chiudo il programma, eseguo
+        // il thread passato di chiusura di rete)
+        shutdownLock.acquire();
+        System.out.println("Closing...");
+
+
+        return;
+        */
+        //online version
         // devo sapere l'owner, lo prendo dagli args
         boolean isOwner = Arrays.stream(args).anyMatch(el -> el.startsWith("--owner"));
         String[] ownerEndPoint = isOwner ? new String[0]

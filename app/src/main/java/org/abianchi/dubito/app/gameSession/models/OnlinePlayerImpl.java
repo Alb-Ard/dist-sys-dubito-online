@@ -13,4 +13,9 @@ public class OnlinePlayerImpl extends PlayerImpl implements OnlinePlayer{
     public PeerId getOnlineId() {
         return this.playerId;
     }
+
+    @Override
+    public String toString() {
+        return "OnlinePlayerImpl [" + super.toString() + " playerId=" + playerId + "]";
+    }
 }
