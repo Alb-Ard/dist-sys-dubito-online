@@ -3,26 +3,42 @@ package org.abianchi.dubito.app.gameSession.views;
 import org.abianchi.dubito.app.gameSession.controllers.GameSessionController;
 import org.abianchi.dubito.app.gameSession.models.Card;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.KeyEvent;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
-public class GameBoardView {
-    private static final int BOTTOM_INDEX = 0;
-    private static final int LEFT_INDEX = 1;
-    private static final int TOP_INDEX = 2;
-    private static final int RIGHT_INDEX = 3;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.ActionMap;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.InputMap;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.KeyStroke;
 
+public class GameBoardView {
+    private static final List<String> PLAYER_POSITIONS = List.of(BorderLayout.SOUTH, BorderLayout.WEST,
+            BorderLayout.NORTH, BorderLayout.EAST);
+    private static final List<Optional<Rotation>> PLAYER_ROTATIONS = List.of(Optional.empty(),
+            Optional.of(Rotation.LEFT), Optional.empty(), Optional.of(Rotation.RIGHT));
 
     private final Container contentPane;
     private final GameSessionController<?> controller;
 
     private final JFrame frame;
-    private final JPanel bottomPlayerCards;
-    private final JPanel topPlayerCards;
-    private final JPanel leftPlayerCards;
-    private final JPanel rightPlayerCards;
+    private final List<JPanel> playerCardPanels = new ArrayList<>();
 
     public GameBoardView(GameSessionController<?> controller, String title) {
         this.controller = controller;
@@ -36,9 +52,10 @@ public class GameBoardView {
         this.contentPane.setPreferredSize(new Dimension(1200, 800));
 
         /** center */
-        JLabel roundValueLabel = new JLabel("Round Card is: " + this.controller.getCurrentGameState().getRoundCardValue());
-        JLabel cardsPlayedLabel = new JLabel("Previous Player played " +
-                this.controller.getCurrentGameState().getTurnPrevPlayerPlayedCards().size() + " cards");
+        JLabel roundValueLabel = new JLabel(
+                "Round Card is: " + this.controller.getCurrentGameState().getRoundCardValue());
+        JLabel cardsPlayedLabel = new JLabel("Previous Player played "
+                + this.controller.getCurrentGameState().getTurnPrevPlayerPlayedCards().size() + " cards");
         roundValueLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         JPanel centerPanel = new JPanel();
         centerPanel.setSize(new Dimension(900, 900));
@@ -50,50 +67,18 @@ public class GameBoardView {
         centerPanel.add(Box.createVerticalGlue());
         /* player cards */
         /* panels created based on number of players */
-        /* bottom player */
-        this.bottomPlayerCards = new JPanel();
-        for (Card card : this.controller.getSessionPlayers().get(BOTTOM_INDEX).getHand()) {
-            CardView buttonCard = getCardJButton(controller, card, Optional.empty());
-            bottomPlayerCards.add(buttonCard);
-        }
-        this.addButtonsAndLives(bottomPlayerCards, BOTTOM_INDEX, false);
-        /* left player */
-        this.leftPlayerCards = new JPanel();
-        leftPlayerCards.setLayout(new BoxLayout(leftPlayerCards, BoxLayout.PAGE_AXIS));
-        for (Card card : this.controller.getSessionPlayers().get(LEFT_INDEX).getHand()) {
-            CardView buttonCard = getCardJButton(controller, card, Optional.of(Rotation.LEFT));
-            leftPlayerCards.add(buttonCard);
-        }
-        this.addButtonsAndLives(leftPlayerCards, LEFT_INDEX, true);
-
-        /* top player */
-        this.topPlayerCards = new JPanel();
-        if(nPlayers == 3) {
-            for (Card card : this.controller.getSessionPlayers().get(TOP_INDEX).getHand()) {
-                CardView buttonCard = getCardJButton(controller, card, Optional.empty());
-                topPlayerCards.add(buttonCard);
+        for (int i = 0; i < nPlayers; i++) {
+            final JPanel playerCards = new JPanel();
+            for (Card card : this.controller.getSessionPlayers().get(i).getHand()) {
+                CardView buttonCard = getCardJButton(controller, card, PLAYER_ROTATIONS.get(i));
+                playerCards.add(buttonCard);
             }
-            this.addButtonsAndLives(topPlayerCards, TOP_INDEX, false);
-        }
-        /* right player */
-        this.rightPlayerCards = new JPanel();
-        if(nPlayers == 4) {
-            rightPlayerCards.setLayout(new BoxLayout(rightPlayerCards, BoxLayout.Y_AXIS));
-            for (Card card : this.controller.getSessionPlayers().get(RIGHT_INDEX).getHand()) {
-                CardView buttonCard = getCardJButton(controller, card, Optional.of(Rotation.RIGHT));
-                rightPlayerCards.add(buttonCard);
-            }
-            this.addButtonsAndLives(rightPlayerCards, RIGHT_INDEX, true);
+            this.addButtonsAndLives(playerCards, i, false);
+            this.contentPane.add(playerCards, PLAYER_POSITIONS.get(i));
+            playerCardPanels.add(playerCards);
         }
 
-        /* add everything to panel */
-
-        // add for 2 players as a start
         this.contentPane.add(centerPanel, BorderLayout.CENTER);
-        this.contentPane.add(bottomPlayerCards, BorderLayout.SOUTH);
-        this.contentPane.add(leftPlayerCards, BorderLayout.WEST);
-        this.contentPane.add(topPlayerCards, BorderLayout.NORTH);
-        this.contentPane.add(rightPlayerCards, BorderLayout.EAST);
 
         this.updatePlayerTurnUI();
 
@@ -112,7 +97,7 @@ public class GameBoardView {
         int currentPlayerIndex = this.controller.getCurrentGameState().getCurrentPlayerIndex();
 
         // se il giocatore non è attivo, nasconde tutte le carte nella view
-        if(!this.controller.isActivePlayer(currentPlayerIndex)) {
+        if (!this.controller.isActivePlayer(currentPlayerIndex)) {
             return;
         }
 
@@ -120,28 +105,12 @@ public class GameBoardView {
         showCardFaces(currentPlayerIndex);
 
         // Enable only the current player's controls
-        switch (currentPlayerIndex) {
-            case BOTTOM_INDEX: // Bottom player
-                setPanelControlsEnabled(bottomPlayerCards, true);
-                break;
-            case LEFT_INDEX: // Left player
-                setPanelControlsEnabled(leftPlayerCards, true);
-                break;
-            case TOP_INDEX: // Top player
-                setPanelControlsEnabled(topPlayerCards, true);
-                break;
-            case RIGHT_INDEX: // Right player
-                setPanelControlsEnabled(rightPlayerCards, true);
-                break;
-        }
+        setPanelControlsEnabled(playerCardPanels.get(currentPlayerIndex), true);
     }
 
     /** helper method to disable everything first */
     private void disableAllPlayerControls() {
-        setPanelControlsEnabled(bottomPlayerCards, false);
-        setPanelControlsEnabled(topPlayerCards, false);
-        setPanelControlsEnabled(leftPlayerCards, false);
-        setPanelControlsEnabled(rightPlayerCards, false);
+        playerCardPanels.stream().forEach(el -> setPanelControlsEnabled(el, false));
     }
 
     /** this method enables control only to the current playing player */
@@ -161,28 +130,12 @@ public class GameBoardView {
 
     /** helper method to hide all the cards in play */
     private void hideAllCardFaces() {
-        setCardFacesVisibility(bottomPlayerCards, false);
-        setCardFacesVisibility(leftPlayerCards, false);
-        setCardFacesVisibility(topPlayerCards, false);
-        setCardFacesVisibility(rightPlayerCards, false);
+        playerCardPanels.stream().forEach(el -> setCardFacesVisibility(el, false));
     }
 
     /** method to show the cards for the current playing player */
     private void showCardFaces(int playerIndex) {
-        switch (playerIndex) {
-            case BOTTOM_INDEX: // Bottom player
-                setCardFacesVisibility(bottomPlayerCards, true);
-                break;
-            case LEFT_INDEX: // Left player
-                setCardFacesVisibility(leftPlayerCards, true);
-                break;
-            case TOP_INDEX: // Top player
-                setCardFacesVisibility(topPlayerCards, true);
-                break;
-            case RIGHT_INDEX: // Right player
-                setCardFacesVisibility(rightPlayerCards, true);
-                break;
-        }
+        setCardFacesVisibility(playerCardPanels.get(playerIndex), true);
     }
 
     /** this is the method that enables the visibility of the card */
@@ -217,17 +170,10 @@ public class GameBoardView {
      * throw cards or the call liar button
      */
     public void refreshBoard() {
-        // Refresh bottom player (index 0)
-        refreshPlayerPanel(bottomPlayerCards, BOTTOM_INDEX, Optional.empty());
-
-        // Refresh left player (index 1)
-        refreshPlayerPanel(leftPlayerCards, LEFT_INDEX, Optional.of(Rotation.LEFT));
-
-        // Refresh top player (index 2)
-        refreshPlayerPanel(topPlayerCards, TOP_INDEX, Optional.empty());
-
-        // Refresh right player (index 3)
-        refreshPlayerPanel(rightPlayerCards, RIGHT_INDEX, Optional.of(Rotation.RIGHT));
+        // Refresh players
+        for (int i = 0; i < playerCardPanels.size(); i++) {
+            refreshPlayerPanel(playerCardPanels.get(i), i, PLAYER_ROTATIONS.get(i));
+        }
 
         // Update the center panel with current round card value
         JLabel centerLabel = (JLabel) ((JPanel) contentPane.getComponent(0)).getComponent(1);
