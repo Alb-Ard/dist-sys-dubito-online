@@ -41,6 +41,9 @@ public class PlayerImpl implements Player{
     }
 
     @Override
+    public void setLives(int lives) { this.lives = lives;}
+
+    @Override
     public List<Card> getHand() {
         return List.copyOf(this.playerHand);
     }

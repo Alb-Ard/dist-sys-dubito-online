@@ -147,6 +147,15 @@ public class GameSessionController<X extends Player> {
         return gameOver;
     }
 
+    public void removePlayer(int removedPlayer) {
+        this.sessionPlayers.get(removedPlayer).setLives(0);
+        if (!gameOver(this.sessionPlayers.get(this.gameState.getCurrentPlayerIndex()))) {
+            this.newRound();
+        } else {
+            this.winnerIndex = this.gameState.getCurrentPlayerIndex();
+        }
+    }
+
     public List<Player> getSessionPlayers() {
         return List.copyOf(this.sessionPlayers);
     }

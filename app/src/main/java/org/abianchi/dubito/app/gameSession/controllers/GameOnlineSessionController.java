@@ -8,6 +8,7 @@ import org.abianchi.dubito.messages.CallLiarMessage;
 import org.abianchi.dubito.messages.CardsThrownMessage;
 import org.abianchi.dubito.messages.NewHandDrawnMessage;
 import org.abianchi.dubito.messages.RoundCardGeneratedMessage;
+import org.albard.dubito.connection.PeerConnection;
 import org.albard.dubito.messaging.handlers.MessageHandler;
 import org.albard.dubito.messaging.messages.GameMessage;
 import org.albard.dubito.network.PeerId;
@@ -32,6 +33,7 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
         this.localPlayer = players.stream().filter(el -> el.getOnlineId().equals(network.getLocalPeerId())).findFirst()
                 .get();
         this.sessionNetwork.addMessageListener(this::handleMessage);
+        this.sessionNetwork.setPeerConnectedListener(this::setPeerDisconnectedListener);
     }
 
     @Override
@@ -104,6 +106,15 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
     protected boolean canGenerateRoundCard() {
         return this.isOwner;
     }
+
+    @Override
+    public void removePlayer(int removedPlayer) {
+
+    }
+
+    private void setPeerDisconnectedListener(PeerId peerId, PeerConnection peerConnection) {
+    }
+
 
     @Override
     protected void giveNewHand() {

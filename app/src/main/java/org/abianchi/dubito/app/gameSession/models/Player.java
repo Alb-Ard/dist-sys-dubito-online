@@ -16,4 +16,6 @@ public interface Player {
 
     void loseLife();
 
+    void setLives(int lives);
+
 }
