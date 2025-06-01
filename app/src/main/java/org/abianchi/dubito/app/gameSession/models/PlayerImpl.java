@@ -3,6 +3,7 @@ package org.abianchi.dubito.app.gameSession.models;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class PlayerImpl implements Player{
 
@@ -47,6 +48,9 @@ public class PlayerImpl implements Player{
     public List<Card> getHand() {
         return List.copyOf(this.playerHand);
     }
+
+    @Override
+    public Optional<String> getName() { return Optional.empty(); }
 
     @Override
     public String toString() {

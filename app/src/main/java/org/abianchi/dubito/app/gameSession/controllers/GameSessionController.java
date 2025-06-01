@@ -28,7 +28,7 @@ public class GameSessionController<X extends Player> {
         this.giveNewHand();
         this.gameState.setTurnPrevPlayerPlayedCards(List.of());
         int nextPlayerIndex = this.getNextAlivePlayingPlayer(this.gameState.getCurrentPlayerIndex());
-        if (nextPlayerIndex == -1 && !gameOver(this.sessionPlayers.get(this.gameState.getCurrentPlayerIndex()))) {
+        if (nextPlayerIndex == -1 && findWinner().isEmpty()) {
             this.newRound();
         } else {
             this.gameState.nextPlayer(nextPlayerIndex);
@@ -95,7 +95,7 @@ public class GameSessionController<X extends Player> {
             this.sessionPlayers.get(this.gameState.getCurrentPlayerIndex()).playCards(this.selectedCards);
             this.selectedCards.clear();
             int nextPlayerIndex = this.getNextAlivePlayingPlayer(this.gameState.getCurrentPlayerIndex());
-            if (nextPlayerIndex == -1 && !gameOver(this.sessionPlayers.get(this.gameState.getCurrentPlayerIndex()))) {
+            if (nextPlayerIndex == -1 && findWinner().isEmpty()) {
                 this.newRound();
             } else {
                 this.gameState.nextPlayer(nextPlayerIndex);
@@ -118,14 +118,14 @@ public class GameSessionController<X extends Player> {
         }
         if (isLiar) {
             this.sessionPlayers.get(this.gameState.getPreviousPlayerIndex()).loseLife();
-            if (!gameOver(this.sessionPlayers.get(this.gameState.getCurrentPlayerIndex()))) {
+            if (findWinner().isEmpty()) {
                 this.newRound();
             } else {
                 this.winnerIndex = this.gameState.getCurrentPlayerIndex();
             }
         } else {
             this.sessionPlayers.get(this.gameState.getCurrentPlayerIndex()).loseLife();
-            if (!gameOver(this.sessionPlayers.get(this.gameState.getPreviousPlayerIndex()))) {
+            if (findWinner().isEmpty()) {
                 this.newRound();
             } else {
                 this.winnerIndex = this.gameState.getPreviousPlayerIndex();
@@ -133,27 +133,30 @@ public class GameSessionController<X extends Player> {
         }
     }
 
-    public boolean gameOver(Player possibleWinner) {
-        boolean gameOver = true;
-        for (Player sessionPlayer : this.sessionPlayers) {
-            if (sessionPlayer.getLives() != 0 && !sessionPlayer.equals(possibleWinner)) {
-                gameOver = false;
-                break;
-            }
+    public Optional<X> findWinner() {
+        List<X> alivePlayers = this.sessionPlayers.stream().filter(el -> el.getLives() > 0).toList();
+        if(alivePlayers.size() == 1) {
+            return Optional.of(alivePlayers.getFirst());
         }
-        return gameOver;
+        return Optional.empty();
     }
 
     public void removePlayer(int removedPlayer) {
         this.sessionPlayers.get(removedPlayer).setLives(0);
-        // copre il caso in cui va via il giocatore non attivo e la partita deve continuare
-        if(removedPlayer != this.getCurrentGameState().getCurrentPlayerIndex() && this.sessionPlayers.isEmpty()) {
-            return;
+        // verifichiamo prima se c'è un vincitore
+        Optional<X> possibleWinner = findWinner();
+        if (possibleWinner.isPresent()) {
+            System.out.println("We have a winner");
+            this.winnerIndex = this.getSessionPlayers().indexOf(possibleWinner.get());
         }
-        if (!gameOver(this.sessionPlayers.get(this.gameState.getCurrentPlayerIndex()))) {
-            this.newRound();
+        // copre il caso in cui va via il giocatore non attivo e la partita deve continuare
+        else if(removedPlayer != this.getCurrentGameState().getCurrentPlayerIndex()) {
+            System.out.println("the game continues");
+            return;
         } else {
-            this.winnerIndex = this.gameState.getCurrentPlayerIndex();
+            // se non è il giocatore attivo e dobbiamo iniziare il secondo round
+            System.out.println("Moving into next round");
+            this.newRound();
         }
     }
 

@@ -1,6 +1,5 @@
 package org.abianchi.dubito.app.gameSession.views;
 
-import com.jgoodies.binding.value.DefaultComponentValueModel;
 import org.abianchi.dubito.app.gameSession.controllers.GameSessionController;
 import org.abianchi.dubito.app.gameSession.models.Card;
 import org.albard.dubito.utils.Debouncer;
@@ -179,6 +178,10 @@ public class GameBoardView {
             // ottengo un'eccezione
             if(this.refreshLock.tryLock()) {
                 try {
+                    if(this.controller.findWinner().isPresent()) {
+                        endGame();
+                        return;
+                    }
                     System.out.println(this.controller.getCurrentGameState() + " - " + this.controller.getSessionPlayers());
                     // Refresh players
                     for (int i = 0; i < playerCardPanels.size(); i++) {
@@ -226,7 +229,9 @@ public class GameBoardView {
         disableAllPlayerControls();
         // Update the center panel with current round card value
         JLabel centerLabel = (JLabel)this.centerPanel.getComponent(1);
-        centerLabel.setText("The winner is: Player " + this.controller.getWinnerIndex());
+        centerLabel.setText("The winner is: Player " +
+                this.controller.getSessionPlayers().get(this.controller.getWinnerIndex())
+                        .getName().orElse(Integer.toString(this.controller.getWinnerIndex())));
     }
 
     private void addButtonsAndLives(JPanel pane, int playerIndex, boolean vertical) {
@@ -262,9 +267,7 @@ public class GameBoardView {
             @Override
             public void actionPerformed(ActionEvent e) {
                 controller.callLiar();
-                if (controller.getPreviousPlayer().map(controller::gameOver).orElse(false)) {
-                    endGame();
-                } else if (controller.getCurrentPlayer().map(controller::gameOver).orElse(false)) {
+                if (controller.findWinner().isPresent()) {
                     endGame();
                 } else {
                     refreshBoard();
@@ -289,9 +292,7 @@ public class GameBoardView {
 
         callLiarButton.addActionListener(e -> {
             controller.callLiar();
-            if (controller.getPreviousPlayer().map(controller::gameOver).orElse(false)) {
-                endGame();
-            } else if (controller.getCurrentPlayer().map(controller::gameOver).orElse(false)) {
+            if (controller.findWinner().isPresent()) {
                 endGame();
             } else {
                 refreshBoard();

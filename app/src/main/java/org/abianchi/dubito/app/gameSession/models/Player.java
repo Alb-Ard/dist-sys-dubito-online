@@ -1,6 +1,7 @@
 package org.abianchi.dubito.app.gameSession.models;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface Player {
 
@@ -17,5 +18,7 @@ public interface Player {
     void loseLife();
 
     void setLives(int lives);
+
+    Optional<String> getName();
 
 }

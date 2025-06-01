@@ -167,7 +167,9 @@ public class GameSessionTest {
             this.testGameOverController.playCards();
             this.testGameOverController.callLiar();
             Assertions.assertTrue(
-                    this.testGameOverController.gameOver(this.testGameOverController.getCurrentPlayer().get()));
+                    this.testGameOverController.findWinner().isPresent());
+            Assertions.assertEquals(this.testGameOverController.findWinner().get(),
+                    this.testGameOverController.getCurrentPlayer().get());
         }
 
         @Test
