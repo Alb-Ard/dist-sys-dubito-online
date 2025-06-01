@@ -23,8 +23,8 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
     private final Runnable onChanged;
     private final OnlinePlayer localPlayer;
 
-    public GameOnlineSessionController(List<X> players, PeerNetwork network,
-            boolean isOwner, Runnable onChanged) {
+    public GameOnlineSessionController(final List<X> players, final PeerNetwork network, final boolean isOwner,
+            final Runnable onChanged) {
         super(players);
         this.sessionNetwork = network;
         this.isOwner = isOwner;
@@ -42,13 +42,10 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
             System.out.println("Player " + handDrawnMessage.getSender() + " has drawn a new hand: "
                     + handDrawnMessage.getNewHand());
             Player player = this.getPlayerById(message.getSender());
-            player.receiveNewHand(handDrawnMessage.getNewHand().stream().map(Card::ofType)
-                    .toList());
+            player.receiveNewHand(handDrawnMessage.getNewHand().stream().map(Card::ofType).toList());
             // devo qua segnalare il refresh della view (senza avere un riferimento alla
-            // view)
-            // devo rendere osservable questo Controller (GameOnlineSessionController) un
-            // observable
-            // uso Runnable
+            // view) devo rendere osservable questo Controller (GameOnlineSessionController)
+            // un observable uso Runnable
             this.onChanged.run();
             return true;
         }
@@ -56,9 +53,8 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
         if (message instanceof CardsThrownMessage cardsThrownMessage) {
             System.out.println("Player " + cardsThrownMessage.getSender() + " has throw cards: "
                     + cardsThrownMessage.getThrownCards());
-            cardsThrownMessage.getThrownCards().stream().map(Card::ofType)
-                    .forEach(this::selectCard);
-            this.playCards();
+            final List<Card> playedCards = cardsThrownMessage.getThrownCards().stream().map(Card::ofType).toList();
+            this.playCards(playedCards);
             this.onChanged.run();
             return true;
         }
@@ -84,24 +80,24 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
     public void newRound() {
         super.newRound(); // fa tutti i cambiamenti locali
         // se sono owner, setto la carta del round
-        if (this.canGenerateRoundCard()) {
-            final CardValue roundCardValue = this.getCurrentGameState().getRoundCardValue();
+        if (this.canGenerateRoundCard() && this.getCurrentGameState().getRoundCardValue().isPresent()) {
+            final CardValue roundCardValue = this.getCurrentGameState().getRoundCardValue().get();
             System.out.println("Setting round card to " + roundCardValue);
-            this.sessionNetwork.sendMessage(new RoundCardGeneratedMessage(sessionNetwork.getLocalPeerId(), null,
-                    roundCardValue));
+            this.sessionNetwork
+                    .sendMessage(new RoundCardGeneratedMessage(sessionNetwork.getLocalPeerId(), null, roundCardValue));
         }
-        final var newHand = this.localPlayer.getHand().stream().map(e -> e.getCardType())
-                .toList();
+        final var newHand = this.localPlayer.getHand().stream().map(e -> e.getCardType()).toList();
         System.out.println("Sending my new hand: " + newHand);
-        sessionNetwork.sendMessage(new NewHandDrawnMessage(sessionNetwork.getLocalPeerId(), null,
-                newHand));
+        sessionNetwork.sendMessage(new NewHandDrawnMessage(sessionNetwork.getLocalPeerId(), null, newHand));
         this.onChanged.run();
     }
 
     @Override
     public boolean isActivePlayer(final int index) {
-        return super.isActivePlayer(index) && index >= 0 && this.getPlayers().get(index).equals(this.localPlayer);
+        return super.isActivePlayer(index) && index >= 0
+                && this.getSessionPlayers().get(index).equals(this.localPlayer);
     }
+
     @Override
     protected boolean canGenerateRoundCard() {
         return this.isOwner;
@@ -114,7 +110,6 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
         this.onChanged.run();
     }
 
-
     @Override
     protected void giveNewHand() {
         // When new hands are given, I only want to generate a hand for my local player
@@ -126,16 +121,17 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
     }
 
     @Override
-    public void playCards() {
+    public void playCards(final List<Card> cards) {
         // gestisco prima il messaggio per indicare che ho giocato le carte (in modo che
         // l'elenco di carte selezionate non venga resettato), per poi fare localmente
         // il resto
+        System.out.println("Playing cards " + cards);
         if (this.isCurrentPlayerLocal()) {
+            System.out.println("Sending thrown cards...");
             sessionNetwork.sendMessage(new CardsThrownMessage(sessionNetwork.getLocalPeerId(), null,
-                    this.getSelectedCards().stream().map(e -> e.getCardType())
-                            .toList()));
+                    cards.stream().map(e -> e.getCardType()).toList()));
         }
-        super.playCards();
+        super.playCards(cards);
         this.onChanged.run();
     }
 
@@ -152,12 +148,10 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
     // con questo prendiamo il primo player della sessione con lo specifico Id
     // passato
     private X getPlayerById(PeerId id) {
-        return this.getPlayers().stream()
-                .filter(el -> el.getOnlineId().equals(id)).findFirst().get();
+        return this.getSessionPlayers().stream().filter(el -> el.getOnlineId().equals(id)).findFirst().get();
     }
 
     private boolean isCurrentPlayerLocal() {
-        return this.getCurrentPlayer().map(this.localPlayer::equals)
-                .orElse(false);
+        return this.getCurrentPlayer().map(this.localPlayer::equals).orElse(false);
     }
 }

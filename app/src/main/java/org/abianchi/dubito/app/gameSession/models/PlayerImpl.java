@@ -1,13 +1,12 @@
 package org.abianchi.dubito.app.gameSession.models;
 
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class PlayerImpl implements Player{
+public class PlayerImpl implements Player {
+    private final List<Card> playerHand;
 
-    private List<Card> playerHand;
     private int lives;
 
     public PlayerImpl() {
@@ -16,12 +15,9 @@ public class PlayerImpl implements Player{
     }
 
     @Override
-    public void playCards(List<Card> selectedCards) {
-        for (Card cardToRemove : selectedCards) {
-            int indexToRemove = this.playerHand.indexOf(cardToRemove);
-            if (indexToRemove >= 0) {
-                this.playerHand.remove(indexToRemove);
-            }
+    public void playCards(final List<Card> cards) {
+        for (final Card cardToRemove : cards) {
+            this.playerHand.remove(cardToRemove);
         }
     }
 

@@ -2,16 +2,13 @@ package org.abianchi.dubito.app.gameSession.views;
 
 import org.abianchi.dubito.app.gameSession.controllers.GameSessionController;
 import org.abianchi.dubito.app.gameSession.models.Card;
+import org.abianchi.dubito.app.gameSession.models.Player;
 import org.albard.dubito.utils.Debouncer;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.event.ActionEvent;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import java.awt.event.KeyEvent;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,9 +30,11 @@ public class GameBoardView {
     private final Debouncer refreshBouncer = new Debouncer(Duration.ofMillis(150));
 
     private final JFrame frame;
-    private final List<JPanel> playerCardPanels = new ArrayList<>();
+    private final List<GameBoardPlayerPanel> playerPanels = new ArrayList<>();
 
     private final JPanel centerPanel;
+    private final JLabel roundStateLabel;
+    private final JLabel cardsPlayedLabel;
 
     public GameBoardView(GameSessionController<?> controller, String title) {
         this.controller = controller;
@@ -49,120 +48,40 @@ public class GameBoardView {
         this.contentPane.setPreferredSize(new Dimension(1200, 800));
 
         /** center */
-        JLabel roundValueLabel = new JLabel(
-                "Round Card is: " + this.controller.getCurrentGameState().getRoundCardValue());
-        JLabel cardsPlayedLabel = new JLabel("Previous Player played "
-                + this.controller.getCurrentGameState().getTurnPrevPlayerPlayedCards().size() + " cards");
-        roundValueLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        this.roundStateLabel = new JLabel(this.getCurrentRoundStateText());
+        this.cardsPlayedLabel = new JLabel("Previous Player played "
+                + this.controller.getCurrentGameState().getPreviousPlayerPlayedCards().size() + " cards");
+        roundStateLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         this.centerPanel = new JPanel();
         this.centerPanel.setSize(new Dimension(900, 900));
         this.centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
         this.centerPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
         this.centerPanel.add(Box.createVerticalGlue());
-        this.centerPanel.add(roundValueLabel);
+        this.centerPanel.add(roundStateLabel);
         this.centerPanel.add(cardsPlayedLabel);
         this.centerPanel.add(Box.createVerticalGlue());
         /* player cards */
         /* panels created based on number of players */
         for (int i = 0; i < nPlayers; i++) {
-            final JPanel playerCards = new JPanel();
-            final Optional<Rotation> rotation = PLAYER_ROTATIONS.get(i);
-            playerCards.setLayout(new BoxLayout(playerCards, rotation.map(x -> BoxLayout.PAGE_AXIS).orElse(BoxLayout.LINE_AXIS)));
-            for (Card card : this.controller.getSessionPlayers().get(i).getHand()) {
-                CardView buttonCard = getCardJButton(controller, card, rotation);
-                playerCards.add(buttonCard);
-            }
-            this.addButtonsAndLives(playerCards, i, rotation.isPresent());
-            this.contentPane.add(playerCards, PLAYER_POSITIONS.get(i));
-            playerCardPanels.add(playerCards);
+            final Player player = this.controller.getSessionPlayers().get(i);
+            final GameBoardPlayerPanel playerPanel = new GameBoardPlayerPanel(player, PLAYER_ROTATIONS.get(i),
+                    this::playCards, this::callLiar);
+            this.contentPane.add(playerPanel, PLAYER_POSITIONS.get(i));
+            playerPanels.add(playerPanel);
         }
 
         this.contentPane.add(this.centerPanel, BorderLayout.CENTER);
-
-        this.updatePlayerTurnUI();
 
         frame.pack();
         frame.setLocationRelativeTo(null);
     }
 
-    private void updatePlayerTurnUI() {
-        // Disable all buttons first
-        disableAllPlayerControls();
-
-        // Hide all card faces
-        hideAllCardFaces();
-
-        // Get current player from controller
-        int currentPlayerIndex = this.controller.getCurrentGameState().getCurrentPlayerIndex();
-
-        // se il giocatore non è attivo, nasconde tutte le carte nella view
-        if (!this.controller.isActivePlayer(currentPlayerIndex)) {
-            return;
-        }
-
-        // Show only the current player's card faces
-        showCardFaces(currentPlayerIndex);
-
-        // Enable only the current player's controls
-        setPanelControlsEnabled(playerCardPanels.get(currentPlayerIndex), true);
-    }
-
-    /** helper method to disable everything first */
-    private void disableAllPlayerControls() {
-        playerCardPanels.stream().forEach(el -> setPanelControlsEnabled(el, false));
-    }
-
-    /** this method enables control only to the current playing player */
-    private void setPanelControlsEnabled(JPanel panel, boolean enabled) {
-        // Enable all components in the panel
-        for (Component component : panel.getComponents()) {
-            if (component instanceof AbstractButton) {
-                component.setEnabled(enabled);
-            } else if (component instanceof JPanel subPanel) {
-                // For button panels
-                for (Component subComponent : subPanel.getComponents()) {
-                    subComponent.setEnabled(enabled);
-                }
-            }
-        }
-    }
-
-    /** helper method to hide all the cards in play */
-    private void hideAllCardFaces() {
-        playerCardPanels.stream().forEach(el -> setCardFacesVisibility(el, false));
-    }
-
-    /** method to show the cards for the current playing player */
-    private void showCardFaces(int playerIndex) {
-        System.out.println("Shown card for player " + playerIndex);
-        setCardFacesVisibility(playerCardPanels.get(playerIndex), true);
-    }
-
-    /** this is the method that enables the visibility of the card */
-    private void setCardFacesVisibility(JPanel panel, boolean visible) {
-        for (Component component : panel.getComponents()) {
-            if (component instanceof CardView cardView) {
-                cardView.setCardVisibility(visible);
-                cardView.repaint();
-            }
-        }
-    }
-
-    /** method used to add buttons for all the cards */
-    private static CardView getCardJButton(GameSessionController<?> controller, Card card, Optional<Rotation> rotate) {
-        final CardView cardView = new CardView(card);
-        cardView.setRotation(rotate);
-        cardView.addItemListener(new ItemListener() {
-            @Override
-            public void itemStateChanged(final ItemEvent event) {
-                if (event.getStateChange() == ItemEvent.SELECTED) {
-                    controller.selectCard(cardView.getCard());
-                } else {
-                    controller.removeSelectedCard(cardView.getCard());
-                }
-            }
-        });
-        return cardView;
+    private String getCurrentRoundStateText() {
+        return this.controller.getCurrentGameState().getWinnerPlayerIndex()
+                .map(winnerIndex -> "The winner is: Player " + this.controller.getSessionPlayers().get(winnerIndex)
+                        .getName().orElse(Integer.toString(winnerIndex)))
+                .orElse("Round Card is: " + this.controller.getCurrentGameState().getRoundCardValue()
+                        .map(x -> x.toString()).orElse("UNKNOWN"));
     }
 
     /**
@@ -170,30 +89,27 @@ public class GameBoardView {
      * throw cards or the call liar button
      */
     public void refreshBoard() {
-        // prima di eseguire un'azione, aspetto un tot di tempo in base al valore passato dentro il Debounce
-        // se qualcuno nel frattempo vuole provare ad eseguire la stessa azione, dai precedenza all'ultimo e il mio lavoro
-        // viene cancellato
+        // Refresh players (let the panels synchronize updates)
+        for (int i = 0; i < this.playerPanels.size(); i++) {
+            this.refreshPlayerPanel(i, false);
+        }
+
+        // prima di eseguire un'azione, aspetto un tot di tempo in base al valore
+        // passato dentro il Debounce se qualcuno nel frattempo vuole provare ad
+        // eseguire la stessa azione, dai precedenza all'ultimo e il mio lavoro viene
+        // cancellato
         this.refreshBouncer.Debounce(() -> {
-            // provo a fare una lock per il refresh della board, in ogni caso poi rilascio il lavoro di refresh anche in caso
-            // ottengo un'eccezione
-            if(this.refreshLock.tryLock()) {
+            // provo a fare una lock per il refresh della board, in ogni caso poi rilascio
+            // il lavoro di refresh anche in caso ottengo un'eccezione
+            if (this.refreshLock.tryLock()) {
                 try {
-                    if(this.controller.findWinner().isPresent()) {
-                        endGame();
+                    if (this.controller.findWinner().isPresent()) {
+                        this.endGame();
                         return;
                     }
-                    System.out.println(this.controller.getCurrentGameState() + " - " + this.controller.getSessionPlayers());
-                    // Refresh players
-                    for (int i = 0; i < playerCardPanels.size(); i++) {
-                        refreshPlayerPanel(playerCardPanels.get(i), i, PLAYER_ROTATIONS.get(i));
-                    }
-
-                    // Update the center panel with current round card value
-                    JLabel centerLabel = (JLabel) this.centerPanel.getComponent(1);
-                    centerLabel.setText("Round Card is: " + this.controller.getCurrentGameState().getRoundCardValue());
-
-                    // Update UI to highlight current player's turn
-                    updatePlayerTurnUI();
+                    System.out.println(
+                            this.controller.getCurrentGameState() + " - " + this.controller.getSessionPlayers());
+                    this.roundStateLabel.setText(this.getCurrentRoundStateText());
                 } finally {
                     this.refreshLock.unlock();
                 }
@@ -202,108 +118,36 @@ public class GameBoardView {
     }
 
     /** Helper method to refresh a specific player's panel */
-    private void refreshPlayerPanel(JPanel playerPanel, int playerIndex, Optional<Rotation> rotateOption) {
-        // Clear the panel
-        playerPanel.removeAll();
-
-        // Re-add cards for the player
-        int currentPlayerIndex = this.controller.getCurrentGameState().getCurrentPlayerIndex();
-        for (Card card : this.controller.getSessionPlayers().get(playerIndex).getHand()) {
-            CardView buttonCard = getCardJButton(controller, card, rotateOption);
-            // Set card visibility based on current player
-            buttonCard.setCardVisibility(playerIndex == currentPlayerIndex);
-
-            playerPanel.add(buttonCard);
-        }
-
-        // Re-add buttons with appropriate orientation
-        this.addButtonsAndLives(playerPanel, playerIndex, rotateOption.isPresent());
-
-        // Refresh the panel
-        playerPanel.revalidate();
-        playerPanel.repaint();
+    private void refreshPlayerPanel(final int playerIndex, final boolean forceInactive) {
+        this.playerPanels.get(playerIndex).refresh(() -> this.controller.getSessionPlayers().get(playerIndex),
+                () -> !forceInactive && this.controller.isActivePlayer(playerIndex));
     }
 
     /** method for the end of the game */
     private void endGame() {
-        disableAllPlayerControls();
-        // Update the center panel with current round card value
-        JLabel centerLabel = (JLabel)this.centerPanel.getComponent(1);
-        centerLabel.setText("The winner is: Player " +
-                this.controller.getSessionPlayers().get(this.controller.getWinnerIndex())
-                        .getName().orElse(Integer.toString(this.controller.getWinnerIndex())));
+        for (int i = 0; i < this.playerPanels.size(); i++) {
+            this.refreshPlayerPanel(i, true);
+        }
+        this.roundStateLabel.setText(this.getCurrentRoundStateText());
     }
 
-    private void addButtonsAndLives(JPanel pane, int playerIndex, boolean vertical) {
-        /** buttons and label for player's lives */
-        JPanel buttonPanel = new JPanel();
-        if (vertical) {
-            buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.Y_AXIS));
+    private void callLiar() {
+        this.controller.callLiar();
+        if (this.controller.findWinner().isPresent()) {
+            this.endGame();
+        } else {
+            this.refreshBoard();
         }
-        JLabel livesLabel = new JLabel("Lives: " + this.controller.getSessionPlayers().get(playerIndex).getLives());
-        JButton throwCardsButton = new JButton("Throw Cards (T)");
-        JButton callLiarButton = new JButton("Call Liar (F)");
-        buttonPanel.add(livesLabel);
-        buttonPanel.add(throwCardsButton);
-        buttonPanel.add(callLiarButton);
+    }
 
-        // Add an action map/input map to the content pane
-        JComponent rootComponent = (JComponent) this.contentPane;
-        InputMap inputMap = rootComponent.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
-        ActionMap actionMap = rootComponent.getActionMap();
-
-        // Create actions for throw cards and call liar
-        Action throwCardsAction = new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (!controller.getSelectedCards().isEmpty() && controller.getSelectedCards().size() <= 3) {
-                    controller.playCards();
-                    refreshBoard();
-                }
-            }
-        };
-
-        Action callLiarAction = new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                controller.callLiar();
-                if (controller.findWinner().isPresent()) {
-                    endGame();
-                } else {
-                    refreshBoard();
-                }
-            }
-        };
-
-        // Bind the T key to the throw cards action
-        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_T, 0), "throwCards");
-        actionMap.put("throwCards", throwCardsAction);
-
-        // Bind the F key to the call liar action
-        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_F, 0), "callLiar");
-        actionMap.put("callLiar", callLiarAction);
-
-        throwCardsButton.addActionListener(e -> {
-            if (!controller.getSelectedCards().isEmpty() && controller.getSelectedCards().size() <= 3) {
-                controller.playCards();
-                refreshBoard();
-            }
-        });
-
-        callLiarButton.addActionListener(e -> {
-            controller.callLiar();
-            if (controller.findWinner().isPresent()) {
-                endGame();
-            } else {
-                refreshBoard();
-            }
-        });
-
-        pane.add(buttonPanel);
+    private void playCards(final List<Card> cards) {
+        if (!cards.isEmpty() && cards.size() <= 3) {
+            this.controller.playCards(cards);
+            this.refreshBoard();
+        }
     }
 
     public void setBoardVisible(boolean visible) {
         this.frame.setVisible(visible);
     }
-
 }
