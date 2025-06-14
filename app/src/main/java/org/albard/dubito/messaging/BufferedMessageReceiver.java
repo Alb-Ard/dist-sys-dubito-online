@@ -5,7 +5,7 @@ import java.net.SocketException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.Optional;
+import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 import java.util.function.Function;
@@ -24,8 +24,7 @@ public final class BufferedMessageReceiver implements MessageReceiver, Observabl
             .of(new MessageListenersState(new HashSet<>(), new LinkedList<>()));
     private final Set<ClosedListener> closedListeners = Collections.synchronizedSet(new HashSet<>());
 
-    public BufferedMessageReceiver(final InputStream stream,
-            final Function<byte[], Optional<GameMessage>> deserializer) {
+    public BufferedMessageReceiver(final InputStream stream, final Function<byte[], List<GameMessage>> deserializer) {
         this.receiveThread = Thread.ofVirtual().unstarted(() -> {
             final byte[] buffer = new byte[1024];
             while (true) {
@@ -37,7 +36,7 @@ public final class BufferedMessageReceiver implements MessageReceiver, Observabl
                     System.out.println("Received  " + readByteCount + "b");
                     final byte[] messageBuffer = new byte[readByteCount];
                     System.arraycopy(buffer, 0, messageBuffer, 0, readByteCount);
-                    deserializer.apply(messageBuffer).ifPresent(message -> {
+                    deserializer.apply(messageBuffer).forEach(message -> {
                         this.messageListenersState.exchange(s -> {
                             if (s.listeners.isEmpty()) {
                                 s.bufferedMessages.add(message);
@@ -59,7 +58,7 @@ public final class BufferedMessageReceiver implements MessageReceiver, Observabl
     }
 
     static MessageReceiver createFromStream(final InputStream stream,
-            final Function<byte[], Optional<GameMessage>> deserializer) {
+            final Function<byte[], List<GameMessage>> deserializer) {
         final BufferedMessageReceiver receiver = new BufferedMessageReceiver(stream, deserializer);
         receiver.start();
         return receiver;

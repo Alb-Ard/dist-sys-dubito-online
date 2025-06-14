@@ -1,6 +1,8 @@
 package org.albard.dubito.messaging;
 
-import java.util.Optional;
+import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.albard.dubito.messaging.messages.GameMessage;
 
@@ -24,16 +26,27 @@ public interface MessageSerializer {
             }
 
             @Override
-            public Optional<GameMessage> deserialize(final byte[] rawMessage) {
+            public List<GameMessage> deserialize(final byte[] rawMessage) {
                 try {
-                    final JsonNode jsonRoot = this.jsonMapper.readTree(rawMessage);
-                    final String className = jsonRoot.get("className").asText();
-                    final Class<?> messageClass = GameMessage.class.getClassLoader().loadClass(className);
-                    return Optional
-                            .of((GameMessage) this.jsonMapper.treeToValue(jsonRoot.get("messageBody"), messageClass));
+                    // A rawMessage may contain multiple messages, so wrap the array in a stream and
+                    // parse until the stream is empty
+                    final ByteArrayInputStream stream = new ByteArrayInputStream(rawMessage);
+                    final List<GameMessage> messages = new ArrayList<>();
+                    while (stream.available() > 0) {
+                        try {
+                            final JsonNode jsonRoot = this.jsonMapper.readTree(stream);
+                            final String className = jsonRoot.get("className").asText();
+                            final Class<?> messageClass = GameMessage.class.getClassLoader().loadClass(className);
+                            messages.add((GameMessage) this.jsonMapper.treeToValue(jsonRoot.get("messageBody"),
+                                    messageClass));
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    return messages;
                 } catch (final Exception ex) {
                     ex.printStackTrace();
-                    return Optional.empty();
+                    return List.of();
                 }
             }
         };
@@ -41,5 +54,5 @@ public interface MessageSerializer {
 
     byte[] serialize(GameMessage message);
 
-    Optional<GameMessage> deserialize(byte[] message);
+    List<GameMessage> deserialize(byte[] message);
 }
