@@ -19,15 +19,16 @@ import java.util.List;
 public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSessionController<X>
         implements MessageHandler {
     private final PeerNetwork sessionNetwork;
-    private final boolean isOwner;
     private final Runnable onChanged;
     private final OnlinePlayer localPlayer;
 
-    public GameOnlineSessionController(final List<X> players, final PeerNetwork network, final boolean isOwner,
+    private int ownerPeerIndex;
+
+    public GameOnlineSessionController(final List<X> players, final PeerNetwork network, final int ownerPeerIndex,
             final Runnable onChanged) {
         super(players);
         this.sessionNetwork = network;
-        this.isOwner = isOwner;
+        this.ownerPeerIndex = ownerPeerIndex;
         this.onChanged = onChanged;
         this.localPlayer = players.stream().filter(el -> el.getOnlineId().equals(network.getLocalPeerId())).findFirst()
                 .get();
@@ -100,13 +101,29 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
 
     @Override
     protected boolean canGenerateRoundCard() {
-        return this.isOwner;
+        return this.isOwner();
     }
 
-    private void setPeerDisconnectedListener(PeerId peerId) {
+    private void setPeerDisconnectedListener(final PeerId peerId) {
         /* viene chiamato su tutti, non devo scambiare messaggi */
-        System.out.println("Removing player " + peerId);
+        System.out.println(this.localPlayer.getOnlineId() + ": Removing player " + peerId);
         this.removePlayer(this.getSessionPlayers().indexOf(this.getPlayerById(peerId)));
+        // If the owner peer has left, pass the ownership to the next valid player
+        if (this.getOwnerPeer().equals(this.getPlayerById(peerId))) {
+            final List<X> players = this.getSessionPlayers();
+            final int oldOwnerIndex = this.ownerPeerIndex;
+            for (int i = 1; i < players.size(); i++) {
+                if (players.get(i).getLives() > 0) {
+                    this.ownerPeerIndex = i;
+                    System.out.println(this.localPlayer.getOnlineId() + ": Ownership passed to "
+                            + this.getOwnerPeer().getOnlineId());
+                    break;
+                }
+            }
+            if (this.ownerPeerIndex == oldOwnerIndex) {
+                System.err.println(this.localPlayer.getOnlineId() + ": Could not transfer ownership!");
+            }
+        }
         this.onChanged.run();
     }
 
@@ -153,5 +170,13 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
 
     private boolean isCurrentPlayerLocal() {
         return this.getCurrentPlayer().map(this.localPlayer::equals).orElse(false);
+    }
+
+    private boolean isOwner() {
+        return this.getOwnerPeer().equals(this.localPlayer);
+    }
+
+    private X getOwnerPeer() {
+        return this.getSessionPlayers().get(this.ownerPeerIndex);
     }
 }

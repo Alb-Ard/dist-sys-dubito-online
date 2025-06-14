@@ -7,8 +7,6 @@ import org.abianchi.dubito.app.gameSession.views.CardView;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import javax.swing.*;
-import java.awt.*;
 import java.util.Optional;
 
 public class CardModelViewTest {
