@@ -20,7 +20,7 @@ public class GameSessionController<X extends Player> {
             this.getCurrentGameState().setRandomRoundCardType();
         }
         this.giveNewHand();
-        this.advanceRound(List.of());
+        this.advanceTurn(List.of());
     }
 
     public boolean isActivePlayer(final int index) {
@@ -72,25 +72,27 @@ public class GameSessionController<X extends Player> {
         this.getCurrentPlayer().ifPresent(currentPlayer -> {
             // Let the player play only cards that it has in its hand
             if (!currentPlayer.getHand().containsAll(cards)) {
+                System.out.println("Player Cards not found in current hand");
                 return;
             }
             if (cards.size() <= 3) {
+                System.out.println("Playing " + cards.size() + " cards");
                 currentPlayer.playCards(cards);
-                this.advanceRound(cards);
+                this.advanceTurn(cards);
             }
         });
     }
 
     // Updates the game state to advance to the next player, if there is one, or
     // ends the game if a winner is found
-    private void advanceRound(final List<Card> previousPlayerCards) {
+    private void advanceTurn(final List<Card> previousPlayerCards) {
         // Set the previous player cards
         this.getCurrentGameState().setPreviousPlayerPlayedCards(previousPlayerCards);
         // If the next player is found, set it
         this.getNextAlivePlayer().ifPresentOrElse(this.getCurrentGameState()::nextPlayer, () -> {
             // Otherwise, search for a winner and set it
             this.findWinner().map(this.getSessionPlayers()::indexOf)
-                    .ifPresent(this.getCurrentGameState()::setWinnerPlayerIndex);
+                    .ifPresentOrElse(this.getCurrentGameState()::setWinnerPlayerIndex, this::newRound);
         });
     }
 
@@ -145,13 +147,13 @@ public class GameSessionController<X extends Player> {
         }
         // copre il caso in cui va via il giocatore non attivo e la partita deve
         // continuare
-        else if (this.getCurrentGameState().getCurrentPlayerIndex().map(x -> x == removedPlayerIndex).orElse(true)) {
+        else if (this.getCurrentGameState().getCurrentPlayerIndex().map(x -> x != removedPlayerIndex).orElse(true)) {
             System.out.println("the game continues");
             return;
         } else {
             // se non è il giocatore attivo e dobbiamo iniziare il secondo round
             System.out.println("Moving into next round");
-            this.newRound();
+            this.advanceTurn(this.getCurrentGameState().getPreviousPlayerPlayedCards());
         }
     }
 
