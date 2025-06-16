@@ -23,7 +23,7 @@ import org.albard.dubito.lobby.models.LobbyInfo;
 import org.albard.dubito.messaging.messages.GameMessage;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
-import org.albard.dubito.utils.Locked;
+import org.albard.utils.Locked;
 
 public final class LobbyClient {
     private final PeerNetwork network;

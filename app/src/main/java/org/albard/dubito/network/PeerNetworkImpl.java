@@ -15,10 +15,10 @@ import org.albard.dubito.connection.PeerConnectionReceiver;
 import org.albard.dubito.messaging.MessengerFactory;
 import org.albard.dubito.messaging.handlers.MessageHandler;
 import org.albard.dubito.messaging.messages.GameMessage;
-import org.albard.dubito.utils.Locked;
-import org.albard.dubito.utils.ObservableHashMap;
-import org.albard.dubito.utils.ObservableMap;
-import org.albard.dubito.utils.ObservableMapListener;
+import org.albard.utils.Locked;
+import org.albard.utils.ObservableHashMap;
+import org.albard.utils.ObservableMap;
+import org.albard.utils.ObservableMapListener;
 
 public final class PeerNetworkImpl implements PeerNetwork {
     private final Lock connectionsLock = new ReentrantLock();
@@ -173,8 +173,7 @@ public final class PeerNetworkImpl implements PeerNetwork {
     public void sendMessage(final GameMessage message) {
         final Set<PeerConnection> receipients = (message.getReceipients() == null ? this.getPeers().values().stream()
                 : this.getPeers().entrySet().stream().filter(e -> message.getReceipients().contains(e.getKey()))
-                        .map(e -> e.getValue()))
-                .collect(Collectors.toSet());
+                        .map(e -> e.getValue())).collect(Collectors.toSet());
         System.out.println(
                 this.getLocalPeerId() + ": Sending " + message.getClass().getSimpleName() + " to " + receipients);
         receipients.forEach(e -> e.sendMessage(message));

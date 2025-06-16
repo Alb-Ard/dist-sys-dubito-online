@@ -9,8 +9,8 @@ import org.albard.dubito.lobby.models.Lobby;
 import org.albard.dubito.lobby.models.LobbyId;
 import org.albard.dubito.lobby.models.LobbyInfo;
 import org.albard.dubito.network.PeerId;
-import org.albard.dubito.utils.Either;
-import org.albard.dubito.utils.Locked;
+import org.albard.utils.Either;
+import org.albard.utils.Locked;
 
 public final class LobbyService {
     public static record LobbyResult(Lobby lobby, boolean isDeleted) {

@@ -3,7 +3,7 @@ package org.abianchi.dubito.app.gameSession.views;
 import org.abianchi.dubito.app.gameSession.controllers.GameSessionController;
 import org.abianchi.dubito.app.gameSession.models.Card;
 import org.abianchi.dubito.app.gameSession.models.Player;
-import org.albard.dubito.utils.Debouncer;
+import org.albard.utils.Debouncer;
 
 import java.awt.BorderLayout;
 import java.awt.Component;

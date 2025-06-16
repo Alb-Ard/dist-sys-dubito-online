@@ -16,7 +16,7 @@ import javax.swing.JPanel;
 
 import org.abianchi.dubito.app.gameSession.models.Card;
 import org.abianchi.dubito.app.gameSession.models.Player;
-import org.albard.dubito.utils.Debouncer;
+import org.albard.utils.Debouncer;
 
 public final class GameBoardPlayerPanel extends JPanel {
     // Use a reentrant lock, so that when a method tries to re-lock from the same

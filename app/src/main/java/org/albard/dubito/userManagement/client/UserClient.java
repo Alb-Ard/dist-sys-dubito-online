@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -13,7 +14,7 @@ import org.albard.dubito.network.PeerNetwork;
 import org.albard.dubito.userManagement.User;
 import org.albard.dubito.userManagement.messages.UpdateUserMessage;
 import org.albard.dubito.userManagement.messages.UserListUpdatedMessage;
-import org.albard.dubito.utils.Locked;
+import org.albard.utils.Locked;
 
 public final class UserClient {
     private final PeerNetwork network;
@@ -37,11 +38,12 @@ public final class UserClient {
     }
 
     public User getLocalUser() {
-        return this.getUser(this.network.getLocalPeerId());
+        return this.getUser(this.network.getLocalPeerId()).get();
     }
 
-    public User getUser(final PeerId id) {
-        return this.users.getValue().get(id);
+    public Optional<User> getUser(final PeerId id) {
+        final Map<PeerId, User> users = this.users.getValue();
+        return users.containsKey(id) ? Optional.of(users.get(id)) : Optional.empty();
     }
 
     public Set<User> getUsers() {

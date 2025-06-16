@@ -29,7 +29,7 @@ public class GameSessionTest {
         List<Player> sessionPlayers = this.testController.getSessionPlayers();
         GameState gameState = this.testController.getCurrentGameState();
         Assertions.assertEquals(this.testPlayers.get(0), sessionPlayers.get(gameState.getCurrentPlayerIndex().get()));
-        Assertions.assertEquals(-1, gameState.getPreviousPlayerIndex().get());
+        Assertions.assertTrue(gameState.getPreviousPlayerIndex().isEmpty());
         sessionPlayers.forEach(player -> {
             Assertions.assertEquals(player.getHand().size(), Player.MAX_HAND_SIZE);
             player.getHand().forEach(Assertions::assertNotNull);

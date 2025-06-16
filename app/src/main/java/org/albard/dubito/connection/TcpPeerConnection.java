@@ -12,7 +12,7 @@ import org.albard.dubito.messaging.MessengerFactory;
 import org.albard.dubito.messaging.handlers.MessageHandler;
 import org.albard.dubito.messaging.messages.GameMessage;
 import org.albard.dubito.network.PeerEndPoint;
-import org.albard.dubito.utils.ObservableCloseable;
+import org.albard.utils.ObservableCloseable;
 
 public final class TcpPeerConnection implements PeerConnection {
     private final Socket socket;

@@ -8,7 +8,7 @@ import java.net.Socket;
 import org.albard.dubito.messaging.Messenger;
 import org.albard.dubito.messaging.MessengerFactory;
 import org.albard.dubito.network.PeerEndPoint;
-import org.albard.dubito.utils.ObservableCloseable;
+import org.albard.utils.ObservableCloseable;
 
 public interface PeerConnection extends Closeable, ObservableCloseable, Messenger {
     static PeerConnection createAndConnect(String bindAddress, int bindPort, String remoteAddress, int remotePort,
