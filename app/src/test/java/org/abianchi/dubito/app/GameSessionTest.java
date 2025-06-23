@@ -54,8 +54,7 @@ public class GameSessionTest {
         Assertions.assertEquals(currentGameState.getPreviousPlayerPlayedCards(), testPlayedCards);
         Assertions.assertEquals(this.testController.getPreviousPlayer().get().getHand().size(),
                 Player.MAX_HAND_SIZE - testPlayedCards.size());
-        // testPlayedCards.forEach(card ->
-        // Assertions.assertFalse(currentPlayer.getHand().contains(card)));
+        Assertions.assertEquals(1, currentGameState.getCurrentPlayerIndex().get());
     }
 
     @Test
