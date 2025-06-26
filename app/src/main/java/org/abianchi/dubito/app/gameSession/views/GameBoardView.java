@@ -92,7 +92,7 @@ public class GameBoardView extends JPanel {
         // passato dentro il Debounce se qualcuno nel frattempo vuole provare ad
         // eseguire la stessa azione, dai precedenza all'ultimo e il mio lavoro viene
         // cancellato
-        this.refreshBouncer.Debounce(() -> {
+        this.refreshBouncer.debounce(() -> {
             // provo a fare una lock per il refresh della board, in ogni caso poi rilascio
             // il lavoro di refresh anche in caso ottengo un'eccezione
             if (this.refreshLock.tryLock()) {

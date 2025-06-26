@@ -46,7 +46,7 @@ public final class GameBoardPlayerPanel extends JPanel {
     // most up-to-date models instead of the ones that were captured when the method
     // was called
     public void refresh(final Supplier<Player> playerSupplier, final Supplier<Boolean> isActiveSupplier) {
-        this.refreshDebouncer.Debounce(() -> this.runLocked(() -> {
+        this.refreshDebouncer.debounce(() -> this.runLocked(() -> {
             this.setActive(isActiveSupplier.get());
             final Player player = playerSupplier.get();
             this.actionsPanel.setLivesCount(player.getLives());
