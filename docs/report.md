@@ -7,7 +7,7 @@
 
 ```
 "During the preparation of this work, the author(s) used Claude.Ai to generate small 
-pieces of code to develop the Game Board for Dubito Online. This was used to help the development
+pieces of code to develop the Game Board for Dubito Online. This was used to help speeding up the development
 of methods such as how to properly rotate game card buttons in the GUI and how to deactivate certain
 buttons in the code based on the developed logic.
 After generating the initial prompt, the author(s) then reviewed and edited the
@@ -20,37 +20,32 @@ final report/artifact."
 This project's objective is to recreate a version of the famous card game called "Dubito", following the rules and ideas of the videogames "Liar's Bar" and "Master Bluff". 
 
 The game rules are the following:
-- At the start of each round each player received 5 cards and a specific type of card is declared (Kings, Queens, Aces);
+- At the start of each round each player receives 5 cards and a specific type of card is declared (Kings, Queens, Aces);
 - Players during their turn can do one of the following actions:
-    - Discard up to 3 cards from their hand facedown, following the same type that was declared at the start of the round or not. 
+    - Discard up to 3 cards from their hand facedown, those being of the same type that was declared at the start of the round or not. 
     - Call the previous player "liar", if the player is not the first one playing in the round.
-- When a player is called a liar, the cards that he discarded must be shown, and:
-    - If that player did lie, he loses 1 point.
-    - If that player did not lie, who called the bluff loses 1 point.
-- Each player starts with 3 points, and the last player that has points winning the game.
+- When a player calls for a lie, the cards that were discarded are shown and 2 possible scenarios may occur:
+    - If that player did lie, the lying player loses 1 life.
+    - If that player did not lie, the one who called for the bluff loses 1 life.
+- Each player starts with 2 lives, and the last remaining living player is declared the winner.
 
 ## Concept
 
 ### Artifacts
 The project will result in a *group* of applications that will let the users host, join and play games of dubito with other users.
 
-The output is comprised of two applications:
-- The LobbyServer, a CLI application that will host a server where users can connect to create and join lobbies.
-- The GameApp, a Swing graphical application that the users can use to connect to a LobbyServer to create or find lobbies, join them and play the game.
+The complete work is comprised of two applications:
+- The LobbyServer, a CLI application that will host a server where users can connect to create and join lobbies;
+- The GameApp, a Swing graphical application that the users can use to connect to a LobbyServer where they can play the game.
 
 ### Interactions and use cases
-All uses will be able to:
-- Use the application to create or find a game to play with other users
-- Participate in a game by doing the actions expressed in the rules
+All users will be able to:
+- Use the application to create or find a game to play with other users;
+- Participate in a game by doing the actions expressed in the rules.
 
-Additionally, users who create games will become their *owners*, which will give them additional funcionality to manage the game(s) they create.
+Additionally, users who create games will become those lobbies' *owners*, which will give them additional funcionality to manage the game(s) they create.
 
 ## Requirements
-
-- The requirements must explain __what__ (not how) the software being produced should do. 
-    * you should not focus on the particular problems, but exclusively on what you want the application to do.
-
-- Requirements must be clearly identified, and possibly numbered
 
 - Requirements are divided into:
     - **Functional**: some functionality the software should provide to the user
@@ -104,8 +99,25 @@ Each requirement will be followed by its own acceptance criteria(s).
 
 #### 1.2 Gameplay
 
-- 1.2.1 **TODO**
-
+- 1.2.1: The app must let every player know which cards they have in their hand and what's the current round card value.
+    - The user must be able to see *only* their hand and the cards that comprise it, without having the ability to see other players' hands.
+    - The app *must* clearly show the current round card value so that players may know which of their cards can be discarded safely.
+- 1.2.2: The app must let each player discard a variable amount of cards from their hand.
+    - During their turn, a player must be capable of selecting up to 3 cards from their hand that can then be discarded with the press of a button or a key.
+    - The app must notify every other users how many cards the turn player has discarded.
+- 1.2.3: The app must let each player "call a lie" if they believe the previous player has not played cards that are of the same type as the declared one for the current round
+    - During their turn, if a previous player has discarded some cards, the player may press a button or key to call the previous player a liar.
+    - The app must then notify every player if the player has made a bluff (lied) or not, removing 1 life from the lying player or the one who called the bluff if he was wrong.
+    - The app must start a new round after this event, giving a new random hand to each player and declaring a new card type for the new round.
+- 1.2.4: The game must start a new round if no players calls for a lie.
+    - If every player decides to only discard cards without anyone calling for a possible lie, the app must then start a new round.
+- 1.2.4: The game can only be considered completed if only one player remains.
+    - When a player loses all their lives, they are out of the game and will not receive new cards or be part of the turn order for the next rounds.
+    - The player must be capable of leaving the current lobby once they are considered dead.
+    - When every player except one dies, the last alive player is considered the game's winner, notifying each player of their success.
+- 1.2.5: The game must continue working correctly if a player leaves the game early.
+    - The app must continue the turn order if one player (the current one or not) disconnects from the lobby, letting the game continue as normal.
+    - If only one player remains and all the others disconnect, the remaining player must be declared the winner of the game.
 #### 1.3 Miscellaneous
 
 - 1.3.1 The app must let a user set its display name.
