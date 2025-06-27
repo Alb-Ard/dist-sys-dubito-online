@@ -13,8 +13,8 @@ public final class Debouncer {
         this.duration = duration;
     }
 
-    public void Debounce(final Runnable action) {
-        long[] localCounter = new long[] { -1 };
+    public void debounce(final Runnable action) {
+        final long[] localCounter = new long[] { -1 };
         this.counter.exchange(counter -> {
             counter++;
             localCounter[0] = counter;

@@ -1,5 +1,6 @@
 package org.albard.dubito.app.controllers;
 
+import java.util.List;
 import java.util.Optional;
 
 import javax.swing.DefaultListModel;
@@ -47,9 +48,12 @@ public final class LobbyListController {
     }
 
     private void onLobbyClientChanged(final ModelPropertyChangeEvent<Optional<LobbyClient>> e) {
-        e.getNewTypedValue().ifPresent(x -> x.addLobbyListUpdatedListener(l -> {
-            this.lobbyListModel.clear();
-            this.lobbyListModel.addAll(l);
-        }));
+        e.getOldTypedValue().ifPresent(x -> x.removeLobbyListUpdatedListener(this::updateLobbyList));
+        e.getNewTypedValue().ifPresent(x -> x.addLobbyListUpdatedListener(this::updateLobbyList));
+    }
+
+    private void updateLobbyList(final List<LobbyDisplay> lobbies) {
+        this.lobbyListModel.clear();
+        this.lobbyListModel.addAll(lobbies);
     }
 }

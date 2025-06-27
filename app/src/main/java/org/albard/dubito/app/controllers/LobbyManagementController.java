@@ -65,13 +65,17 @@ public final class LobbyManagementController {
     }
 
     private void onLobbyClientChanged(final ModelPropertyChangeEvent<Optional<LobbyClient>> e) {
-        e.getNewTypedValue().ifPresent(
-                x -> x.addCurrentLobbyUpdatedListener(l -> SwingUtilities.invokeLater(() -> l.ifPresentOrElse(lobby -> {
-                    this.currentLobbyModel.setFromLobby(lobby, this::getPeerUserName);
-                    this.stateModel.setState(AppStateModel.State.IN_LOBBY);
-                }, () -> {
-                    this.stateModel.setState(AppStateModel.State.IN_LOBBY_LIST);
-                }))));
+        e.getOldTypedValue().ifPresent(x -> x.removeCurrentLobbyUpdatedListener(this::onCurrentLobbyUpdated));
+        e.getNewTypedValue().ifPresent(x -> x.addCurrentLobbyUpdatedListener(this::onCurrentLobbyUpdated));
+    }
+
+    private void onCurrentLobbyUpdated(final Optional<Lobby> lobby) {
+        SwingUtilities.invokeLater(() -> lobby.ifPresentOrElse(l -> {
+            this.currentLobbyModel.setFromLobby(l, this::getPeerUserName);
+            this.stateModel.setState(AppStateModel.State.IN_LOBBY);
+        }, () -> {
+            this.stateModel.setState(AppStateModel.State.IN_LOBBY_LIST);
+        }));
     }
 
     private String getPeerUserName(final Lobby lobby, final PeerId peerId) {

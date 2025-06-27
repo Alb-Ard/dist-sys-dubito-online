@@ -57,6 +57,7 @@ public final class MainWindow extends JFrame {
         lobbyListView.getSaveUserNameCommand().addListener(userController::setName);
         currentLobbyView.getSaveLobbyInfoCommand().addListener(lobbyManagementController::saveLobbyInfo);
         currentLobbyView.getExitLobbyCommand().addListener(lobbyManagementController::leaveLobby);
+        currentLobbyView.getStartGameCommand().addListener(lobbyManagementController::startGame);
         joinLobbyView.getJoinCommand().addListener(lobbyListController::joinProtectedLobby);
         joinLobbyView.getCancelCommand().addListener(lobbyListController::cancelJoinProtectedLobby);
         stateModel.setState(AppStateModel.State.IN_MAIN_MENU);
