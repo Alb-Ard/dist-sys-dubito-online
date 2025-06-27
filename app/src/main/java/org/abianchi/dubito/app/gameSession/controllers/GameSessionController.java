@@ -23,19 +23,29 @@ public class GameSessionController<X extends Player> {
         this.advanceTurn(List.of());
     }
 
+    /**
+     * simple check method to see if player with given index is the current active player
+     * @param index index of the player
+     * @return boolean that returns if the player is the current active one
+     */
     public boolean isActivePlayer(final int index) {
         return this.getCurrentGameState().getCurrentPlayerIndex().map(x -> x == index).orElse(false);
     }
 
+    /**
+     * Simple method to determine whether this controller can generate new CardValues for the new rounds (in the offline
+     * version it's always true, but this method is overridden for the online version)
+     *
+     * @return a boolean to determine whether or not this version of the controller can generate new CardValues
+     */
     protected boolean canGenerateRoundCard() {
         return true;
     }
 
     /**
      * Finds the next alive player in the list, starting from the given index
-     * 
-     * @param startIndex The index to start searching from
-     * @return The next player with lives > 0, or null if none found
+     *
+     * @return Optional containing the next player with lives > 0, or optional empty if non were found
      */
     private Optional<Integer> getNextAlivePlayer() {
         if (this.getCurrentGameState().getCurrentPlayerIndex().isEmpty()) {
