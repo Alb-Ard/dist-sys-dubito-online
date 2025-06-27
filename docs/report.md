@@ -133,6 +133,9 @@ Each requirement will be followed by its own acceptance criteria(s).
     - The information the users receve from the lobby management system must always be corrent and up-to-date, taking into account network delays.
 - 2.3: The game management should not have network partition protection systems in place.
     - If a users loses connection to the game, he won't be able to connect back.
+- 2.4: The game management should notify each player of other users' actions in a consistent manner, while still keeping a certain level of availability.
+    - When a player discards a certain amount of cards, even players that are not immediately after them in the turn order should be notified of the game change that occurred.
+    - When a new round starts, each player must have their UI updated *when it's their turn* (they must have the most recent and updated view of the game).
 
 ### 3. Implementation
 
