@@ -32,7 +32,7 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
         this.onChanged = onChanged;
         this.localPlayer = players.stream().filter(el -> el.getOnlineId().equals(network.getLocalPeerId())).findFirst()
                 .get();
-        this.sessionNetwork.addMessageListener(this::handleMessage);
+        this.sessionNetwork.addMessageListener(this);
         this.sessionNetwork.setPeerDisconnectedListener(this::setPeerDisconnectedListener);
     }
 

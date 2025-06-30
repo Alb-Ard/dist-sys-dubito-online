@@ -1,5 +1,8 @@
 package org.albard.dubito.app.controllers;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -51,7 +54,9 @@ public final class LobbyManagementController {
                         } else {
                             final PeerEndPoint ownerEndPoint = network.getPeers().get(currentLobby.getOwner())
                                     .getRemoteEndPoint();
-                            return Optional.of(new ClientGameApp(localPeerId, PeerEndPoint.ofValues("0.0.0.0", 9100),
+                            final int bindPort = isLocalAddress(ownerEndPoint) ? 9200 : 9100;
+                            return Optional.of(new ClientGameApp(localPeerId,
+                                    PeerEndPoint.ofValues("0.0.0.0", bindPort),
                                     PeerEndPoint.ofValues(ownerEndPoint.getHost(), 9100), participantPeerIds.size()));
                         }
                     } catch (final Exception ex) {
@@ -62,6 +67,10 @@ public final class LobbyManagementController {
             });
         }).ifPresentOrElse(this.gameStartedListener,
                 () -> System.err.println("Could not create GameApp, game start failed!"));
+    }
+
+    private static boolean isLocalAddress(final PeerEndPoint ownerEndPoint) throws UnknownHostException {
+        return Arrays.stream(InetAddress.getAllByName(ownerEndPoint.getHost())).anyMatch(x -> x.isAnyLocalAddress());
     }
 
     private void onLobbyClientChanged(final ModelPropertyChangeEvent<Optional<LobbyClient>> e) {

@@ -45,15 +45,17 @@ public final class LobbyListView extends JPanel {
                 SimpleComponentFactory.createVerticalPanel(createLobbyButton, new JSeparator(JSeparator.HORIZONTAL),
                         SimpleComponentFactory.createHorizontalPanel(userNameField, saveUserButton)),
                 BorderLayout.SOUTH);
-        listModel.addListDataListener(this.createLobbyListDataListener(noLobbiesLabel, listModel, lobbyList));
+        listModel.addListDataListener(createLobbyListDataListener(noLobbiesLabel, listModel, lobbyList,
+                x -> this.lobbySelectedCommand.execute(l -> l.accept(x))));
         stateModel.addModelPropertyChangeListener(AppStateModel.STATE_PROPERTY,
                 e -> this.setVisible(e.getNewValue() == AppStateModel.State.IN_LOBBY_LIST));
         createLobbyButton.addActionListener(e -> this.createLobbyCommand.execute(l -> l.run()));
         saveUserButton.addActionListener(e -> this.saveUserNameCommand.execute(l -> l.accept(userModel.getName())));
     }
 
-    private ListDataListener createLobbyListDataListener(final JLabel noLobbiesLabel,
-            final DefaultListModel<LobbyDisplay> listModel, final JComponent lobbyList) {
+    private static ListDataListener createLobbyListDataListener(final JLabel noLobbiesLabel,
+            final DefaultListModel<LobbyDisplay> listModel, final JComponent lobbyList,
+            final Consumer<LobbyDisplay> lobbySelectedListener) {
         return new ListDataListener() {
             private final Debouncer repaintDeboucer = new Debouncer(Duration.ofMillis(150));
 
@@ -75,14 +77,14 @@ public final class LobbyListView extends JPanel {
             private void repaint() {
                 this.repaintDeboucer.debounce(() -> {
                     SwingUtilities.invokeLater(() -> {
-                        noLobbiesLabel.setVisible(listModel.getSize() <= 0);
+                        noLobbiesLabel.setVisible(listModel.size() <= 0);
                         lobbyList.removeAll();
                         for (int i = 0; i < listModel.size(); i++) {
                             final LobbyListItemView item = new LobbyListItemView(listModel.get(i));
-                            item.getLobbySelectedCommand().addListener(
-                                    x -> LobbyListView.this.lobbySelectedCommand.execute(l -> l.accept(x)));
+                            item.getLobbySelectedCommand().addListener(x -> lobbySelectedListener.accept(x));
                             lobbyList.add(item);
                         }
+                        lobbyList.invalidate();
                     });
                 });
             }
