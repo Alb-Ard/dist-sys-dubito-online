@@ -144,15 +144,32 @@ Each requirement will be followed by its own acceptance criteria(s).
 
 ## Design
 
-This chapter explains the strategies used to meet the requirements identified in the analysis.
-Ideally, the design should be the same, regardless of the technological choices made during the implementation phase.
+This chapter explains the strategies used to meet the requirements identified in the analysis, describing its architecture,
+infrastructure and important aspects that will later be expanded in the implementation.
 
-> You can re-order the sections as you prefer, but all the sections must be present in the end
 
 ### Architecture
 
-- Which architectural style? 
-    + why?
+The project's architecture is divided into 2 main different parts, each focusing on one specific aspect of the previously established requirements:
+- The lobby system was developed following the **client-server architecture**, one of the most typical distributed application structure. This allowed us to partition tasks/workloads 
+between the providers of a resource or service (the server lobby) and the service requesters (the user clients). Clients and servers exchange messages in a request–response messaging pattern:
+each user may make one or multiple specific requests, after which servers provide the user clients with the necessary functions/services in order to satisfy the user's request. That includes: accessing any currently 
+available lobbies, create new ones, set their own username, start a new game. The server can also receive and handle requests from many distinct clients in a short period, with a certain limit. Server relies on a scheduling 
+system to prioritize incoming requests from clients to accommodate them. Also, servers provide encryption of lobbies using a simple password system to protect certain lobbies;
+- The main game establishes communications between each user using **Peer-To-Peer (P2P)**. A peer-to-peer network is designed around the notion of *equal peer nodes* simultaneously functioning 
+as both "clients" and "servers" to the other nodes on the network. Each in-game user, along with remaining connected to the lobby server, also becomes a peer.
+Each player can then send messages/resources based on their in-game actions (discarding cards, calling liar), without requiring the usage 
+of a central coordination system when updating the game state after each actions.
+
+The project overall primarily follows the **Transmission Control Protocol (TCP)**, one of the main protocols of the Internet protocol suite. TCP provides reliable, ordered, 
+and error-checked delivery of a stream of data between applications running on hosts communicating via an IP network. It provides host-to-host connectivity at the transport layer of the Internet model. An application does not need to know the 
+particular mechanisms for sending data via a link to another host, such as the required IP fragmentation to accommodate the maximum transmission unit of the transmission medium. At the transport layer, TCP handles all handshaking and transmission 
+details and presents an abstraction of the network connection to the application typically through a network socket interface. At the lower levels of the protocol stack, due to network congestion, traffic load balancing, or unpredictable network behavior, 
+IP packets may be lost, duplicated, or delivered out of order. TCP detects these problems, requests re-transmission of lost data, rearranges out-of-order data and even helps minimize network congestion to reduce the occurrence of the other problems. 
+If the data still remains undelivered, the source is notified of this failure. Once the TCP receiver has reassembled the sequence of bytes originally transmitted, it passes them to the receiving application. Thus, TCP abstracts the application's communication 
+from the underlying networking details. We've chosen TCP protocol since the lobby system and game application 
+required more consistency and accuracy, focusing less on its availabilty.
+
 
 ### Infrastructure
 
