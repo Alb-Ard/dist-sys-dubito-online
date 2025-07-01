@@ -5,6 +5,7 @@ import org.abianchi.dubito.app.gameSession.controllers.GameSessionController;
 import org.abianchi.dubito.app.gameSession.models.OnlinePlayer;
 import org.abianchi.dubito.app.gameSession.models.OnlinePlayerImpl;
 import org.abianchi.dubito.app.gameSession.views.*;
+import org.albard.dubito.app.models.AppStateModel;
 import org.albard.dubito.messaging.MessageSerializer;
 import org.albard.dubito.messaging.MessengerFactory;
 import org.albard.dubito.network.PeerEndPoint;
@@ -31,7 +32,7 @@ public abstract class GameApp {
         this.playerCount = playerCount;
     }
 
-    public void run(final Consumer<GameBoardView> showBoardConsumer, final Semaphore stopLock) {
+    public void run(final Consumer<GameBoardView> showBoardConsumer, final Semaphore stopLock, final AppStateModel stateModel) {
         try {
             // creiamo la rete, dove poi gli passeremo l'indirizzo di uno dei giocatori
             // della lobby (la rete in automatico si
@@ -57,7 +58,7 @@ public abstract class GameApp {
             final GameBoardView[] view = new GameBoardView[1];
             final GameSessionController<OnlinePlayer> controller = new GameOnlineSessionController<>(players, network,
                     0, () -> view[0].refreshBoard());
-            view[0] = new GameBoardView(controller);
+            view[0] = new GameBoardView(controller, stateModel);
 
             // Here we wait for all players to setup their controller/view
             Thread.sleep(5000);

@@ -36,7 +36,7 @@ public final class MainWindow extends JFrame {
         final LobbyListController lobbyListController = new LobbyListController(stateModel, joinLobbyModel,
                 lobbyListModel);
         final LobbyManagementController lobbyManagementController = new LobbyManagementController(stateModel,
-                currentLobbyModel, gameApp -> gameApp.run(this.getContentPane()::add, closeSemaphore));
+                currentLobbyModel, gameApp -> gameApp.run(this.getContentPane()::add, closeSemaphore, stateModel));
         final ConnectionController connectionController = new ConnectionController(stateModel);
         // Create views
         final MainMenuView mainMenuView = new MainMenuView(stateModel);

@@ -3,6 +3,7 @@ package org.abianchi.dubito.app.gameSession.views;
 import org.abianchi.dubito.app.gameSession.controllers.GameSessionController;
 import org.abianchi.dubito.app.gameSession.models.Card;
 import org.abianchi.dubito.app.gameSession.models.Player;
+import org.albard.dubito.app.models.AppStateModel;
 import org.albard.utils.Debouncer;
 
 import java.awt.BorderLayout;
@@ -36,7 +37,7 @@ public class GameBoardView extends JPanel {
     private final JLabel roundStateLabel;
     private final JLabel cardsPlayedLabel;
 
-    public GameBoardView(final GameSessionController<?> controller) {
+    public GameBoardView(final GameSessionController<?> controller, final AppStateModel appStateModel) {
         this.controller = controller;
         final int nPlayers = this.controller.getSessionPlayers().size();
 
@@ -46,7 +47,8 @@ public class GameBoardView extends JPanel {
 
         /** center */
         this.roundStateLabel = new JLabel(this.getCurrentRoundStateText());
-        this.cardsPlayedLabel = new JLabel("Previous Player played "
+        this.cardsPlayedLabel = new JLabel("Player " + (controller.getPreviousPlayer().isPresent() ?
+                appStateModel.getUserClient().get() : "No One")+ " played "
                 + this.controller.getCurrentGameState().getPreviousPlayerPlayedCards().size() + " cards");
         roundStateLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         this.centerPanel = new JPanel();

@@ -30,7 +30,7 @@ public final class Program {
         Runtime.getRuntime().addShutdownHook(new Thread(shutdownLock::release));
         // aspetto qui che il programma venga chiuso (quando chiudo il programma, eseguo
         // il thread passato di chiusura di rete)
-        app.run(Program::showBoardInWindow, shutdownLock);
+        //app.run(Program::showBoardInWindow, shutdownLock);
     }
 
     // Searches for an argument in the form of "--name" or "--name=<true/false>"
