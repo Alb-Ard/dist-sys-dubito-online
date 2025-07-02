@@ -23,15 +23,16 @@ public final class Program {
 
         final GameApp app = isOwner
                 ? new OwnerGameApp(localId, PeerEndPoint.ofValues(bindEndPoint[0], Integer.parseInt(bindEndPoint[1])),
-                        nPlayers)
+                        nPlayers, new AppStateModel())
                 : new ClientGameApp(localId, PeerEndPoint.ofValues(bindEndPoint[0], Integer.parseInt(bindEndPoint[1])),
-                        PeerEndPoint.ofValues(ownerEndPoint[0], Integer.parseInt(ownerEndPoint[1])), nPlayers);
+                        PeerEndPoint.ofValues(ownerEndPoint[0], Integer.parseInt(ownerEndPoint[1])), nPlayers,
+                        new AppStateModel());
 
         final Semaphore shutdownLock = new Semaphore(0);
         Runtime.getRuntime().addShutdownHook(new Thread(shutdownLock::release));
         // aspetto qui che il programma venga chiuso (quando chiudo il programma, eseguo
         // il thread passato di chiusura di rete)
-        app.run(Program::showBoardInWindow, shutdownLock, new AppStateModel());
+        app.run(Program::showBoardInWindow, shutdownLock);
     }
 
     // Searches for an argument in the form of "--name" or "--name=<true/false>"

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.abianchi.dubito.messages.PlayerOrderMessage;
+import org.albard.dubito.app.models.AppStateModel;
 import org.albard.dubito.network.PeerEndPoint;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
@@ -13,8 +14,8 @@ public final class ClientGameApp extends GameApp {
     private final PeerEndPoint remoteEndPoint;
 
     public ClientGameApp(final PeerId id, final PeerEndPoint bindEndPoint, final PeerEndPoint remoteEndPoint,
-            final int playerCount) throws IOException {
-        super(id, bindEndPoint, playerCount);
+            final int playerCount, final AppStateModel appStateModel) throws IOException {
+        super(id, bindEndPoint, playerCount, appStateModel);
         this.remoteEndPoint = remoteEndPoint;
     }
 

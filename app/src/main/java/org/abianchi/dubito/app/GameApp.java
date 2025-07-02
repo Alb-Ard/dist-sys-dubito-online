@@ -30,15 +30,17 @@ public abstract class GameApp {
     private final PeerId localId;
     private final PeerEndPoint bindEndPoint;
     private final Set<Runnable> gameStartedListeners = Collections.synchronizedSet(new HashSet<>());
+    private final AppStateModel appStateModel;
 
-    public GameApp(final PeerId id, final PeerEndPoint bindEndPoint, final int playerCount) throws IOException {
+    public GameApp(final PeerId id, final PeerEndPoint bindEndPoint, final int playerCount,
+            final AppStateModel appStateModel) throws IOException {
         this.localId = id;
         this.bindEndPoint = bindEndPoint;
         this.playerCount = playerCount;
+        this.appStateModel = appStateModel;
     }
 
-    public void run(final Consumer<GameBoardView> showBoardConsumer, final Semaphore stopLock,
-            final AppStateModel stateModel) {
+    public void run(final Consumer<GameBoardView> showBoardConsumer, final Semaphore stopLock) {
         try {
             // creiamo la rete, dove poi gli passeremo l'indirizzo di uno dei giocatori
             // della lobby (la rete in automatico si
@@ -55,7 +57,8 @@ public abstract class GameApp {
             // nel caso degli altri giocatori, aspetto di ricevere la lista ordinata dei
             // giocatori
             final List<PeerId> playerPeers = this.initializePeers(network).get();
-            final List<OnlinePlayer> players = playerPeers.stream().map(OnlinePlayerImpl::new)
+            final List<OnlinePlayer> players = playerPeers.stream()
+                    .map(x -> new OnlinePlayerImpl(x, this.getPlayerUsername(x, playerPeers.indexOf(x))))
                     .collect(Collectors.toList());
 
             // Stabilisco la GameBoardView e il GameSessionController (versione online)
@@ -103,5 +106,10 @@ public abstract class GameApp {
             System.out.println("Waiting for players: " + (network.getPeerCount() + 1) + "/" + this.playerCount);
             Thread.sleep(1000);
         }
+    }
+
+    private String getPlayerUsername(final PeerId peerId, final int playerIndex) {
+        return this.appStateModel.getUserClient().flatMap(x -> x.getUser(peerId)).map(x -> x.name())
+                .orElse("Player " + playerIndex);
     }
 }

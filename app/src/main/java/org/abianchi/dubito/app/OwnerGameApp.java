@@ -6,13 +6,15 @@ import java.util.List;
 import java.util.Optional;
 
 import org.abianchi.dubito.messages.PlayerOrderMessage;
+import org.albard.dubito.app.models.AppStateModel;
 import org.albard.dubito.network.PeerEndPoint;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
 
 public final class OwnerGameApp extends GameApp {
-    public OwnerGameApp(final PeerId id, final PeerEndPoint bindEndPoint, final int playerCount) throws IOException {
-        super(id, bindEndPoint, playerCount);
+    public OwnerGameApp(final PeerId id, final PeerEndPoint bindEndPoint, final int playerCount,
+            final AppStateModel appStateModel) throws IOException {
+        super(id, bindEndPoint, playerCount, appStateModel);
     }
 
     @Override
