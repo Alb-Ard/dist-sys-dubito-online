@@ -30,11 +30,11 @@ public final class GameBoardPlayerPanel extends JPanel {
     private boolean isActive = false;
 
     public GameBoardPlayerPanel(final Player player, final Optional<Rotation> rotation,
-            final Consumer<List<Card>> playCardsListener, final Runnable callLiarListener) {
+            final Consumer<List<Card>> playCardsListener, final Runnable callLiarListener, final String playerName) {
         this.rotation = rotation;
         this.playerCardPanel.setLayout(
                 new BoxLayout(playerCardPanel, rotation.map(x -> BoxLayout.PAGE_AXIS).orElse(BoxLayout.LINE_AXIS)));
-        this.actionsPanel = new GameBoardPlayerActionsPanel(player.getLives(), rotation.isPresent(),
+        this.actionsPanel = new GameBoardPlayerActionsPanel(player.getLives(), rotation.isPresent(), playerName,
                 () -> playCardsListener.accept(this.getSelectedCards()), callLiarListener);
         this.add(this.playerCardPanel);
         this.add(this.actionsPanel);

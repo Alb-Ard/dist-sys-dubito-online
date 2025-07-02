@@ -18,17 +18,20 @@ import javax.swing.KeyStroke;
 
 final class GameBoardPlayerActionsPanel extends JPanel {
     private final JLabel livesLabel;
+    private final JLabel playerNameLabel;
 
-    public GameBoardPlayerActionsPanel(final int initialLivesCount, final boolean vertical,
+    public GameBoardPlayerActionsPanel(final int initialLivesCount, final boolean vertical, final String playerName,
             final Runnable playCardsListener, final Runnable callLiarListener) {
         /** buttons and label for player's lives */
         if (vertical) {
             this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         }
         this.livesLabel = new JLabel(getLivesText(initialLivesCount));
+        this.playerNameLabel = new JLabel(playerName);
         JButton throwCardsButton = new JButton("Throw Cards (T)");
         JButton callLiarButton = new JButton("Call Liar (F)");
         this.add(livesLabel);
+        this.add(playerNameLabel);
         this.add(throwCardsButton);
         this.add(callLiarButton);
 

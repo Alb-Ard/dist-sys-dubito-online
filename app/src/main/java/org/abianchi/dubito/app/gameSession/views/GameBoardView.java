@@ -62,7 +62,7 @@ public class GameBoardView extends JPanel {
         for (int i = 0; i < nPlayers; i++) {
             final Player player = this.controller.getSessionPlayers().get(i);
             final GameBoardPlayerPanel playerPanel = new GameBoardPlayerPanel(player, PLAYER_ROTATIONS.get(i),
-                    this::playCards, this::callLiar);
+                    this::playCards, this::callLiar, this.getPlayerNameByIndex(player));
             this.add(playerPanel, PLAYER_POSITIONS.get(i));
             playerPanels.add(playerPanel);
         }
@@ -107,19 +107,22 @@ public class GameBoardView extends JPanel {
     }
 
     private String getLastPlayedCardsText() {
-        return this.controller.getPreviousPlayer().map(previousPlayer -> {
-            final String previousPlayerName = this.getPlayerName(previousPlayer, x -> x.getPreviousPlayerIndex());
-            return new StringBuilder(previousPlayerName).append(" played ")
-                    .append(this.controller.getCurrentGameState().getPreviousPlayerPlayedCards().size())
-                    .append(" cards").toString();
-        }).orElse("");
+        if(!this.controller.getCurrentGameState().getPreviousPlayerPlayedCards().isEmpty()) {
+            return this.controller.getPreviousPlayer().map(previousPlayer -> {
+                final String previousPlayerName = this.getPlayerName(previousPlayer, GameState::getPreviousPlayerIndex);
+                return new StringBuilder(previousPlayerName).append(" played ")
+                        .append(this.controller.getCurrentGameState().getPreviousPlayerPlayedCards().size())
+                        .append(" cards").toString();
+            }).orElse("");
+        }
+        return "";
     }
 
     private String getCurrentRoundStateText() {
         return this.controller.getWinnerPlayer().map(
-                winnerPlayer -> "The winner is: " + this.getPlayerName(winnerPlayer, x -> x.getWinnerPlayerIndex()))
+                winnerPlayer -> "The winner is: " + this.getPlayerName(winnerPlayer, GameState::getWinnerPlayerIndex))
                 .orElse("Round Card is: " + this.controller.getCurrentGameState().getRoundCardValue()
-                        .map(x -> x.toString()).orElse("UNKNOWN"));
+                        .map(Enum::toString).orElse("UNKNOWN"));
     }
 
     private String getPlayerName(final Player player,
@@ -127,6 +130,10 @@ public class GameBoardView extends JPanel {
         return player.getName()
                 .orElseGet(() -> "Player " + fallbackIndexProvider.apply(this.controller.getCurrentGameState())
                         .map(x -> Integer.toString(x.intValue() + 1)).orElse("UNKNOWN"));
+    }
+
+    private String getPlayerNameByIndex(final Player player) {
+        return "Player: " + player.getName().orElseGet(() -> "Player" + this.controller.getSessionPlayers().indexOf(player) + 1);
     }
 
     private void refreshPlayerPanel(final int playerIndex, final boolean forceInactive) {
