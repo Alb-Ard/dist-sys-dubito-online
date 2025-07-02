@@ -31,7 +31,7 @@ public final class CurrentLobbyModel extends AbstractModel<CurrentLobbyModel> {
     }
 
     public Optional<PeerId> getLocalPeerId() {
-        return this.stateModelAdapter.getBean().getNetwork().map(x -> x.getLocalPeerId());
+        return this.stateModelAdapter.getBean().getLobbyNetwork().map(x -> x.getLocalPeerId());
     }
 
     public String getLobbyName() {

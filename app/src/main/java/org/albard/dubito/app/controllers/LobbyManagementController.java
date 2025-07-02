@@ -1,6 +1,8 @@
 package org.albard.dubito.app.controllers;
 
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Optional;
@@ -14,6 +16,7 @@ import org.abianchi.dubito.app.GameApp;
 import org.abianchi.dubito.app.OwnerGameApp;
 import org.albard.dubito.app.models.AppStateModel;
 import org.albard.dubito.app.models.CurrentLobbyModel;
+import org.albard.dubito.app.models.AppStateModel.State;
 import org.albard.dubito.lobby.client.LobbyClient;
 import org.albard.dubito.lobby.models.Lobby;
 import org.albard.dubito.lobby.models.LobbyInfo;
@@ -43,39 +46,28 @@ public final class LobbyManagementController {
     }
 
     public void startGame() {
-        this.stateModel.getLobbyClient().flatMap(x -> x.getCurrentLobby()).flatMap(currentLobby -> {
-            return this.stateModel.getNetwork().flatMap(network -> {
-                return this.currentLobbyModel.getLocalPeerId().flatMap(localPeerId -> {
-                    try {
-                        final Set<PeerId> participantPeerIds = currentLobby.getParticipants();
-                        if (this.currentLobbyModel.isLocalPeerOwner()) {
-                            return Optional.of(new OwnerGameApp(localPeerId, PeerEndPoint.ofValues("0.0.0.0", 9100),
-                                    participantPeerIds.size()));
-                        } else {
-                            final PeerEndPoint ownerEndPoint = network.getPeers().get(currentLobby.getOwner())
-                                    .getRemoteEndPoint();
-                            final int bindPort = isLocalAddress(ownerEndPoint) ? 9200 : 9100;
-                            return Optional.of(new ClientGameApp(localPeerId,
-                                    PeerEndPoint.ofValues("0.0.0.0", bindPort),
-                                    PeerEndPoint.ofValues(ownerEndPoint.getHost(), 9100), participantPeerIds.size()));
-                        }
-                    } catch (final Exception ex) {
-                        System.err.println("Could not start game: " + ex.getMessage());
-                        return Optional.empty();
-                    }
-                });
-            });
-        }).ifPresentOrElse(this.gameStartedListener,
-                () -> System.err.println("Could not create GameApp, game start failed!"));
+        this.stateModel.getLobbyClient().ifPresent(x -> x.requestStartCurrentLobbyGame());
     }
 
     private static boolean isLocalAddress(final PeerEndPoint ownerEndPoint) throws UnknownHostException {
-        return Arrays.stream(InetAddress.getAllByName(ownerEndPoint.getHost())).anyMatch(x -> x.isAnyLocalAddress());
+        return Arrays.stream(InetAddress.getAllByName(ownerEndPoint.getHost())).anyMatch(x -> {
+            try {
+                return x.isLoopbackAddress() || x.isAnyLocalAddress() || NetworkInterface.getByInetAddress(x) != null;
+            } catch (final SocketException e) {
+                return false;
+            }
+        });
     }
 
     private void onLobbyClientChanged(final ModelPropertyChangeEvent<Optional<LobbyClient>> e) {
-        e.getOldTypedValue().ifPresent(x -> x.removeCurrentLobbyUpdatedListener(this::onCurrentLobbyUpdated));
-        e.getNewTypedValue().ifPresent(x -> x.addCurrentLobbyUpdatedListener(this::onCurrentLobbyUpdated));
+        e.getOldTypedValue().ifPresent(x -> {
+            x.removeCurrentLobbyUpdatedListener(this::onCurrentLobbyUpdated);
+            x.removeCurrentLobbyGameStartedListener(this::onGameStarted);
+        });
+        e.getNewTypedValue().ifPresent(x -> {
+            x.addCurrentLobbyUpdatedListener(this::onCurrentLobbyUpdated);
+            x.addCurrentLobbyGameStartedListener(this::onGameStarted);
+        });
     }
 
     private void onCurrentLobbyUpdated(final Optional<Lobby> lobby) {
@@ -94,5 +86,33 @@ public final class LobbyManagementController {
                         .map(x -> x.append(lobby.getOwner().equals(peerId) ? " (owner)" : "").toString())
                         .orElse(peerId.id()))
                 .orElse(peerId.id());
+    }
+
+    private void onGameStarted(final PeerEndPoint ownerEndPoint) {
+        this.stateModel.getLobbyClient().flatMap(x -> x.getCurrentLobby()).flatMap(currentLobby -> {
+            return this.stateModel.getLobbyNetwork().flatMap(network -> {
+                return this.currentLobbyModel.getLocalPeerId().flatMap(localPeerId -> {
+                    try {
+                        final Set<PeerId> participantPeerIds = currentLobby.getParticipants();
+                        if (this.currentLobbyModel.isLocalPeerOwner()) {
+                            return Optional.of(new OwnerGameApp(localPeerId, PeerEndPoint.ofValues("0.0.0.0", 9100),
+                                    participantPeerIds.size()));
+                        } else {
+                            final int bindPort = isLocalAddress(ownerEndPoint) ? 9200 : 9100;
+                            return Optional.of(new ClientGameApp(localPeerId,
+                                    PeerEndPoint.ofValues("0.0.0.0", bindPort),
+                                    PeerEndPoint.ofValues(ownerEndPoint.getHost(), 9100), participantPeerIds.size()));
+                        }
+                    } catch (final Exception ex) {
+                        System.err.println("Could not start game: " + ex.getMessage());
+                        return Optional.empty();
+                    }
+                });
+            });
+        }).ifPresentOrElse(app -> {
+            app.addGameStartedListener(this::leaveLobby);
+            stateModel.setState(State.IN_GAME);
+            this.gameStartedListener.accept(app);
+        }, () -> System.err.println("Could not create GameApp, game start failed!"));
     }
 }

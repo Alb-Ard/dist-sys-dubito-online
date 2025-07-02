@@ -49,7 +49,10 @@ public final class LobbyListController {
 
     private void onLobbyClientChanged(final ModelPropertyChangeEvent<Optional<LobbyClient>> e) {
         e.getOldTypedValue().ifPresent(x -> x.removeLobbyListUpdatedListener(this::updateLobbyList));
-        e.getNewTypedValue().ifPresent(x -> x.addLobbyListUpdatedListener(this::updateLobbyList));
+        e.getNewTypedValue().ifPresent(x -> {
+            x.addLobbyListUpdatedListener(this::updateLobbyList);
+            this.updateLobbyList(x.getLobbies());
+        });
     }
 
     private void updateLobbyList(final List<LobbyDisplay> lobbies) {

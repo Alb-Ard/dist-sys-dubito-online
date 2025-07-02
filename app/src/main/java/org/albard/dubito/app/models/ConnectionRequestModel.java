@@ -4,13 +4,13 @@ import org.albard.mvc.AbstractModel;
 import org.albard.mvc.ModelProperty;
 
 public final class ConnectionRequestModel extends AbstractModel<ConnectionRequestModel> {
-    public static final ModelProperty<String> ADDRESS_PROPERTY = defineProperty("address", String.class);
-    public static final ModelProperty<Integer> PORT_PROPERTY = defineProperty("port", Integer.class);
+    public static final ModelProperty<String> ADDRESS_PROPERTY = defineProperty("address");
+    public static final ModelProperty<String> PORT_PROPERTY = defineProperty("port");
 
     private String address;
-    private int port;
+    private String port;
 
-    public ConnectionRequestModel(final String address, final int port) {
+    public ConnectionRequestModel(final String address, final String port) {
         this.address = address;
         this.port = port;
     }
@@ -19,7 +19,7 @@ public final class ConnectionRequestModel extends AbstractModel<ConnectionReques
         return this.address;
     }
 
-    public int getPort() {
+    public String getPort() {
         return this.port;
     }
 
@@ -27,7 +27,7 @@ public final class ConnectionRequestModel extends AbstractModel<ConnectionReques
         this.firePropertyChange(ADDRESS_PROPERTY, this.address, () -> this.address = address);
     }
 
-    public void setPort(final int port) {
+    public void setPort(final String port) {
         this.firePropertyChange(PORT_PROPERTY, this.port, () -> this.port = port);
     }
 }

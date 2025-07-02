@@ -33,7 +33,7 @@ public final class BoundComponentFactory {
     }
 
     public static JTextField createIntegerTextField(final AbstractModel<?> model,
-            final ModelProperty<Integer> property) {
+            final ModelProperty<? extends Number> property) {
         return createIntegerTextField(model.getAdapter(), property.getName());
     }
 
@@ -78,8 +78,10 @@ public final class BoundComponentFactory {
     }
 
     private static ValueModel getIntegerValueModel(final BeanAdapter<?> beanAdapter, final String propertyName) {
-        return ConverterFactory.createStringConverter(beanAdapter.getValueModel(propertyName),
-                NumberFormat.getIntegerInstance());
+        final NumberFormat format = NumberFormat.getIntegerInstance();
+        format.setGroupingUsed(false);
+        format.setParseIntegerOnly(true);
+        return ConverterFactory.createStringConverter(beanAdapter.getValueModel(propertyName), format);
     }
 
     private static <X> SelectionInList<X> getListValueModel(final BeanAdapter<?> beanAdapter,

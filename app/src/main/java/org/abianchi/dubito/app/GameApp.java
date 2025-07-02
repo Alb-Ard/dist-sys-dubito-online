@@ -12,11 +12,15 @@ import org.albard.dubito.network.PeerEndPoint;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
 import org.albard.dubito.network.PeerStarNetwork;
+import org.albard.utils.ListenerUtils;
 
 import java.awt.*;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -25,6 +29,7 @@ public abstract class GameApp {
     private final int playerCount;
     private final PeerId localId;
     private final PeerEndPoint bindEndPoint;
+    private final Set<Runnable> gameStartedListeners = Collections.synchronizedSet(new HashSet<>());
 
     public GameApp(final PeerId id, final PeerEndPoint bindEndPoint, final int playerCount) throws IOException {
         this.localId = id;
@@ -32,7 +37,8 @@ public abstract class GameApp {
         this.playerCount = playerCount;
     }
 
-    public void run(final Consumer<GameBoardView> showBoardConsumer, final Semaphore stopLock, final AppStateModel stateModel) {
+    public void run(final Consumer<GameBoardView> showBoardConsumer, final Semaphore stopLock,
+            final AppStateModel stateModel) {
         try {
             // creiamo la rete, dove poi gli passeremo l'indirizzo di uno dei giocatori
             // della lobby (la rete in automatico si
@@ -61,7 +67,9 @@ public abstract class GameApp {
             view[0] = new GameBoardView(controller, stateModel);
 
             // Here we wait for all players to setup their controller/view
-            Thread.sleep(5000);
+            Thread.sleep(1000);
+
+            ListenerUtils.runAll(this.gameStartedListeners);
 
             controller.newRound();
             EventQueue.invokeLater(() -> showBoardConsumer.accept(view[0]));
@@ -71,6 +79,14 @@ public abstract class GameApp {
         } catch (final Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void addGameStartedListener(final Runnable listener) {
+        this.gameStartedListeners.add(listener);
+    }
+
+    public void removeGameStartedListener(final Runnable listener) {
+        this.gameStartedListeners.remove(listener);
     }
 
     protected int getPlayerCount() {

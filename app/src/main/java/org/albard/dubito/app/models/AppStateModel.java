@@ -14,12 +14,12 @@ public final class AppStateModel extends AbstractModel<AppStateModel> {
     }
 
     public static final ModelProperty<State> STATE_PROPERTY = defineProperty("state");
-    public static final ModelProperty<Optional<PeerNetwork>> NETWORK_PROPERTY = defineProperty("network");
+    public static final ModelProperty<Optional<PeerNetwork>> LOBBY_NETWORK_PROPERTY = defineProperty("lobbyNetwork");
     public static final ModelProperty<Optional<UserClient>> USER_CLIENT_PROPERTY = defineProperty("userClient");
     public static final ModelProperty<Optional<LobbyClient>> LOBBY_CLIENT_PROPERTY = defineProperty("lobbyClient");
 
     private State state;
-    private Optional<PeerNetwork> network = Optional.empty();
+    private Optional<PeerNetwork> lobbyNetwork = Optional.empty();
     private Optional<UserClient> userClient = Optional.empty();
     private Optional<LobbyClient> lobbyClient = Optional.empty();
 
@@ -27,8 +27,8 @@ public final class AppStateModel extends AbstractModel<AppStateModel> {
         return this.state;
     }
 
-    public Optional<PeerNetwork> getNetwork() {
-        return this.network;
+    public Optional<PeerNetwork> getLobbyNetwork() {
+        return this.lobbyNetwork;
     }
 
     public Optional<UserClient> getUserClient() {
@@ -43,8 +43,9 @@ public final class AppStateModel extends AbstractModel<AppStateModel> {
         this.firePropertyChange(STATE_PROPERTY, this.state, () -> this.state = state);
     }
 
-    public void setNetwork(final PeerNetwork network) {
-        this.firePropertyChange(NETWORK_PROPERTY, this.network, () -> this.network = Optional.of(network));
+    public void setLobbyNetwork(final PeerNetwork network) {
+        this.firePropertyChange(LOBBY_NETWORK_PROPERTY, this.lobbyNetwork,
+                () -> this.lobbyNetwork = Optional.of(network));
         this.firePropertyChange(USER_CLIENT_PROPERTY, this.userClient,
                 () -> this.userClient = Optional.of(new UserClient(network)));
         this.firePropertyChange(LOBBY_CLIENT_PROPERTY, this.lobbyClient,

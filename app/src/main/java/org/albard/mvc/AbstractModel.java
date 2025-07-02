@@ -20,9 +20,13 @@ public abstract class AbstractModel<X extends AbstractModel<X>> extends Model {
             final ModelPropertyChangeListener<Y> listener) {
         this.selfAdapter.addBeanPropertyChangeListener(property.getName(),
                 ev -> listener.propertyChange(new ModelPropertyChangeEvent<Y>(ev)));
+        @SuppressWarnings("unchecked")
+        final Y currentValue = (Y) this.selfAdapter.getValue(property.getName());
+        listener.propertyChange(new ModelPropertyChangeEvent<>(this, property, currentValue, currentValue));
         return this;
     }
 
+    @SuppressWarnings("unchecked")
     public <Y> AbstractModel<X> addModelPropertyChangeListener(final Function<X, ModelProperty<Y>> propertyProvider,
             final ModelPropertyChangeListener<Y> listener) {
         return this.addModelPropertyChangeListener(propertyProvider.apply((X) this), listener);

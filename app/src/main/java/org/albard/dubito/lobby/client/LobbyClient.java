@@ -11,18 +11,22 @@ import org.albard.dubito.lobby.messages.CreateLobbyMessage;
 import org.albard.dubito.lobby.messages.JoinLobbyMessage;
 import org.albard.dubito.lobby.messages.LeaveLobbyMessage;
 import org.albard.dubito.lobby.messages.LobbyCreatedMessage;
+import org.albard.dubito.lobby.messages.LobbyGameStartedMessage;
 import org.albard.dubito.lobby.messages.LobbyJoinedMessage;
 import org.albard.dubito.lobby.messages.LobbyLeavedMessage;
 import org.albard.dubito.lobby.messages.LobbyListUpdatedMessage;
 import org.albard.dubito.lobby.messages.LobbyUpdatedMessage;
+import org.albard.dubito.lobby.messages.StartLobbyGameMessage;
 import org.albard.dubito.lobby.messages.UpdateLobbyInfoMessage;
 import org.albard.dubito.lobby.models.Lobby;
 import org.albard.dubito.lobby.models.LobbyDisplay;
 import org.albard.dubito.lobby.models.LobbyId;
 import org.albard.dubito.lobby.models.LobbyInfo;
 import org.albard.dubito.messaging.messages.GameMessage;
+import org.albard.dubito.network.PeerEndPoint;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
+import org.albard.utils.ListenerUtils;
 import org.albard.utils.Locked;
 
 public final class LobbyClient {
@@ -31,6 +35,7 @@ public final class LobbyClient {
     private final Locked<CurrentLobby> currentLobby = Locked.of(new CurrentLobby());
     private final Locked<Set<Consumer<List<LobbyDisplay>>>> lobbyListUpdatedListeners = Locked.of(new HashSet<>());
     private final Locked<Set<Consumer<Optional<Lobby>>>> currentLobbyUpdatedListeners = Locked.of(new HashSet<>());
+    private final Locked<Set<Consumer<PeerEndPoint>>> currentLobbyGameStartedListeners = Locked.of(new HashSet<>());
 
     public LobbyClient(final PeerNetwork network) {
         this.network = network;
@@ -81,6 +86,20 @@ public final class LobbyClient {
         });
     }
 
+    public void addCurrentLobbyGameStartedListener(final Consumer<PeerEndPoint> listener) {
+        this.currentLobbyGameStartedListeners.exchange(l -> {
+            l.add(listener);
+            return l;
+        });
+    }
+
+    public void removeCurrentLobbyGameStartedListener(final Consumer<PeerEndPoint> listener) {
+        this.currentLobbyGameStartedListeners.exchange(l -> {
+            l.remove(listener);
+            return l;
+        });
+    }
+
     public void requestNewLobby(final LobbyInfo info) {
         this.network.sendMessage(new CreateLobbyMessage(this.getLocalPeerId(), null, info));
     }
@@ -99,6 +118,14 @@ public final class LobbyClient {
                 .sendMessage(new UpdateLobbyInfoMessage(this.getLocalPeerId(), null, l.getId(), newLobbyInfo)));
     }
 
+    public void requestStartCurrentLobbyGame() {
+        this.getCurrentLobby().ifPresent(l -> {
+            if (l.getOwner().equals(this.network.getLocalPeerId())) {
+                this.network.sendMessage(new StartLobbyGameMessage(this.getLocalPeerId(), null, l.getId()));
+            }
+        });
+    }
+
     private boolean handleMessage(final GameMessage message) {
         if (message instanceof LobbyCreatedMessage lobbyCreatedMessage) {
             this.currentLobby.exchange(l -> l.setId(lobbyCreatedMessage.getNewLobbyId()));
@@ -110,20 +137,28 @@ public final class LobbyClient {
         }
         if (message instanceof LobbyLeavedMessage) {
             this.currentLobby.exchange(l -> l.setId(null).setLobby(null));
-            Set.copyOf(this.currentLobbyUpdatedListeners.getValue()).forEach(l -> l.accept(Optional.empty()));
+            ListenerUtils.runAll(this.currentLobbyUpdatedListeners.getValue(), Optional.empty());
             return true;
         }
         if (message instanceof LobbyUpdatedMessage lobbyUpdatedMessage) {
             this.currentLobby.exchange(l -> l.setLobby(lobbyUpdatedMessage.getLobby()));
-            Set.copyOf(this.currentLobbyUpdatedListeners.getValue())
-                    .forEach(l -> l.accept(Optional.of(lobbyUpdatedMessage.getLobby())));
+            ListenerUtils.runAll(this.currentLobbyUpdatedListeners.getValue(),
+                    Optional.of(lobbyUpdatedMessage.getLobby()));
             return true;
         }
         if (message instanceof LobbyListUpdatedMessage lobbyListUpdatedMessage) {
             this.allLobbies.exchange(l -> List.copyOf(lobbyListUpdatedMessage.getLobbies()));
-            Set.copyOf(this.lobbyListUpdatedListeners.getValue())
-                    .forEach(l -> l.accept(lobbyListUpdatedMessage.getLobbies()));
+            ListenerUtils.runAll(this.lobbyListUpdatedListeners.getValue(), lobbyListUpdatedMessage.getLobbies());
             return true;
+        }
+        if (message instanceof LobbyGameStartedMessage gameStartedMessage) {
+            this.currentLobby.exchange(currentLobby -> {
+                if (currentLobby.getId().map(x -> x.equals(gameStartedMessage.getLobbyId())).orElse(false)) {
+                    ListenerUtils.runAll(this.currentLobbyGameStartedListeners.getValue(),
+                            gameStartedMessage.getOwnerEndPoint());
+                }
+                return currentLobby;
+            });
         }
         return false;
     }

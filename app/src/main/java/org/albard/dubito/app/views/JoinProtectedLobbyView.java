@@ -29,7 +29,7 @@ public final class JoinProtectedLobbyView extends JPanel {
         this.add(passwordFiled);
         this.add(SimpleComponentFactory.createHorizontalPanel(cancelButton, joinButton));
         stateModel.addModelPropertyChangeListener(AppStateModel.STATE_PROPERTY,
-                e -> this.setVisible(e.getNewValue() == AppStateModel.State.REQUESTING_LOBBY_PASSWORD));
+                e -> this.setVisible(e.getNewTypedValue() == AppStateModel.State.REQUESTING_LOBBY_PASSWORD));
         joinButton.addActionListener(
                 e -> this.joinCommand.execute(l -> l.accept(model.getLobbyId(), model.getPassword())));
         cancelButton.addActionListener(e -> this.cancelCommand.execute(l -> l.run()));

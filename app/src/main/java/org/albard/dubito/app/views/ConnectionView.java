@@ -1,8 +1,9 @@
 package org.albard.dubito.app.views;
 
-import java.awt.Dimension;
+import java.util.Optional;
 import java.util.function.Consumer;
 
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JPanel;
@@ -21,22 +22,34 @@ public final class ConnectionView extends JPanel {
     private final ExecutableViewCommand<Consumer<PeerEndPoint>> connectCommand = new ExecutableViewCommand<>();
 
     public ConnectionView(final AppStateModel stateModel, final ConnectionRequestModel connectionModel) {
-        this.setMinimumSize(new Dimension(300, 100));
         this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         final JTextField addressField = BoundComponentFactory.createStringTextField(connectionModel,
                 ConnectionRequestModel.ADDRESS_PROPERTY);
-        final JTextField portField = BoundComponentFactory.createIntegerTextField(connectionModel,
+        final JTextField portField = BoundComponentFactory.createStringTextField(connectionModel,
                 ConnectionRequestModel.PORT_PROPERTY);
         final JButton connectButton = new GameButton("Connect");
-        this.add(SimpleComponentFactory.createHorizontalPanel(addressField, portField));
-        this.add(connectButton);
-        connectButton.addActionListener(e -> connectCommand.execute(
-                l -> l.accept(PeerEndPoint.ofValues(connectionModel.getAddress(), connectionModel.getPort()))));
+        this.add(Box.createVerticalGlue());
+        this.add(SimpleComponentFactory.createHorizontalPanel(Box.createHorizontalGlue(), addressField, portField,
+                Box.createHorizontalGlue()));
+        this.add(Box.createVerticalStrut(8));
+        this.add(SimpleComponentFactory.createHorizontalPanel(Box.createHorizontalGlue(), connectButton,
+                Box.createHorizontalGlue()));
+        this.add(Box.createVerticalGlue());
+        connectButton.addActionListener(e -> tryParseInt(connectionModel.getPort()).ifPresent(port -> connectCommand
+                .execute(l -> l.accept(PeerEndPoint.ofValues(connectionModel.getAddress(), port)))));
         stateModel.addModelPropertyChangeListener(AppStateModel.STATE_PROPERTY,
-                e -> this.setVisible(e.getNewValue() == AppStateModel.State.IN_LOBBY_SERVER_CONNECTION));
+                e -> this.setVisible(e.getNewTypedValue() == AppStateModel.State.IN_LOBBY_SERVER_CONNECTION));
     }
 
     public ViewCommand<Consumer<PeerEndPoint>> getConnectCommand() {
         return this.connectCommand;
+    }
+
+    private static Optional<Integer> tryParseInt(final String value) {
+        try {
+            return Optional.of(Integer.parseInt(value));
+        } catch (final Exception ex) {
+            return Optional.empty();
+        }
     }
 }

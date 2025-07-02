@@ -171,9 +171,7 @@ public final class PeerNetworkImpl implements PeerNetwork {
 
     @Override
     public void sendMessage(final GameMessage message) {
-        final Set<PeerConnection> receipients = (message.getReceipients() == null ? this.getPeers().values().stream()
-                : this.getPeers().entrySet().stream().filter(e -> message.getReceipients().contains(e.getKey()))
-                        .map(e -> e.getValue())).collect(Collectors.toSet());
+        final Set<PeerConnection> receipients = getMessageActualReceipients(message);
         System.out.println(
                 this.getLocalPeerId() + ": Sending " + message.getClass().getSimpleName() + " to " + receipients);
         receipients.forEach(e -> e.sendMessage(message));
@@ -231,6 +229,15 @@ public final class PeerNetworkImpl implements PeerNetwork {
     private boolean containsPeerAtEndPoint(final PeerEndPoint peerEndPoint) {
         return this.connections.getValue().values().stream().map(c -> c.getRemoteEndPoint())
                 .anyMatch(peerEndPoint::equals);
+    }
+
+    private Set<PeerConnection> getMessageActualReceipients(final GameMessage message) {
+        final Set<PeerId> messageReceipients = message.getReceipients();
+        if (messageReceipients == null) {
+            return Set.copyOf(this.getPeers().values());
+        }
+        return this.getPeers().entrySet().stream().filter(e -> messageReceipients.contains(e.getKey()))
+                .map(e -> e.getValue()).collect(Collectors.toSet());
     }
 
     private boolean onMessageReceived(final GameMessage message) {

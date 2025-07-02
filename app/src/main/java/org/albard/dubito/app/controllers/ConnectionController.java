@@ -23,7 +23,7 @@ public final class ConnectionController {
                 // TODO: Show error to user
                 return;
             }
-            this.stateModel.setNetwork(network);
+            this.stateModel.setLobbyNetwork(network);
             this.stateModel.setState(State.IN_LOBBY_LIST);
         } catch (final Exception ex) {
             System.err.println("Could not connect to " + endPoint + ": " + ex.getMessage());

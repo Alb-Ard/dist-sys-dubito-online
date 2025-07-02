@@ -53,7 +53,7 @@ public final class CurrentLobbyView extends JPanel {
             readOnlyLobbyNameLabel.setVisible(!model.isLocalPeerOwner());
         });
         stateModel.addModelPropertyChangeListener(AppStateModel.STATE_PROPERTY,
-                e -> this.setVisible(e.getNewValue() == AppStateModel.State.IN_LOBBY));
+                e -> this.setVisible(e.getNewTypedValue() == AppStateModel.State.IN_LOBBY));
         saveInfoButton.addActionListener(e -> {
             final LobbyInfo newInfo = new LobbyInfo(model.getLobbyName(), model.getLobbyPassword());
             this.saveLobbyInfoCommand.execute(l -> l.accept(newInfo));

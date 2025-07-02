@@ -8,6 +8,7 @@ import java.util.concurrent.Semaphore;
 import javax.swing.JFrame;
 
 import org.abianchi.dubito.app.gameSession.views.GameBoardView;
+import org.albard.dubito.app.models.AppStateModel;
 import org.albard.dubito.network.PeerEndPoint;
 import org.albard.dubito.network.PeerId;
 
@@ -30,7 +31,7 @@ public final class Program {
         Runtime.getRuntime().addShutdownHook(new Thread(shutdownLock::release));
         // aspetto qui che il programma venga chiuso (quando chiudo il programma, eseguo
         // il thread passato di chiusura di rete)
-        //app.run(Program::showBoardInWindow, shutdownLock);
+        app.run(Program::showBoardInWindow, shutdownLock, new AppStateModel());
     }
 
     // Searches for an argument in the form of "--name" or "--name=<true/false>"
