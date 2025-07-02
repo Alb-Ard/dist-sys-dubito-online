@@ -64,7 +64,7 @@ public abstract class GameApp {
             final GameBoardView[] view = new GameBoardView[1];
             final GameSessionController<OnlinePlayer> controller = new GameOnlineSessionController<>(players, network,
                     0, () -> view[0].refreshBoard());
-            view[0] = new GameBoardView(controller, stateModel);
+            view[0] = new GameBoardView(controller);
 
             // Here we wait for all players to setup their controller/view
             Thread.sleep(1000);

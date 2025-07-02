@@ -2,8 +2,8 @@ package org.abianchi.dubito.app.gameSession.views;
 
 import org.abianchi.dubito.app.gameSession.controllers.GameSessionController;
 import org.abianchi.dubito.app.gameSession.models.Card;
+import org.abianchi.dubito.app.gameSession.models.GameState;
 import org.abianchi.dubito.app.gameSession.models.Player;
-import org.albard.dubito.app.models.AppStateModel;
 import org.albard.utils.Debouncer;
 
 import java.awt.BorderLayout;
@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Function;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -32,25 +33,22 @@ public class GameBoardView extends JPanel {
     private final Debouncer refreshBouncer = new Debouncer(Duration.ofMillis(150));
 
     private final List<GameBoardPlayerPanel> playerPanels = new ArrayList<>();
-
     private final JPanel centerPanel;
     private final JLabel roundStateLabel;
     private final JLabel cardsPlayedLabel;
 
-    public GameBoardView(final GameSessionController<?> controller, final AppStateModel appStateModel) {
+    public GameBoardView(final GameSessionController<?> controller) {
         this.controller = controller;
         final int nPlayers = this.controller.getSessionPlayers().size();
 
         final BorderLayout borderLayout = new BorderLayout();
         this.setLayout(borderLayout);
-        this.setPreferredSize(new Dimension(1200, 800));
 
         /** center */
         this.roundStateLabel = new JLabel(this.getCurrentRoundStateText());
-        this.cardsPlayedLabel = new JLabel("Player " + (controller.getPreviousPlayer().isPresent() ?
-                appStateModel.getUserClient().get() : "No One")+ " played "
-                + this.controller.getCurrentGameState().getPreviousPlayerPlayedCards().size() + " cards");
-        roundStateLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        this.roundStateLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        this.cardsPlayedLabel = new JLabel(this.getLastPlayedCardsText());
+        this.cardsPlayedLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         this.centerPanel = new JPanel();
         this.centerPanel.setSize(new Dimension(900, 900));
         this.centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
@@ -59,8 +57,8 @@ public class GameBoardView extends JPanel {
         this.centerPanel.add(roundStateLabel);
         this.centerPanel.add(cardsPlayedLabel);
         this.centerPanel.add(Box.createVerticalGlue());
-        /* player cards */
-        /* panels created based on number of players */
+
+        /* player panels */
         for (int i = 0; i < nPlayers; i++) {
             final Player player = this.controller.getSessionPlayers().get(i);
             final GameBoardPlayerPanel playerPanel = new GameBoardPlayerPanel(player, PLAYER_ROTATIONS.get(i),
@@ -72,17 +70,11 @@ public class GameBoardView extends JPanel {
         this.add(this.centerPanel, BorderLayout.CENTER);
     }
 
-    private String getCurrentRoundStateText() {
-        return this.controller.getCurrentGameState().getWinnerPlayerIndex()
-                .map(winnerIndex -> "The winner is: Player " + this.controller.getSessionPlayers().get(winnerIndex)
-                        .getName().orElse(Integer.toString(winnerIndex)))
-                .orElse("Round Card is: " + this.controller.getCurrentGameState().getRoundCardValue()
-                        .map(x -> x.toString()).orElse("UNKNOWN"));
-    }
-
     /**
-     * This method refreshes all the player hands after someone has pressed either
-     * throw cards or the call liar button
+     * Refreshes the whole board.
+     * 
+     * @implNote Internally, this will throttle the refreshes and will make sure
+     *           that any concurrent executions are executed sequentially
      */
     public void refreshBoard() {
         // Refresh players (let the panels synchronize updates)
@@ -106,6 +98,7 @@ public class GameBoardView extends JPanel {
                     System.out.println(
                             this.controller.getCurrentGameState() + " - " + this.controller.getSessionPlayers());
                     this.roundStateLabel.setText(this.getCurrentRoundStateText());
+                    this.cardsPlayedLabel.setText(this.getLastPlayedCardsText());
                 } finally {
                     this.refreshLock.unlock();
                 }
@@ -113,18 +106,40 @@ public class GameBoardView extends JPanel {
         });
     }
 
-    /** Helper method to refresh a specific player's panel */
+    private String getLastPlayedCardsText() {
+        return this.controller.getPreviousPlayer().map(previousPlayer -> {
+            final String previousPlayerName = this.getPlayerName(previousPlayer, x -> x.getPreviousPlayerIndex());
+            return new StringBuilder(previousPlayerName).append(" played ")
+                    .append(this.controller.getCurrentGameState().getPreviousPlayerPlayedCards().size())
+                    .append(" cards").toString();
+        }).orElse("");
+    }
+
+    private String getCurrentRoundStateText() {
+        return this.controller.getWinnerPlayer().map(
+                winnerPlayer -> "The winner is: " + this.getPlayerName(winnerPlayer, x -> x.getWinnerPlayerIndex()))
+                .orElse("Round Card is: " + this.controller.getCurrentGameState().getRoundCardValue()
+                        .map(x -> x.toString()).orElse("UNKNOWN"));
+    }
+
+    private String getPlayerName(final Player player,
+            final Function<GameState, Optional<Integer>> fallbackIndexProvider) {
+        return player.getName()
+                .orElseGet(() -> "Player " + fallbackIndexProvider.apply(this.controller.getCurrentGameState())
+                        .map(x -> Integer.toString(x.intValue() + 1)).orElse("UNKNOWN"));
+    }
+
     private void refreshPlayerPanel(final int playerIndex, final boolean forceInactive) {
         this.playerPanels.get(playerIndex).refresh(() -> this.controller.getSessionPlayers().get(playerIndex),
                 () -> !forceInactive && this.controller.isActivePlayer(playerIndex));
     }
 
-    /** method for the end of the game */
     private void endGame() {
         for (int i = 0; i < this.playerPanels.size(); i++) {
             this.refreshPlayerPanel(i, true);
         }
         this.roundStateLabel.setText(this.getCurrentRoundStateText());
+        this.cardsPlayedLabel.setText("");
     }
 
     private void callLiar() {
