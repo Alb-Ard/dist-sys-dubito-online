@@ -10,6 +10,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.function.Function;
 
+import org.abianchi.dubito.messages.CardsThrownMessage;
 import org.albard.dubito.messaging.handlers.MessageHandler;
 import org.albard.dubito.messaging.messages.GameMessage;
 import org.albard.utils.Locked;
@@ -37,6 +38,12 @@ public final class BufferedMessageReceiver implements MessageReceiver, Observabl
                     final byte[] messageBuffer = new byte[readByteCount];
                     System.arraycopy(buffer, 0, messageBuffer, 0, readByteCount);
                     deserializer.apply(messageBuffer).forEach(message -> {
+                        System.out.println("BufferedMessageReceiver has got message: " + message);
+                        System.out.println("message sender is:" + message.getSender());
+                        System.out.println("message recepients are: " + message.getReceipients());
+                        if(message instanceof CardsThrownMessage) {
+                            System.out.println("Cards thrown are: " + ((CardsThrownMessage) message).getThrownCards());
+                        }
                         this.messageListenersState.exchange(s -> {
                             if (s.listeners.isEmpty()) {
                                 s.bufferedMessages.add(message);
