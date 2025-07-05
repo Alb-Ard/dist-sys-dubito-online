@@ -150,6 +150,7 @@ public class GameBoardView extends JPanel {
     }
 
     private void callLiar() {
+        System.out.println("Calling Liar");
         this.controller.callLiar();
         if (this.controller.findWinner().isPresent()) {
             this.endGame();
@@ -160,6 +161,7 @@ public class GameBoardView extends JPanel {
 
     private void playCards(final List<Card> cards) {
         if (!cards.isEmpty() && cards.size() <= 3) {
+            System.out.println("Throwing Cards");
             this.controller.playCards(cards);
             this.refreshBoard();
         }

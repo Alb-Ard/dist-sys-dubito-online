@@ -145,8 +145,10 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
         System.out.println("Playing cards " + cards);
         if (this.isCurrentPlayerLocal()) {
             System.out.println("Sending thrown cards...");
-            sessionNetwork.sendMessage(new CardsThrownMessage(sessionNetwork.getLocalPeerId(), null,
-                    cards.stream().map(e -> e.getCardType()).toList()));
+            CardsThrownMessage message = new CardsThrownMessage(sessionNetwork.getLocalPeerId(), null,
+                    cards.stream().map(Card::getCardType).toList());
+            System.out.println("The message is " + message);
+            sessionNetwork.sendMessage(message);
         }
         super.playCards(cards);
         this.onChanged.run();
@@ -156,7 +158,9 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
     public void callLiar() {
         // gestione messaggio callLiar come con playCard
         if (this.isCurrentPlayerLocal()) {
-            sessionNetwork.sendMessage(new CallLiarMessage(sessionNetwork.getLocalPeerId(), null));
+            CallLiarMessage message = new CallLiarMessage(sessionNetwork.getLocalPeerId(), null);
+            System.out.println("The message is " + message);
+            sessionNetwork.sendMessage(message);
         }
         super.callLiar();
         this.onChanged.run();

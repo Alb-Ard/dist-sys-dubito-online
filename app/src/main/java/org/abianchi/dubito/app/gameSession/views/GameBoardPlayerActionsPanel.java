@@ -27,7 +27,7 @@ final class GameBoardPlayerActionsPanel extends JPanel {
             this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         }
         this.livesLabel = new JLabel(getLivesText(initialLivesCount));
-        this.playerNameLabel = new JLabel(playerName);
+        this.playerNameLabel = new JLabel(playerName.length() > 15 ? playerName.substring(0, 16) + "..." : playerName);
         JButton throwCardsButton = new JButton("Throw Cards (T)");
         JButton callLiarButton = new JButton("Call Liar (F)");
         this.add(livesLabel);
