@@ -98,7 +98,7 @@ public final class LobbyManagementController {
                             return Optional.of(new OwnerGameApp(localPeerId, PeerEndPoint.ofValues("0.0.0.0", 9100),
                                     participantPeerIds.size(), stateModel));
                         } else {
-                            final int bindPort = isLocalAddress(ownerEndPoint) ? 9200 : 9100;
+                            final int bindPort = isLocalAddress(ownerEndPoint) ? 0 : 9100;
                             return Optional
                                     .of(new ClientGameApp(localPeerId, PeerEndPoint.ofValues("0.0.0.0", bindPort),
                                             PeerEndPoint.ofValues(ownerEndPoint.getHost(), 9100),
