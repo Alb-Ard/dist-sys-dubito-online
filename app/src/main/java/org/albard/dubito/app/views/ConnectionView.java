@@ -8,6 +8,7 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.JLabel;
 
 import org.abianchi.dubito.app.gameSession.views.GameButton;
 import org.albard.dubito.app.models.AppStateModel;
@@ -23,12 +24,16 @@ public final class ConnectionView extends JPanel {
 
     public ConnectionView(final AppStateModel stateModel, final ConnectionRequestModel connectionModel) {
         this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        final JLabel addressLabel = new JLabel("Put server address here");
+        final JLabel portLabel = new JLabel("Put server port here");
         final JTextField addressField = BoundComponentFactory.createStringTextField(connectionModel,
                 ConnectionRequestModel.ADDRESS_PROPERTY);
         final JTextField portField = BoundComponentFactory.createStringTextField(connectionModel,
                 ConnectionRequestModel.PORT_PROPERTY);
         final JButton connectButton = new GameButton("Connect");
         this.add(Box.createVerticalGlue());
+        this.add(SimpleComponentFactory.createHorizontalPanel(Box.createHorizontalGlue(), addressLabel, portLabel,
+                Box.createHorizontalGlue()));
         this.add(SimpleComponentFactory.createHorizontalPanel(Box.createHorizontalGlue(), addressField, portField,
                 Box.createHorizontalGlue()));
         this.add(Box.createVerticalStrut(8));
