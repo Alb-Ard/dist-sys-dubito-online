@@ -1,22 +1,25 @@
 package org.albard.dubito;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import org.albard.dubito.messaging.MessageReceiver;
-import org.albard.dubito.messaging.MessageSerializer;
 import org.albard.dubito.messaging.MessengerFactory;
 import org.albard.dubito.messaging.messages.GameMessage;
 import org.albard.dubito.messaging.messages.PingMessage;
+import org.albard.dubito.messaging.serialization.MessageSerializer;
 import org.albard.dubito.network.PeerEndPoint;
 import org.albard.dubito.network.PeerEndPointPair;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
+import org.albard.dubito.serialization.ObjectSerializer;
 
 public final class TestUtilities {
     private TestUtilities() {
@@ -57,16 +60,17 @@ public final class TestUtilities {
         return new MessengerFactory(MessageSerializer.createJson());
     }
 
-    public static MessageSerializer createMessageSerializer(final GameMessage deserializedMessage,
+    public static ObjectSerializer<GameMessage> createMessageSerializer(final GameMessage deserializedMessage,
             final byte[] serializedData) {
-        return new MessageSerializer() {
+        return new ObjectSerializer<GameMessage>() {
             @Override
-            public List<GameMessage> deserialize(final byte[] message) {
-                return List.of(deserializedMessage);
+            public <Y extends GameMessage> Optional<Y> deserialize(final InputStream data, final Class<Y> dataClass) {
+                return dataClass.isAssignableFrom(deserializedMessage.getClass()) ? Optional.of((Y) deserializedMessage)
+                        : Optional.empty();
             }
 
             @Override
-            public byte[] serialize(GameMessage message) {
+            public byte[] serialize(final GameMessage data) {
                 return serializedData;
             }
         };

@@ -3,8 +3,8 @@ package org.albard.dubito.lobby.app.server;
 import java.util.concurrent.Semaphore;
 
 import org.albard.dubito.lobby.server.LobbyServer;
-import org.albard.dubito.messaging.MessageSerializer;
 import org.albard.dubito.messaging.MessengerFactory;
+import org.albard.dubito.messaging.serialization.MessageSerializer;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
 import org.albard.dubito.userManagement.server.UserServer;

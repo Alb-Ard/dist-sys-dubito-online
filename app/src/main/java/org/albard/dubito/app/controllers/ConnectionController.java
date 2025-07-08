@@ -2,8 +2,8 @@ package org.albard.dubito.app.controllers;
 
 import org.albard.dubito.app.models.AppStateModel;
 import org.albard.dubito.app.models.AppStateModel.State;
-import org.albard.dubito.messaging.MessageSerializer;
 import org.albard.dubito.messaging.MessengerFactory;
+import org.albard.dubito.messaging.serialization.MessageSerializer;
 import org.albard.dubito.network.PeerEndPoint;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;

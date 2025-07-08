@@ -9,7 +9,7 @@ import org.albard.dubito.messaging.messages.GameMessage;
 
 public interface MessageReceiver {
     static MessageReceiver createFromStream(final InputStream stream,
-            final Function<byte[], List<GameMessage>> deserializer) {
+            final Function<InputStream, List<GameMessage>> deserializer) {
         return BufferedMessageReceiver.createFromStream(stream, deserializer);
     }
 

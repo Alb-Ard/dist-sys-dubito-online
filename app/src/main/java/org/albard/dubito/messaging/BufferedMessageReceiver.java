@@ -1,5 +1,6 @@
 package org.albard.dubito.messaging;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.SocketException;
 import java.util.Collections;
@@ -10,7 +11,6 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.function.Function;
 
-import org.abianchi.dubito.messages.CardsThrownMessage;
 import org.albard.dubito.messaging.handlers.MessageHandler;
 import org.albard.dubito.messaging.messages.GameMessage;
 import org.albard.utils.Locked;
@@ -25,7 +25,8 @@ public final class BufferedMessageReceiver implements MessageReceiver, Observabl
             .of(new MessageListenersState(new HashSet<>(), new LinkedList<>()));
     private final Set<ClosedListener> closedListeners = Collections.synchronizedSet(new HashSet<>());
 
-    public BufferedMessageReceiver(final InputStream stream, final Function<byte[], List<GameMessage>> deserializer) {
+    public BufferedMessageReceiver(final InputStream stream,
+            final Function<InputStream, List<GameMessage>> deserializer) {
         this.receiveThread = Thread.ofVirtual().unstarted(() -> {
             final byte[] buffer = new byte[1024];
             while (true) {
@@ -37,13 +38,7 @@ public final class BufferedMessageReceiver implements MessageReceiver, Observabl
                     System.out.println("Received  " + readByteCount + "b");
                     final byte[] messageBuffer = new byte[readByteCount];
                     System.arraycopy(buffer, 0, messageBuffer, 0, readByteCount);
-                    deserializer.apply(messageBuffer).forEach(message -> {
-                        System.out.println("BufferedMessageReceiver has got message: " + message);
-                        System.out.println("message sender is:" + message.getSender());
-                        System.out.println("message recepients are: " + message.getReceipients());
-                        if(message instanceof CardsThrownMessage) {
-                            System.out.println("Cards thrown are: " + ((CardsThrownMessage) message).getThrownCards());
-                        }
+                    deserializer.apply(new ByteArrayInputStream(messageBuffer)).forEach(message -> {
                         this.messageListenersState.exchange(s -> {
                             if (s.listeners.isEmpty()) {
                                 s.bufferedMessages.add(message);
@@ -65,7 +60,7 @@ public final class BufferedMessageReceiver implements MessageReceiver, Observabl
     }
 
     static MessageReceiver createFromStream(final InputStream stream,
-            final Function<byte[], List<GameMessage>> deserializer) {
+            final Function<InputStream, List<GameMessage>> deserializer) {
         final BufferedMessageReceiver receiver = new BufferedMessageReceiver(stream, deserializer);
         receiver.start();
         return receiver;
