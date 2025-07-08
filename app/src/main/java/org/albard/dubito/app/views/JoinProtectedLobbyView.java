@@ -7,6 +7,7 @@ import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.SwingUtilities;
+import javax.swing.JLabel;
 
 import org.albard.dubito.app.models.JoinProtectedLobbyModel;
 import org.albard.dubito.app.models.AppStateModel;
@@ -23,10 +24,12 @@ public final class JoinProtectedLobbyView extends JPanel {
     public JoinProtectedLobbyView(final JoinProtectedLobbyModel model, final AppStateModel stateModel) {
         this.setSize(300, 200);
         this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        final JLabel passwordLabel = new JLabel("Put lobby password here!");
         final JPasswordField passwordFiled = BoundComponentFactory.createPasswordField(model,
                 JoinProtectedLobbyModel.PASSWORD_PROPERTY);
         final JButton joinButton = new JButton("Join >");
         final JButton cancelButton = new JButton("< Cancel");
+        this.add(passwordLabel);
         this.add(passwordFiled);
         this.add(SimpleComponentFactory.createHorizontalPanel(cancelButton, joinButton));
         stateModel.addModelPropertyChangeListener(AppStateModel.STATE_PROPERTY,
