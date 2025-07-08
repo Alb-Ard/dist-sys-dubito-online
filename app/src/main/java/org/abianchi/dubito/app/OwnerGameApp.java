@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.Optional;
 
 import org.abianchi.dubito.messages.PlayerOrderMessage;
+import org.abianchi.dubito.messages.PlayerReadyMessage;
 import org.albard.dubito.app.models.AppStateModel;
+import org.albard.dubito.messaging.handlers.MessageHandler;
 import org.albard.dubito.network.PeerEndPoint;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
@@ -38,5 +40,26 @@ public final class OwnerGameApp extends GameApp {
             e.printStackTrace();
             return Optional.empty();
         }
+    }
+
+    @Override
+    protected void waitForPlayers(PeerNetwork network) throws InterruptedException {
+        // Wait for all OTHER peers to connect and send the PlayerReadyMessage (the
+        // local peer is not in this list)
+        int[] readyPlayerCount = new int[] { 0 };
+        final MessageHandler playerReadyHandler = message -> {
+            if (message instanceof PlayerReadyMessage) {
+                readyPlayerCount[0]++;
+                return true;
+            }
+            return false;
+        };
+        network.addMessageListener(playerReadyHandler);
+        while (readyPlayerCount[0] < this.getPlayerCount() - 1) {
+            System.out.println(this.getLocalId() + ": Waiting for READY players: " + readyPlayerCount[0] + "/"
+                    + (this.getPlayerCount() - 1));
+            Thread.sleep(1000);
+        }
+        network.removeMessageListener(playerReadyHandler);
     }
 }

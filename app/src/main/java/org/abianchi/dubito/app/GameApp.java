@@ -4,7 +4,7 @@ import org.abianchi.dubito.app.gameSession.controllers.GameOnlineSessionControll
 import org.abianchi.dubito.app.gameSession.controllers.GameSessionController;
 import org.abianchi.dubito.app.gameSession.models.OnlinePlayer;
 import org.abianchi.dubito.app.gameSession.models.OnlinePlayerImpl;
-import org.abianchi.dubito.app.gameSession.views.*;
+import org.abianchi.dubito.app.gameSession.views.GameBoardView;
 import org.albard.dubito.app.models.AppStateModel;
 import org.albard.dubito.messaging.MessengerFactory;
 import org.albard.dubito.messaging.serialization.MessageSerializer;
@@ -24,6 +24,8 @@ import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import javax.swing.SwingUtilities;
 
 public abstract class GameApp {
     private final int playerCount;
@@ -45,12 +47,16 @@ public abstract class GameApp {
             // creiamo la rete, dove poi gli passeremo l'indirizzo di uno dei giocatori
             // della lobby (la rete in automatico si
             // collegherà a tutti gli altri rimasti
+            System.out.println(localId + ": Binding to " + bindEndPoint);
             final PeerNetwork network = PeerStarNetwork.createBound(localId, bindEndPoint.getHost(),
                     bindEndPoint.getPort(), new MessengerFactory(MessageSerializer.createJson()));
+            System.out.println(localId + ": Initializing network");
             if (!this.initializeNetwork(network)) {
                 return;
             }
+            System.out.println(localId + ": Waiting for players");
             this.waitForPlayers(network);
+            System.out.println(localId + ": All players connected");
 
             // se sono l'owner, creo la lista dei peers ottenuti per assegnare un ordine ai
             // vari giocatori
@@ -66,7 +72,7 @@ public abstract class GameApp {
             // modo corretto
             final GameBoardView[] view = new GameBoardView[1];
             final GameSessionController<OnlinePlayer> controller = new GameOnlineSessionController<>(players, network,
-                    0, () -> view[0].refreshBoard());
+                    0, () -> SwingUtilities.invokeLater(view[0]::refreshBoard));
             view[0] = new GameBoardView(controller);
 
             // Here we wait for all players to setup their controller/view
@@ -77,10 +83,10 @@ public abstract class GameApp {
             controller.newRound();
             EventQueue.invokeLater(() -> showBoardConsumer.accept(view[0]));
             stopLock.acquire();
-            System.out.println("Closing...");
+            System.out.println(localId + ": Closing...");
             network.close();
-        } catch (final Exception e) {
-            e.printStackTrace();
+        } catch (final Exception ex) {
+            System.err.println(localId + ": Could not run app: " + ex.getMessage());
         }
     }
 
@@ -96,17 +102,15 @@ public abstract class GameApp {
         return this.playerCount;
     }
 
+    protected PeerId getLocalId() {
+        return this.localId;
+    }
+
     protected abstract boolean initializeNetwork(final PeerNetwork network);
 
     protected abstract Optional<List<PeerId>> initializePeers(final PeerNetwork network);
 
-    private void waitForPlayers(final PeerNetwork network) throws InterruptedException {
-        // Wait for all OTHER peers to connect (the local peer is not in this list)
-        while (network.getPeerCount() < this.playerCount - 1) {
-            System.out.println("Waiting for players: " + (network.getPeerCount() + 1) + "/" + this.playerCount);
-            Thread.sleep(1000);
-        }
-    }
+    protected abstract void waitForPlayers(final PeerNetwork network) throws InterruptedException;
 
     private String getPlayerUsername(final PeerId peerId, final int playerIndex) {
         return this.appStateModel.getUserClient().flatMap(x -> x.getUser(peerId)).map(x -> x.name())

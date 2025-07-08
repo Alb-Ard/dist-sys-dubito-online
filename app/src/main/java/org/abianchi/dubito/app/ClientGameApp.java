@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.abianchi.dubito.messages.PlayerOrderMessage;
+import org.abianchi.dubito.messages.PlayerReadyMessage;
 import org.albard.dubito.app.models.AppStateModel;
 import org.albard.dubito.network.PeerEndPoint;
 import org.albard.dubito.network.PeerId;
@@ -46,18 +47,30 @@ public final class ClientGameApp extends GameApp {
         }
     }
 
+    @Override
+    protected void waitForPlayers(final PeerNetwork network) throws InterruptedException {
+        // Wait for all OTHER peers to connect (the local peer is not in this list)
+        while (network.getPeerCount() < this.getPlayerCount() - 1) {
+            System.out.println(this.getLocalId() + ": Waiting for players: " + network.getPeerCount() + "/"
+                    + (this.getPlayerCount() - 1));
+            Thread.sleep(1000);
+        }
+        network.sendMessage(new PlayerReadyMessage(this.getLocalId(), null));
+    }
+
     private List<PeerId> waitForPlayerOrder(final PeerNetwork network) throws InterruptedException {
         final PlayerOrderMessage[] orderMessages = new PlayerOrderMessage[1];
         network.addOnceMessageListener(message -> {
             if (message instanceof PlayerOrderMessage orderMessage) {
-                System.out.println("player order has been received: " + orderMessage.getPlayers());
+                System.out
+                        .println(this.getLocalId() + ": Player order has been received: " + orderMessage.getPlayers());
                 orderMessages[0] = orderMessage;
                 return true;
             }
             return false;
         });
         while (orderMessages[0] == null) {
-            System.out.println("Waiting for player order");
+            System.out.println(this.getLocalId() + ": Waiting for player order");
             Thread.sleep(1000);
         }
         return orderMessages[0].getPlayers();
