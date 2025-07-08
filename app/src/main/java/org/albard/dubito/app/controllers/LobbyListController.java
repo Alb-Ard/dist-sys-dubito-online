@@ -23,7 +23,8 @@ public final class LobbyListController {
         this.stateModel = stateModel;
         this.joinLobbyModel = joinLobbyModel;
         this.lobbyListModel = lobbyListModel;
-        this.stateModel.addModelPropertyChangeListener(AppStateModel.LOBBY_CLIENT_PROPERTY, this::onLobbyClientChanged);
+        this.stateModel.addModelPropertyChangeListener(AppStateModel.LOBBY_CLIENT_PROPERTY, this::onLobbyClientChanged,
+                null);
     }
 
     public void joinLobby(final LobbyDisplay lobby) {

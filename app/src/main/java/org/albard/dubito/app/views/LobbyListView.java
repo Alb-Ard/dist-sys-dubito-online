@@ -48,7 +48,8 @@ public final class LobbyListView extends JPanel {
         listModel.addListDataListener(createLobbyListDataListener(noLobbiesLabel, listModel, lobbyList,
                 x -> this.lobbySelectedCommand.execute(l -> l.accept(x))));
         stateModel.addModelPropertyChangeListener(AppStateModel.STATE_PROPERTY,
-                e -> this.setVisible(e.getNewTypedValue() == AppStateModel.State.IN_LOBBY_LIST));
+                e -> this.setVisible(e.getNewTypedValue() == AppStateModel.State.IN_LOBBY_LIST),
+                SwingUtilities::invokeLater);
         createLobbyButton.addActionListener(e -> this.createLobbyCommand.execute(l -> l.run()));
         saveUserButton.addActionListener(e -> this.saveUserNameCommand.execute(l -> l.accept(userModel.getName())));
     }

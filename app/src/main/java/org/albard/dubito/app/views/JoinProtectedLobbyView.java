@@ -6,6 +6,7 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
+import javax.swing.SwingUtilities;
 
 import org.albard.dubito.app.models.JoinProtectedLobbyModel;
 import org.albard.dubito.app.models.AppStateModel;
@@ -29,7 +30,8 @@ public final class JoinProtectedLobbyView extends JPanel {
         this.add(passwordFiled);
         this.add(SimpleComponentFactory.createHorizontalPanel(cancelButton, joinButton));
         stateModel.addModelPropertyChangeListener(AppStateModel.STATE_PROPERTY,
-                e -> this.setVisible(e.getNewTypedValue() == AppStateModel.State.REQUESTING_LOBBY_PASSWORD));
+                e -> this.setVisible(e.getNewTypedValue() == AppStateModel.State.REQUESTING_LOBBY_PASSWORD),
+                SwingUtilities::invokeLater);
         joinButton.addActionListener(
                 e -> this.joinCommand.execute(l -> l.accept(model.getLobbyId(), model.getPassword())));
         cancelButton.addActionListener(e -> this.cancelCommand.execute(l -> l.run()));

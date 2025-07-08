@@ -1,5 +1,6 @@
 package org.albard.mvc;
 
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -16,20 +17,49 @@ public abstract class AbstractModel<X extends AbstractModel<X>> extends Model {
         return this.selfAdapter;
     }
 
+    /**
+     * Adds a listener that will be invoked when the given property changes on this
+     * model. The listener is also invoked when this method is called.
+     * 
+     * @param <Y>      The property type
+     * @param property The property definition
+     * @param listener The listener to invoke
+     * @param wrapper  A wrapper that will be used around the listener when invoked.
+     *                 May be null. Can be used to force invocation on a separate
+     *                 thread (Ex. by passing SwingUtilities::invokeLater)
+     * @return This model
+     */
     public <Y> AbstractModel<X> addModelPropertyChangeListener(final ModelProperty<Y> property,
-            final ModelPropertyChangeListener<Y> listener) {
+            final ModelPropertyChangeListener<Y> listener, final Consumer<Runnable> wrapper) {
+        // If requested, wrap the listener
+        final ModelPropertyChangeListener<Y> wrappedListener = wrapper != null
+                ? (ev) -> wrapper.accept(() -> listener.propertyChange(ev))
+                : listener;
         this.selfAdapter.addBeanPropertyChangeListener(property.getName(),
-                ev -> listener.propertyChange(new ModelPropertyChangeEvent<Y>(ev)));
+                ev -> wrappedListener.propertyChange(new ModelPropertyChangeEvent<>(ev)));
         @SuppressWarnings("unchecked")
         final Y currentValue = (Y) this.selfAdapter.getValue(property.getName());
-        listener.propertyChange(new ModelPropertyChangeEvent<>(this, property, currentValue, currentValue));
+        wrappedListener.propertyChange(new ModelPropertyChangeEvent<>(this, property, currentValue, currentValue));
         return this;
     }
 
+    /**
+     * Adds a listener that will be invoked when the given property changes on this
+     * model. The listener is also invoked when this method is called.
+     * 
+     * @param <Y>              The property type
+     * @param propertyProvider A provider that will return the property definition
+     * @param listener         The listener to invoke
+     * @param wrapper          A wrapper that will be used around the listener when
+     *                         invoked. May be null. Can be used to force invocation
+     *                         on a separate thread (Ex. by passing
+     *                         SwingUtilities::invokeLater)
+     * @return This model
+     */
     @SuppressWarnings("unchecked")
     public <Y> AbstractModel<X> addModelPropertyChangeListener(final Function<X, ModelProperty<Y>> propertyProvider,
-            final ModelPropertyChangeListener<Y> listener) {
-        return this.addModelPropertyChangeListener(propertyProvider.apply((X) this), listener);
+            final ModelPropertyChangeListener<Y> listener, final Consumer<Runnable> wrapper) {
+        return this.addModelPropertyChangeListener(propertyProvider.apply((X) this), listener, wrapper);
     }
 
     protected <Y> void firePropertyChange(final ModelProperty<Y> property, final Y oldValue,

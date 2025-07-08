@@ -11,6 +11,7 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
 
 import org.albard.dubito.app.models.CurrentLobbyModel;
 import org.abianchi.dubito.app.gameSession.views.GameButton;
@@ -51,9 +52,10 @@ public final class CurrentLobbyView extends JPanel {
         model.addModelPropertyChangeListener(CurrentLobbyModel.LOBBY_OWNER_PROPERTY, e -> {
             adminPanel.setVisible(model.isLocalPeerOwner());
             readOnlyLobbyNameLabel.setVisible(!model.isLocalPeerOwner());
-        });
+        }, SwingUtilities::invokeLater);
         stateModel.addModelPropertyChangeListener(AppStateModel.STATE_PROPERTY,
-                e -> this.setVisible(e.getNewTypedValue() == AppStateModel.State.IN_LOBBY));
+                e -> this.setVisible(e.getNewTypedValue() == AppStateModel.State.IN_LOBBY),
+                SwingUtilities::invokeLater);
         saveInfoButton.addActionListener(e -> {
             final LobbyInfo newInfo = new LobbyInfo(model.getLobbyName(), model.getLobbyPassword());
             this.saveLobbyInfoCommand.execute(l -> l.accept(newInfo));

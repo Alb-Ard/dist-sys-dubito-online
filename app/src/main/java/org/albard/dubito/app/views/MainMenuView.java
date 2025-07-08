@@ -31,10 +31,10 @@ public final class MainMenuView extends JPanel {
         this.add(buttonPanel, BorderLayout.CENTER);
         this.add(titlePanel, BorderLayout.NORTH);
 
-
         exit.addActionListener(e -> System.exit(0));
         start.addActionListener(e -> stateModel.setState(State.IN_LOBBY_SERVER_CONNECTION));
         stateModel.addModelPropertyChangeListener(AppStateModel.STATE_PROPERTY,
-                e -> this.setVisible(e.getNewTypedValue() == AppStateModel.State.IN_MAIN_MENU));
+                e -> this.setVisible(e.getNewTypedValue() == AppStateModel.State.IN_MAIN_MENU),
+                SwingUtilities::invokeLater);
     }
 }

@@ -8,6 +8,7 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 
 import org.abianchi.dubito.app.gameSession.views.GameButton;
 import org.albard.dubito.app.models.AppStateModel;
@@ -38,7 +39,8 @@ public final class ConnectionView extends JPanel {
         connectButton.addActionListener(e -> tryParseInt(connectionModel.getPort()).ifPresent(port -> connectCommand
                 .execute(l -> l.accept(PeerEndPoint.ofValues(connectionModel.getAddress(), port)))));
         stateModel.addModelPropertyChangeListener(AppStateModel.STATE_PROPERTY,
-                e -> this.setVisible(e.getNewTypedValue() == AppStateModel.State.IN_LOBBY_SERVER_CONNECTION));
+                e -> this.setVisible(e.getNewTypedValue() == AppStateModel.State.IN_LOBBY_SERVER_CONNECTION),
+                SwingUtilities::invokeLater);
     }
 
     public ViewCommand<Consumer<PeerEndPoint>> getConnectCommand() {

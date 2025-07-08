@@ -1,10 +1,5 @@
 package org.albard.dubito.app.controllers;
 
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.net.UnknownHostException;
-import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -25,6 +20,8 @@ import org.albard.dubito.network.PeerId;
 import org.albard.mvc.ModelPropertyChangeEvent;
 
 public final class LobbyManagementController {
+    private static final int DEFAULT_OWNER_BIND_PORT = 10100;
+
     private final AppStateModel stateModel;
     private final CurrentLobbyModel currentLobbyModel;
     private final Consumer<GameApp> gameStartedListener;
@@ -34,7 +31,8 @@ public final class LobbyManagementController {
         this.stateModel = stateModel;
         this.currentLobbyModel = currentLobbyModel;
         this.gameStartedListener = gameStartedListener;
-        this.stateModel.addModelPropertyChangeListener(AppStateModel.LOBBY_CLIENT_PROPERTY, this::onLobbyClientChanged);
+        this.stateModel.addModelPropertyChangeListener(AppStateModel.LOBBY_CLIENT_PROPERTY, this::onLobbyClientChanged,
+                null);
     }
 
     public void saveLobbyInfo(final LobbyInfo newInfo) {
@@ -47,16 +45,6 @@ public final class LobbyManagementController {
 
     public void startGame() {
         this.stateModel.getLobbyClient().ifPresent(x -> x.requestStartCurrentLobbyGame());
-    }
-
-    private static boolean isLocalAddress(final PeerEndPoint ownerEndPoint) throws UnknownHostException {
-        return Arrays.stream(InetAddress.getAllByName(ownerEndPoint.getHost())).anyMatch(x -> {
-            try {
-                return x.isLoopbackAddress() || x.isAnyLocalAddress() || NetworkInterface.getByInetAddress(x) != null;
-            } catch (final SocketException e) {
-                return false;
-            }
-        });
     }
 
     private void onLobbyClientChanged(final ModelPropertyChangeEvent<Optional<LobbyClient>> e) {
@@ -95,14 +83,13 @@ public final class LobbyManagementController {
                     try {
                         final Set<PeerId> participantPeerIds = currentLobby.getParticipants();
                         if (this.currentLobbyModel.isLocalPeerOwner()) {
-                            return Optional.of(new OwnerGameApp(localPeerId, PeerEndPoint.ofValues("0.0.0.0", 9100),
+                            return Optional.of(new OwnerGameApp(localPeerId,
+                                    PeerEndPoint.ofValues("0.0.0.0", DEFAULT_OWNER_BIND_PORT),
                                     participantPeerIds.size(), stateModel));
                         } else {
-                            final int bindPort = isLocalAddress(ownerEndPoint) ? 0 : 9100;
-                            return Optional
-                                    .of(new ClientGameApp(localPeerId, PeerEndPoint.ofValues("0.0.0.0", bindPort),
-                                            PeerEndPoint.ofValues(ownerEndPoint.getHost(), 9100),
-                                            participantPeerIds.size(), stateModel));
+                            return Optional.of(new ClientGameApp(localPeerId, PeerEndPoint.ofValues("0.0.0.0", 0),
+                                    PeerEndPoint.ofValues(ownerEndPoint.getHost(), DEFAULT_OWNER_BIND_PORT),
+                                    participantPeerIds.size(), stateModel));
                         }
                     } catch (final Exception ex) {
                         System.err.println("Could not start game: " + ex.getMessage());
