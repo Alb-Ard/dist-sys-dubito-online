@@ -267,6 +267,14 @@ The domain entities are:
     * _what_ happens when a component fails? _why_? _how_?
 
 ### Availability
+In case of network partitioning, the system prioritizes consistency over availability. The main focus
+of the project is making sure that the right clients enter the respective game session and that each
+player receives the correct game state when it's their turn to play. In case a
+client goes offline while in a lobby, a message is sent to other lobby users to notify them of that disconnection,
+without any attempt performed to retry connecting to the lobby (the disconnected user must restart the application, connect to the
+server and find the lobby once again, if it hasn't started the game). If a player disconnects during play session, the system still does not
+try to reconnect said player, updating instead the other users' views by showing that the disconnected players has lost all its lives and is now considered
+a loser and continuing the turn order as normal. If only one user remains in game while every other player has disconnected, that player is declared as the winner of the game.
 
 - Is there any __caching__ mechanism?
     * _where_? _why_?
@@ -278,6 +286,13 @@ The domain entities are:
     * _why_? _how_?
 
 ### Security
+Authentication is an optional action performed only during lobby creation. Whenever a user sets a new lobby, it can decide
+to add an extra form of authentication by establishing a lobby password. Whenever another user tries to join a protected
+lobby, it is first sent to a new view where the system forces the user to input the correct password.
+User written password is given to the server, who retrieves the lobby's password to compare the two. If they are the same, server
+sends a JoinLobbyMessage to the owner and adds the new user to the lobby list (if it's not full). Otherwise, server sends to the new user
+a JoinLobbyFailedMessage, asking for the user to retry inputting the correct password.
+These passwords are not encrypted and are handled by server as simple strings.
 
 - Is there any form of __authentication__?
     * _where_? _why_?
@@ -350,11 +365,15 @@ Tests are mainly divided into these sections:
 > recall to test corner cases (crashes, errors, etc.)
 
 ### Acceptance test
+Manual testing was performed in order to:
+- Analyze triggering of event messages due to player actions: since tons of actions are related
+  to player interaction, it was deemed to be more intuitive to perform these tests manually;
+- Check proper integration of lobby and game application: while not impossible to be automatically tested, we
+  decided to perform manual testing for this section to see if the whole project would be able to properly create
+  peer networks and functioning game sessions in a reasonable amount of time.
 
-- did you perform any _manual_ testing?
-    * what did you test?
-    * why wasn't it automatic?
-
+These manual tests where perform both on single and multiple machines, using Windows 11. 
+The original game was also tested on Linux.
 
 ## Release
 
