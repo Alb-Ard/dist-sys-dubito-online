@@ -150,7 +150,9 @@ infrastructure and important aspects that will later be expanded in the implemen
 
 ### Architecture
 
-The project's architecture is divided into 2 main different parts, each focusing on one specific aspect of the previously established requirements:
+The project follows the MVC architecture to develop its main logic and program.
+
+Focusing on the distributed part, the project is divided into 2 main different parts, each focusing on one specific aspect of the previously established requirements:
 - The lobby system was developed following the **client-server architecture**, one of the most typical distributed application structure. This allowed us to partition tasks/workloads 
 between the providers of a resource or service (the server lobby) and the service requesters (the user clients). Clients and servers exchange messages in a request–response messaging pattern:
 each user may make one or multiple specific requests, after which servers provide the user clients with the necessary functions/services in order to satisfy the user's request. That includes: accessing any currently 
@@ -162,20 +164,29 @@ Each player can then send messages/resources based on their in-game actions (dis
 of a central coordination system when updating the game state after each actions.
 
 The project overall primarily follows the **Transmission Control Protocol (TCP)**, one of the main protocols of the Internet protocol suite. TCP provides reliable, ordered, 
-and error-checked delivery of a stream of data between applications running on hosts communicating via an IP network. It provides host-to-host connectivity at the transport layer of the Internet model. An application does not need to know the 
-particular mechanisms for sending data via a link to another host, such as the required IP fragmentation to accommodate the maximum transmission unit of the transmission medium. At the transport layer, TCP handles all handshaking and transmission 
-details and presents an abstraction of the network connection to the application typically through a network socket interface. At the lower levels of the protocol stack, due to network congestion, traffic load balancing, or unpredictable network behavior, 
-IP packets may be lost, duplicated, or delivered out of order. TCP detects these problems, requests re-transmission of lost data, rearranges out-of-order data and even helps minimize network congestion to reduce the occurrence of the other problems. 
-If the data still remains undelivered, the source is notified of this failure. Once the TCP receiver has reassembled the sequence of bytes originally transmitted, it passes them to the receiving application. Thus, TCP abstracts the application's communication 
-from the underlying networking details. We've chosen TCP protocol since the lobby system and game application 
-required more consistency and accuracy, focusing less on its availabilty.
+and error-checked delivery of a stream of data between applications running on hosts communicating via an IP network. This was chosen because users do not need to know the 
+particular mechanisms for sending data to other players (in other words, TCP offers a certain level of *transparency*). We've also chosen TCP protocol since the lobby system and game application 
+required more focus on *consistency*, making sure that each message sent by the system to its users would be correct, rather than focusing on its availabilty.
 
 
 ### Infrastructure
+The project's infrastructure was developed and composed as such:
 
-- are there _infrastructural components_ that need to be introduced? _how many_?
-    * e.g. _clients_, _servers_, _load balancers_, _caches_, _databases_, _message brokers_, _queues_, _workers_, _proxies_, _firewalls_, _CDNs_, _etc._
+- Each player is considered a client. N players can connect to a server with specific IP address and port;
+- Each player is capable of creating a lobby (either password-protected or not), containing up to a max of 4 players;
+- Theoretically, multiple servers can be located on the same machine;
+- At the practical and at testing level however, only one server was initialized on the machine. All clients were also run on the same machine for development and simplicity purposes.
+  It was also tested that it's possible for clients to be distributed across the world as long as the
+  leader’s firewall accepts connections from outside the network;
+- When starting the game, server connects each player in a lobby to each other;
+- During game sessions, players interact with each other, acting both as clients and servers;
+- Communication is performed via *custom messaging system*, where multiple types of messages where developed for each possible event that would normally occur in the application
+  (both for lobbies and in-game events);
 
+![Infrastructure](report_images/infrastructure.png "Infrastructure Diagram")
+
+- are there infrastructural components that need to be introduced? how many?
+    * e.g. clients, servers, load balancers, caches, databases, message brokers, queues, workers, proxies, firewalls, CDNs, etc.
 - how do components	_distribute_ over the network? _where_?
     * e.g. do servers / brokers / databases / etc. sit on the same machine? on the same network? on the same datacenter? on the same continent?
 
@@ -186,6 +197,14 @@ required more consistency and accuracy, focusing less on its availabilty.
 > Component diagrams are welcome here
 
 ### Modelling
+
+
+#### Entities
+The domain entities are:
+
+- Players;
+- Servers;
+- ...
 
 - which __domain entities__ are there?
     * e.g. _users_, _products_, _orders_, _etc._
@@ -206,7 +225,6 @@ required more consistency and accuracy, focusing less on its availabilty.
 > Class diagram are welcome here
 
 ### Interaction
-
 - how do components _communicate_? _when_? _what_? 
 - _which_ __interaction patterns__ do they enact?
 
@@ -295,6 +313,26 @@ required more consistency and accuracy, focusing less on its availabilty.
 ## Validation
 
 ### Automatic Testing
+Components and important aspects of the project were unit-tested by creating simplified environment versions.
+Tests are mainly divided into these sections:
+- **Game Tests**
+   * These were made to check the correct execution of the main game loop and interaction between game entities and "offline" players;
+- **Utilities Tests**
+   * Since many utilities where created for the project, a series of tests were made to check if they would correctly work in their required scenarios;
+- **Message Tests**
+   * Test environments were developed to analyze the many custom messages that were created for the project, their structure and how to potentially fix/enhance them;
+   * Additional tests were created to see behaviour after sending or receiving a certain lobby or game message;
+- **Lobby Tests**
+   * These tests were focused on lobby's behaviour;
+   * The purpose is testing the communication and interaction between clients and server while creating and updating lobbies;
+   * Lobby connections are tested by ensuring the server has the correct amount of active players in the same lobby;
+   * Lobby disconnection is tested by disconnecting one client and making sure the number of lobby players decreased;
+- **Peer Tests**
+   * These were developed to check user's behaviour during game sessions, where each player would turn into a peer 
+   capable of communicating with other in-game players;
+   * Focus points of these tests would be whether a peer would exchange messages, how the peer network would handle
+   each update and making sure that each peer in the network would be UP-TO-DATE during their turn.
+
 
 - how were individual components **_unit_-test**ed?
 - how was communication, interaction, and/or integration among components tested?
@@ -347,6 +385,9 @@ required more consistency and accuracy, focusing less on its availabilty.
 
 ## Self-evaluation
 
+### Andrea Bianchi
+
+### Alberto Arduini
 - An individual section is required for each member of the group
 - Each member must self-evaluate their work, listing the strengths and weaknesses of the product
 - Each member must describe their role within the group as objectively as possible. 
