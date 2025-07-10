@@ -4,10 +4,12 @@ import java.util.Set;
 
 import org.albard.dubito.connection.PeerConnection;
 import org.albard.dubito.messaging.messages.GameMessage;
+import org.albard.dubito.network.PeerEndPoint;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
 import org.albard.dubito.userManagement.User;
 import org.albard.dubito.userManagement.messages.UserListUpdatedMessage;
+import org.albard.utils.Logger;
 import org.albard.dubito.userManagement.messages.UpdateUserMessage;
 
 public final class UserServer {
@@ -18,8 +20,8 @@ public final class UserServer {
         this.network = network;
         this.userService = userService;
         this.network.addMessageListener(this::handleMessage);
-        this.network.setPeerConnectedListener(this::handlePeerConnected);
-        this.network.setPeerDisconnectedListener(this::handlePeerDisconnected);
+        this.network.addPeerConnectedListener(this::handlePeerConnected);
+        this.network.addPeerDisconnectedListener(this::handlePeerDisconnected);
         this.userService.addPeerAddedListener(u -> this.sendUserListTo(null));
         this.userService.addPeerUpdatedListener(u -> this.sendUserListTo(null));
         this.userService.addPeerRemovedListener(u -> this.sendUserListTo(null));
@@ -33,7 +35,8 @@ public final class UserServer {
         return Set.copyOf(this.userService.getUsers());
     }
 
-    private void handlePeerConnected(final PeerId id, final PeerConnection connection) {
+    private void handlePeerConnected(final PeerId id, final PeerConnection connection,
+            final PeerEndPoint remoteEndPoint) {
         this.userService.addUser(new User(id, id.id()));
     }
 
@@ -54,7 +57,9 @@ public final class UserServer {
     }
 
     private void sendUserListTo(final Set<PeerId> receipients) {
-        this.network.sendMessage(
-                new UserListUpdatedMessage(this.network.getLocalPeerId(), receipients, this.userService.getUsers()));
+        final Set<User> users = this.userService.getUsers();
+        Logger.logInfo(this.network.getLocalPeerId() + ": Sending " + users.size() + " user to "
+                + (receipients == null ? "ALL" : Integer.toString(receipients.size())) + " peers");
+        this.network.sendMessage(new UserListUpdatedMessage(this.network.getLocalPeerId(), receipients, users));
     }
 }
