@@ -13,6 +13,7 @@ import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
 import org.albard.dubito.network.PeerStarNetwork;
 import org.albard.utils.ListenerUtils;
+import org.albard.utils.Logger;
 
 import java.awt.*;
 import java.io.IOException;
@@ -47,16 +48,16 @@ public abstract class GameApp {
             // creiamo la rete, dove poi gli passeremo l'indirizzo di uno dei giocatori
             // della lobby (la rete in automatico si
             // collegherà a tutti gli altri rimasti
-            System.out.println(localId + ": Binding to " + bindEndPoint);
             final PeerNetwork network = PeerStarNetwork.createBound(localId, bindEndPoint.getHost(),
+            Logger.logInfo(localId + ": Binding to " + bindEndPoint);
                     bindEndPoint.getPort(), new MessengerFactory(MessageSerializer.createJson()));
-            System.out.println(localId + ": Initializing network");
+            Logger.logInfo(localId + ": Initializing network");
             if (!this.initializeNetwork(network)) {
                 return;
             }
-            System.out.println(localId + ": Waiting for players");
+            Logger.logInfo(localId + ": Waiting for players");
             this.waitForPlayers(network);
-            System.out.println(localId + ": All players connected");
+            Logger.logInfo(localId + ": All players connected");
 
             // se sono l'owner, creo la lista dei peers ottenuti per assegnare un ordine ai
             // vari giocatori
@@ -83,10 +84,10 @@ public abstract class GameApp {
             controller.newRound();
             EventQueue.invokeLater(() -> showBoardConsumer.accept(view[0]));
             stopLock.acquire();
-            System.out.println(localId + ": Closing...");
+            Logger.logInfo(localId + ": Closing...");
             network.close();
         } catch (final Exception ex) {
-            System.err.println(localId + ": Could not run app: " + ex.getMessage());
+            Logger.logError(localId + ": Could not run app: " + ex.getMessage());
         }
     }
 

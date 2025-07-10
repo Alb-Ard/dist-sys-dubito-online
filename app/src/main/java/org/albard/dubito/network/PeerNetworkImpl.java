@@ -16,6 +16,7 @@ import org.albard.dubito.messaging.MessengerFactory;
 import org.albard.dubito.messaging.handlers.MessageHandler;
 import org.albard.dubito.messaging.messages.GameMessage;
 import org.albard.utils.Locked;
+import org.albard.utils.Logger;
 import org.albard.utils.ObservableHashMap;
 import org.albard.utils.ObservableMap;
 import org.albard.utils.ObservableMapListener;
@@ -45,8 +46,8 @@ public final class PeerNetworkImpl implements PeerNetwork {
                 System.err.println(ex.getMessage());
                 try {
                     c.close();
-                } catch (final Exception ex2) {
-                    System.err.println(ex2.getMessage());
+                } catch (final IOException ex) {
+                    Logger.logError(this.getLocalPeerId() + ": Could not close connection: " + ex.getMessage());
                 }
             }
         });
@@ -107,7 +108,7 @@ public final class PeerNetworkImpl implements PeerNetwork {
                         connection.close();
                     }
                 } catch (final Exception ex2) {
-                    System.err.println(ex2.getMessage());
+                    Logger.logError(ex2.getMessage());
                 }
                 return false;
             }
@@ -124,15 +125,14 @@ public final class PeerNetworkImpl implements PeerNetwork {
         try {
             final PeerConnection connection = this.connections.getValue().remove(peerId);
             if (connection == null) {
-                System.err.println(
-                        this.getLocalPeerId() + ": Disconnecting from " + peerId + ", but peer was not found!");
+                Logger.logError(this.getLocalPeerId() + ": Disconnecting from " + peerId + ", but peer was not found!");
                 return false;
             }
-            System.out.println(this.getLocalPeerId() + ": Disconnecting from " + peerId);
+            Logger.logInfo(this.getLocalPeerId() + ": Disconnecting from " + peerId);
             try {
                 connection.close();
             } catch (final IOException ex) {
-                System.err.println(ex.getMessage());
+                Logger.logError(ex.getMessage());
             }
             return true;
         } finally {
@@ -157,7 +157,7 @@ public final class PeerNetworkImpl implements PeerNetwork {
 
     @Override
     public void close() {
-        System.out.println(this.getLocalPeerId() + ": Closing...");
+        Logger.logInfo(this.getLocalPeerId() + ": Closing...");
         final Set<PeerId> connectedPeers = Set.copyOf(this.connections.getValue().keySet());
         for (final PeerId connectionId : connectedPeers) {
             this.disconnectFromPeer(connectionId);
@@ -165,7 +165,7 @@ public final class PeerNetworkImpl implements PeerNetwork {
         try {
             this.connectionReceiver.close();
         } catch (final IOException ex) {
-            System.err.println(ex.getMessage());
+            Logger.logError(ex.getMessage());
         }
     }
 
@@ -199,8 +199,8 @@ public final class PeerNetworkImpl implements PeerNetwork {
         try {
             System.out.println(this.getLocalPeerId() + ": Adding connection " + id);
             if (id == null) {
-                System.err.println(this.getLocalPeerId() + ": Provided Id for connection "
-                        + connection.getRemoteEndPoint() + " is null (maybe Id exchange failed...)");
+                Logger.logError(this.getLocalPeerId() + ": Provided Id for connection " + connection.getRemoteEndPoint()
+                        + " is null (maybe Id exchange failed...)");
                 try {
                     connection.close();
                 } catch (final IOException ex) {
@@ -209,15 +209,14 @@ public final class PeerNetworkImpl implements PeerNetwork {
             }
             final PeerConnection oldConnection = this.connections.getValue().putIfAbsent(id, connection);
             if (oldConnection != null) {
-                System.out.println(
-                        this.getLocalPeerId() + ": A connection with the same PeerId is already present " + id);
+                Logger.logInfo(this.getLocalPeerId() + ": A connection with the same PeerId is already present " + id);
                 try {
                     connection.close();
                 } catch (final IOException ex) {
                 }
                 return false;
             }
-            System.out.println(this.getLocalPeerId() + ": Connected to peer " + id);
+            Logger.logInfo(this.getLocalPeerId() + ": Connected to peer " + id);
             connection.addMessageListener(this::onMessageReceived);
             connection.addClosedListener(() -> this.disconnectFromPeer(id));
             return true;

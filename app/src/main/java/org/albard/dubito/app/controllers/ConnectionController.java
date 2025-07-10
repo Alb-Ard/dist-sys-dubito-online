@@ -7,6 +7,7 @@ import org.albard.dubito.messaging.serialization.MessageSerializer;
 import org.albard.dubito.network.PeerEndPoint;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
+import org.albard.utils.Logger;
 
 public final class ConnectionController {
     private final AppStateModel stateModel;
@@ -26,7 +27,7 @@ public final class ConnectionController {
             this.stateModel.setLobbyNetwork(network);
             this.stateModel.setState(State.IN_LOBBY_LIST);
         } catch (final Exception ex) {
-            System.err.println("Could not connect to " + endPoint + ": " + ex.getMessage());
+            Logger.logError("Could not connect to " + endPoint + ": " + ex.getMessage());
         }
     }
 }

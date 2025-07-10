@@ -10,6 +10,7 @@ import org.albard.dubito.app.models.AppStateModel;
 import org.albard.dubito.network.PeerEndPoint;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
+import org.albard.utils.Logger;
 
 public final class ClientGameApp extends GameApp {
     private final PeerEndPoint remoteEndPoint;
@@ -41,8 +42,8 @@ public final class ClientGameApp extends GameApp {
     protected Optional<List<PeerId>> initializePeers(final PeerNetwork network) {
         try {
             return Optional.of(this.waitForPlayerOrder(network));
-        } catch (final InterruptedException e) {
-            e.printStackTrace();
+        } catch (final InterruptedException ex) {
+            Logger.logError(this.getLocalId() + ": Could not initialize peers: " + ex.getMessage());
             return Optional.empty();
         }
     }
@@ -51,7 +52,7 @@ public final class ClientGameApp extends GameApp {
     protected void waitForPlayers(final PeerNetwork network) throws InterruptedException {
         // Wait for all OTHER peers to connect (the local peer is not in this list)
         while (network.getPeerCount() < this.getPlayerCount() - 1) {
-            System.out.println(this.getLocalId() + ": Waiting for players: " + network.getPeerCount() + "/"
+            Logger.logInfo(this.getLocalId() + ": Waiting for players: " + network.getPeerCount() + "/"
                     + (this.getPlayerCount() - 1));
             Thread.sleep(1000);
         }
@@ -70,7 +71,7 @@ public final class ClientGameApp extends GameApp {
             return false;
         });
         while (orderMessages[0] == null) {
-            System.out.println(this.getLocalId() + ": Waiting for player order");
+            Logger.logInfo(this.getLocalId() + ": Waiting for player order");
             Thread.sleep(1000);
         }
         return orderMessages[0].getPlayers();

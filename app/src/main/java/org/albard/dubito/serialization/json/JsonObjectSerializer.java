@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.util.Optional;
 
 import org.albard.dubito.serialization.ObjectSerializer;
+import org.albard.utils.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -21,7 +22,7 @@ public final class JsonObjectSerializer<X> implements ObjectSerializer<X> {
             final String json = this.jsonMapper.writeValueAsString(new Object[] { data });
             return json.getBytes("UTF-8");
         } catch (final Exception ex) {
-            ex.printStackTrace();
+            Logger.logError("Could not serialize JSON: " + ex.getMessage());
             return new byte[0];
         }
     }

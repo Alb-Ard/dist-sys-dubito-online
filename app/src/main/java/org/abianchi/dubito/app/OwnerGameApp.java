@@ -12,6 +12,7 @@ import org.albard.dubito.messaging.handlers.MessageHandler;
 import org.albard.dubito.network.PeerEndPoint;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
+import org.albard.utils.Logger;
 
 public final class OwnerGameApp extends GameApp {
     public OwnerGameApp(final PeerId id, final PeerEndPoint bindEndPoint, final int playerCount,
@@ -56,7 +57,7 @@ public final class OwnerGameApp extends GameApp {
         };
         network.addMessageListener(playerReadyHandler);
         while (readyPlayerCount[0] < this.getPlayerCount() - 1) {
-            System.out.println(this.getLocalId() + ": Waiting for READY players: " + readyPlayerCount[0] + "/"
+            Logger.logInfo(this.getLocalId() + ": Waiting for READY players: " + readyPlayerCount[0] + "/"
                     + (this.getPlayerCount() - 1));
             Thread.sleep(1000);
         }

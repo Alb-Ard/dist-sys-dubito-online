@@ -9,6 +9,7 @@ import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
 import org.albard.dubito.userManagement.server.UserServer;
 import org.albard.dubito.userManagement.server.UserService;
+import org.albard.utils.Logger;
 
 public class LobbyServerHost {
     public static void main(final String[] args) {
@@ -17,11 +18,11 @@ public class LobbyServerHost {
                 new MessengerFactory(MessageSerializer.createJson()))) {
             new LobbyServer(network, peerService);
             new UserServer(network, peerService);
-            System.out.println("Listening on 0.0.0.0:9000");
+            Logger.logInfo("Listening on 0.0.0.0:9000");
             final Semaphore shutdownLock = new Semaphore(0);
             Runtime.getRuntime().addShutdownHook(new Thread(shutdownLock::release));
             shutdownLock.acquire();
-            System.out.println("Closing...");
+            Logger.logInfo("Closing...");
             network.close();
         } catch (final Exception ex) {
             ex.printStackTrace();

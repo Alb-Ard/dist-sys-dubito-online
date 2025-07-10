@@ -12,6 +12,7 @@ import org.albard.dubito.messaging.handlers.MessageHandler;
 import org.albard.dubito.messaging.messages.GameMessage;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
+import org.albard.utils.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +41,7 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
     public boolean handleMessage(GameMessage message) {
         // sender di messaggio avvisa che ha pescato una nuova mano
         if (message instanceof NewHandDrawnMessage handDrawnMessage) {
-            System.out.println("Player " + handDrawnMessage.getSender() + " has drawn a new hand: "
+            Logger.logInfo("Player " + handDrawnMessage.getSender() + " has drawn a new hand: "
                     + handDrawnMessage.getNewHand());
             Player player = this.getPlayerById(message.getSender());
             player.receiveNewHand(handDrawnMessage.getNewHand().stream().map(Card::ofType).toList());
@@ -52,7 +53,7 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
         }
         // sender ha lanciato le carte
         if (message instanceof CardsThrownMessage cardsThrownMessage) {
-            System.out.println("Player " + cardsThrownMessage.getSender() + " has throw cards: "
+            Logger.logInfo("Player " + cardsThrownMessage.getSender() + " has throw cards: "
                     + cardsThrownMessage.getThrownCards());
             final List<Card> playedCards = cardsThrownMessage.getThrownCards().stream().map(Card::ofType).toList();
             this.playCards(playedCards);
@@ -60,13 +61,13 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
             return true;
         }
         if (message instanceof CallLiarMessage) {
-            System.out.println("Player " + message.getSender() + " has called liar");
+            Logger.logInfo("Player " + message.getSender() + " has called liar");
             this.callLiar();
             this.onChanged.run();
             return true;
         }
         if (message instanceof RoundCardGeneratedMessage roundCardGeneratedMessage) {
-            System.out.println("Player " + roundCardGeneratedMessage.getSender() + " has set the round card to "
+            Logger.logInfo("Player " + roundCardGeneratedMessage.getSender() + " has set the round card to "
                     + roundCardGeneratedMessage.getRoundCard());
             this.getCurrentGameState().setRoundCardType(roundCardGeneratedMessage.getRoundCard());
             this.onChanged.run();
@@ -83,12 +84,12 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
         // se sono owner, setto la carta del round
         if (this.canGenerateRoundCard() && this.getCurrentGameState().getRoundCardValue().isPresent()) {
             final CardValue roundCardValue = this.getCurrentGameState().getRoundCardValue().get();
-            System.out.println("Setting round card to " + roundCardValue);
+            Logger.logInfo("Setting round card to " + roundCardValue);
             this.sessionNetwork
                     .sendMessage(new RoundCardGeneratedMessage(sessionNetwork.getLocalPeerId(), null, roundCardValue));
         }
         final var newHand = this.localPlayer.getHand().stream().map(e -> e.getCardType()).toList();
-        System.out.println("Sending my new hand: " + newHand);
+        Logger.logInfo("Sending my new hand: " + newHand);
         sessionNetwork.sendMessage(new NewHandDrawnMessage(sessionNetwork.getLocalPeerId(), null, newHand));
         this.onChanged.run();
     }
@@ -106,7 +107,7 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
 
     private void setPeerDisconnectedListener(final PeerId peerId) {
         /* viene chiamato su tutti, non devo scambiare messaggi */
-        System.out.println(this.localPlayer.getOnlineId() + ": Removing player " + peerId);
+        Logger.logInfo(this.localPlayer.getOnlineId() + ": Removing player " + peerId);
         this.removePlayer(this.getSessionPlayers().indexOf(this.getPlayerById(peerId)));
         // If the owner peer has left, pass the ownership to the next valid player
         if (this.getOwnerPeer().equals(this.getPlayerById(peerId))) {
@@ -115,13 +116,13 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
             for (int i = 1; i < players.size(); i++) {
                 if (players.get(i).getLives() > 0) {
                     this.ownerPeerIndex = i;
-                    System.out.println(this.localPlayer.getOnlineId() + ": Ownership passed to "
+                    Logger.logInfo(this.localPlayer.getOnlineId() + ": Ownership passed to "
                             + this.getOwnerPeer().getOnlineId());
                     break;
                 }
             }
             if (this.ownerPeerIndex == oldOwnerIndex) {
-                System.err.println(this.localPlayer.getOnlineId() + ": Could not transfer ownership!");
+                Logger.logError(this.localPlayer.getOnlineId() + ": Could not transfer ownership!");
             }
         }
         this.onChanged.run();
@@ -142,12 +143,12 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
         // gestisco prima il messaggio per indicare che ho giocato le carte (in modo che
         // l'elenco di carte selezionate non venga resettato), per poi fare localmente
         // il resto
-        System.out.println("Playing cards " + cards);
+        Logger.logInfo("Playing cards " + cards);
         if (this.isCurrentPlayerLocal()) {
-            System.out.println("Sending thrown cards...");
+            Logger.logInfo("Sending thrown cards...");
             CardsThrownMessage message = new CardsThrownMessage(sessionNetwork.getLocalPeerId(), null,
                     cards.stream().map(Card::getCardType).toList());
-            System.out.println("The message is " + message);
+            Logger.logInfo("The message is " + message);
             sessionNetwork.sendMessage(message);
         }
         super.playCards(cards);
@@ -159,7 +160,7 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
         // gestione messaggio callLiar come con playCard
         if (this.isCurrentPlayerLocal()) {
             CallLiarMessage message = new CallLiarMessage(sessionNetwork.getLocalPeerId(), null);
-            System.out.println("The message is " + message);
+            Logger.logInfo("The message is " + message);
             sessionNetwork.sendMessage(message);
         }
         super.callLiar();

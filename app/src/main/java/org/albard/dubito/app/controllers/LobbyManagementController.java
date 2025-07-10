@@ -18,6 +18,7 @@ import org.albard.dubito.lobby.models.LobbyInfo;
 import org.albard.dubito.network.PeerEndPoint;
 import org.albard.dubito.network.PeerId;
 import org.albard.mvc.ModelPropertyChangeEvent;
+import org.albard.utils.Logger;
 
 public final class LobbyManagementController {
     private static final int DEFAULT_OWNER_BIND_PORT = 10100;
@@ -92,7 +93,7 @@ public final class LobbyManagementController {
                                     participantPeerIds.size(), stateModel));
                         }
                     } catch (final Exception ex) {
-                        System.err.println("Could not start game: " + ex.getMessage());
+                        Logger.logError("Could not start game: " + ex.getMessage());
                         return Optional.empty();
                     }
                 });
@@ -101,6 +102,6 @@ public final class LobbyManagementController {
             app.addGameStartedListener(this::leaveLobby);
             stateModel.setState(State.IN_GAME);
             this.gameStartedListener.accept(app);
-        }, () -> System.err.println("Could not create GameApp, game start failed!"));
+        }, () -> Logger.logError("Could not create GameApp, game start failed!"));
     }
 }

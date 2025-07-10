@@ -5,6 +5,7 @@ import org.abianchi.dubito.app.gameSession.models.Card;
 import org.abianchi.dubito.app.gameSession.models.GameState;
 import org.abianchi.dubito.app.gameSession.models.Player;
 import org.albard.utils.Debouncer;
+import org.albard.utils.Logger;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -95,8 +96,7 @@ public class GameBoardView extends JPanel {
                         this.endGame();
                         return;
                     }
-                    System.out.println(
-                            this.controller.getCurrentGameState() + " - " + this.controller.getSessionPlayers());
+                    Logger.logInfo(this.controller.getCurrentGameState() + " - " + this.controller.getSessionPlayers());
                     this.roundStateLabel.setText(this.getCurrentRoundStateText());
                     this.cardsPlayedLabel.setText(this.getLastPlayedCardsText());
                 } finally {
@@ -107,7 +107,7 @@ public class GameBoardView extends JPanel {
     }
 
     private String getLastPlayedCardsText() {
-        if(!this.controller.getCurrentGameState().getPreviousPlayerPlayedCards().isEmpty()) {
+        if (!this.controller.getCurrentGameState().getPreviousPlayerPlayedCards().isEmpty()) {
             return this.controller.getPreviousPlayer().map(previousPlayer -> {
                 final String previousPlayerName = this.getPlayerName(previousPlayer, GameState::getPreviousPlayerIndex);
                 return new StringBuilder(previousPlayerName).append(" played ")
@@ -133,7 +133,8 @@ public class GameBoardView extends JPanel {
     }
 
     private String getPlayerNameByIndex(final Player player) {
-        return "Player: " + player.getName().orElseGet(() -> "Player" + this.controller.getSessionPlayers().indexOf(player) + 1);
+        return "Player: "
+                + player.getName().orElseGet(() -> "Player" + this.controller.getSessionPlayers().indexOf(player) + 1);
     }
 
     private void refreshPlayerPanel(final int playerIndex, final boolean forceInactive) {
@@ -150,7 +151,7 @@ public class GameBoardView extends JPanel {
     }
 
     private void callLiar() {
-        System.out.println("Calling Liar");
+        Logger.logInfo("Calling Liar");
         this.controller.callLiar();
         if (this.controller.findWinner().isPresent()) {
             this.endGame();
@@ -161,7 +162,7 @@ public class GameBoardView extends JPanel {
 
     private void playCards(final List<Card> cards) {
         if (!cards.isEmpty() && cards.size() <= 3) {
-            System.out.println("Throwing Cards");
+            Logger.logInfo("Throwing Cards");
             this.controller.playCards(cards);
             this.refreshBoard();
         }

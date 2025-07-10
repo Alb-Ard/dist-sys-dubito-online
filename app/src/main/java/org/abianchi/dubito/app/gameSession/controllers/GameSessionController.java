@@ -1,6 +1,7 @@
 package org.abianchi.dubito.app.gameSession.controllers;
 
 import org.abianchi.dubito.app.gameSession.models.*;
+import org.albard.utils.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -82,11 +83,11 @@ public class GameSessionController<X extends Player> {
         this.getCurrentPlayer().ifPresent(currentPlayer -> {
             // Let the player play only cards that it has in its hand
             if (!currentPlayer.getHand().containsAll(cards)) {
-                System.out.println("Player Cards not found in current hand");
+                Logger.logInfo("Player Cards not found in current hand");
                 return;
             }
             if (cards.size() <= 3) {
-                System.out.println("Playing " + cards.size() + " cards");
+                Logger.logInfo("Playing " + cards.size() + " cards");
                 currentPlayer.playCards(cards);
                 this.advanceTurn(cards);
             }
@@ -152,17 +153,17 @@ public class GameSessionController<X extends Player> {
         // verifichiamo prima se c'è un vincitore
         final Optional<X> possibleWinner = findWinner();
         if (possibleWinner.isPresent()) {
-            System.out.println("We have a winner");
+            Logger.logInfo("We have a winner");
             this.getCurrentGameState().setWinnerPlayerIndex(this.getSessionPlayers().indexOf(possibleWinner.get()));
         }
         // copre il caso in cui va via il giocatore non attivo e la partita deve
         // continuare
         else if (this.getCurrentGameState().getCurrentPlayerIndex().map(x -> x != removedPlayerIndex).orElse(true)) {
-            System.out.println("the game continues");
+            Logger.logInfo("the game continues");
             return;
         } else {
             // se non è il giocatore attivo e dobbiamo iniziare il secondo round
-            System.out.println("Moving into next round");
+            Logger.logInfo("Moving into next round");
             this.advanceTurn(this.getCurrentGameState().getPreviousPlayerPlayedCards());
         }
     }

@@ -12,6 +12,7 @@ import org.albard.dubito.messaging.MessengerFactory;
 import org.albard.dubito.messaging.handlers.MessageHandler;
 import org.albard.dubito.messaging.messages.GameMessage;
 import org.albard.dubito.network.PeerEndPoint;
+import org.albard.utils.Logger;
 import org.albard.utils.ObservableCloseable;
 
 public final class TcpPeerConnection implements PeerConnection {
@@ -29,7 +30,7 @@ public final class TcpPeerConnection implements PeerConnection {
                 try {
                     this.close();
                 } catch (final IOException ex) {
-                    System.err.println(ex.getMessage());
+                    Logger.logError(ex.getMessage());
                 }
             });
         }
@@ -56,7 +57,7 @@ public final class TcpPeerConnection implements PeerConnection {
 
     @Override
     public void sendMessage(final GameMessage message) {
-        System.out.println(this + ": Sending message " + message.getClass().getSimpleName());
+        Logger.logInfo(this + ": Sending message " + message.getClass().getSimpleName());
         this.messageSender.sendMessage(message);
     }
 

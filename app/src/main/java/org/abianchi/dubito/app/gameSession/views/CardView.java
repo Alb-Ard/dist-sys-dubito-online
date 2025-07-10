@@ -2,6 +2,7 @@ package org.abianchi.dubito.app.gameSession.views;
 
 import org.abianchi.dubito.app.gameSession.models.Card;
 import org.abianchi.dubito.app.gameSession.models.CardType;
+import org.albard.utils.Logger;
 
 import javax.swing.*;
 import java.util.Optional;
@@ -51,15 +52,13 @@ public class CardView extends JToggleButton {
     }
 
     private void setImageFromPath(final String imagePath) {
-        ImageUtilities.loadImageFromPath(imagePath, 70, 150).ifPresentOrElse(image -> SwingUtilities
-                .invokeLater(
-                        () -> { try {
-                            this.setIcon(new ImageIcon(this.rotation.map(r -> ImageUtilities.rotateImage(image, r)).orElse(image)));
-                        } catch(Exception ex) {
-                            ex.printStackTrace();
-                        }
-                        }),
-                () -> System.err.println("Image not found: " + imagePath));
+        ImageUtilities.loadImageFromPath(imagePath, 70, 150).ifPresentOrElse(image -> SwingUtilities.invokeLater(() -> {
+            try {
+                this.setIcon(new ImageIcon(this.rotation.map(r -> ImageUtilities.rotateImage(image, r)).orElse(image)));
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }), () -> Logger.logError("Image not found: " + imagePath));
     }
 
     public String getCardImagePath() {

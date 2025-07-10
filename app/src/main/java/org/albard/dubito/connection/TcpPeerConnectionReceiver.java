@@ -11,6 +11,7 @@ import java.util.function.Consumer;
 
 import org.albard.dubito.messaging.MessengerFactory;
 import org.albard.dubito.network.PeerEndPoint;
+import org.albard.utils.Logger;
 
 public final class TcpPeerConnectionReceiver implements PeerConnectionReceiver {
     private static final int SERVER_BACKLOG_SIZE = 4;
@@ -77,7 +78,7 @@ public final class TcpPeerConnectionReceiver implements PeerConnectionReceiver {
                     }
                 });
             } catch (final IOException ex) {
-                System.err.println(ex.getMessage());
+                Logger.logError(ex.getMessage());
             }
         }
     }
