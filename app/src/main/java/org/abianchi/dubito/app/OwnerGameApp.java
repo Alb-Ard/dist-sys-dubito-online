@@ -61,6 +61,6 @@ public final class OwnerGameApp extends GameApp {
                     + (this.getPlayerCount() - 1));
             Thread.sleep(1000);
         }
-        network.removeMessageListener(playerReadyHandler);
+        network.queueRemoveMessageListener(playerReadyHandler);
     }
 }

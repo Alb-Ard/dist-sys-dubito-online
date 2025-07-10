@@ -6,6 +6,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.albard.dubito.lobby.app.server.LobbyServerHost;
+import org.albard.utils.Logger;
 
 public final class DubitoAppTest {
     @FunctionalInterface
@@ -30,7 +31,7 @@ public final class DubitoAppTest {
             try {
                 main.run(args);
             } catch (final Exception ex) {
-                System.err.println("UNHANDLED EXCEPTION: " + ex.getMessage());
+                Logger.logError("UNHANDLED EXCEPTION: " + ex.getMessage());
             }
         });
     }

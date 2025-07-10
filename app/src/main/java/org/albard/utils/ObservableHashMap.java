@@ -7,6 +7,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * A map that provides observability when adding/removing items.
+ * 
+ * @implNote This implementation is thread-safe and supports concurrency.
+ */
 public final class ObservableHashMap<TKey, TValue> implements ObservableMap<TKey, TValue> {
     private final Map<TKey, TValue> map = Collections.synchronizedMap(new HashMap<>());
     private final Set<ObservableMapListener<TKey, TValue>> listeners = Collections.synchronizedSet(new HashSet<>());

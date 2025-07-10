@@ -26,7 +26,7 @@ import org.albard.dubito.messaging.messages.GameMessage;
 import org.albard.dubito.network.PeerEndPoint;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
-import org.albard.utils.ListenerUtils;
+import org.albard.utils.Listeners;
 import org.albard.utils.Locked;
 
 public final class LobbyClient {
@@ -137,24 +137,23 @@ public final class LobbyClient {
         }
         if (message instanceof LobbyLeavedMessage) {
             this.currentLobby.exchange(l -> l.setId(null).setLobby(null));
-            ListenerUtils.runAll(this.currentLobbyUpdatedListeners.getValue(), Optional.empty());
+            Listeners.runAll(this.currentLobbyUpdatedListeners.getValue(), Optional.empty());
             return true;
         }
         if (message instanceof LobbyUpdatedMessage lobbyUpdatedMessage) {
             this.currentLobby.exchange(l -> l.setLobby(lobbyUpdatedMessage.getLobby()));
-            ListenerUtils.runAll(this.currentLobbyUpdatedListeners.getValue(),
-                    Optional.of(lobbyUpdatedMessage.getLobby()));
+            Listeners.runAll(this.currentLobbyUpdatedListeners.getValue(), Optional.of(lobbyUpdatedMessage.getLobby()));
             return true;
         }
         if (message instanceof LobbyListUpdatedMessage lobbyListUpdatedMessage) {
             this.allLobbies.exchange(l -> List.copyOf(lobbyListUpdatedMessage.getLobbies()));
-            ListenerUtils.runAll(this.lobbyListUpdatedListeners.getValue(), lobbyListUpdatedMessage.getLobbies());
+            Listeners.runAll(this.lobbyListUpdatedListeners.getValue(), lobbyListUpdatedMessage.getLobbies());
             return true;
         }
         if (message instanceof LobbyGameStartedMessage gameStartedMessage) {
             this.currentLobby.exchange(currentLobby -> {
                 if (currentLobby.getId().map(x -> x.equals(gameStartedMessage.getLobbyId())).orElse(false)) {
-                    ListenerUtils.runAll(this.currentLobbyGameStartedListeners.getValue(),
+                    Listeners.runAll(this.currentLobbyGameStartedListeners.getValue(),
                             gameStartedMessage.getOwnerEndPoint());
                 }
                 return currentLobby;

@@ -12,7 +12,7 @@ import org.albard.dubito.network.PeerEndPoint;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
 import org.albard.dubito.network.PeerStarNetwork;
-import org.albard.utils.ListenerUtils;
+import org.albard.utils.Listeners;
 import org.albard.utils.Logger;
 
 import java.awt.*;
@@ -79,7 +79,7 @@ public abstract class GameApp {
             // Here we wait for all players to setup their controller/view
             Thread.sleep(1000);
 
-            ListenerUtils.runAll(this.gameStartedListeners);
+            Listeners.runAll(this.gameStartedListeners);
 
             controller.newRound();
             EventQueue.invokeLater(() -> showBoardConsumer.accept(view[0]));

@@ -14,7 +14,9 @@ import org.albard.dubito.network.PeerNetwork;
 import org.albard.dubito.userManagement.User;
 import org.albard.dubito.userManagement.messages.UpdateUserMessage;
 import org.albard.dubito.userManagement.messages.UserListUpdatedMessage;
+import org.albard.utils.Listeners;
 import org.albard.utils.Locked;
+import org.albard.utils.Logger;
 
 public final class UserClient {
     private final PeerNetwork network;
@@ -67,11 +69,13 @@ public final class UserClient {
     }
 
     private void updateUserList(final Set<User> newUsers) {
-        final Set<User> updatedUsers = Set.copyOf(this.users.exchange(users -> {
+        this.users.exchange(users -> {
+            Logger.logInfo(
+                    this.network.getLocalPeerId() + ": Received updated user list with " + newUsers.size() + " users");
             users.clear();
             newUsers.forEach(u -> users.put(u.peerId(), u));
             return users;
-        }).values());
-        this.userListChangedListeners.forEach(l -> l.accept(updatedUsers));
+        });
+        Listeners.runAll(this.userListChangedListeners, newUsers);
     }
 }
