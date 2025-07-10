@@ -17,7 +17,8 @@ public final class DubitoAppTest {
     private static final ExecutorService appExecutor = Executors.newFixedThreadPool(10);
 
     public static void main(final String[] args) throws InterruptedException {
-        waitAny(runApp(DubitoApp::main, args), runApp(DubitoApp::main, args), runApp(LobbyServerHost::main, args));
+        waitAny(runApp(DubitoApp::main, args), runApp(DubitoApp::main, args), runApp(DubitoApp::main, args),
+                runApp(DubitoApp::main, args), runApp(LobbyServerHost::main, args));
     }
 
     private static void waitAny(final Future<?>... tasks) throws InterruptedException {
