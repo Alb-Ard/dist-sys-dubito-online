@@ -11,7 +11,7 @@ import org.albard.dubito.messaging.serialization.MessageSerializer;
 import org.albard.dubito.network.PeerEndPoint;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
-import org.albard.dubito.network.PeerStarNetwork;
+import org.albard.dubito.network.PeerGraphNetwork;
 import org.albard.utils.Listeners;
 import org.albard.utils.Logger;
 
@@ -48,8 +48,8 @@ public abstract class GameApp {
             // creiamo la rete, dove poi gli passeremo l'indirizzo di uno dei giocatori
             // della lobby (la rete in automatico si
             // collegherà a tutti gli altri rimasti
-            final PeerNetwork network = PeerStarNetwork.createBound(localId, bindEndPoint.getHost(),
             Logger.logInfo(localId + ": Binding to " + bindEndPoint);
+            final PeerNetwork network = PeerGraphNetwork.createBound(localId, bindEndPoint.getHost(),
                     bindEndPoint.getPort(), new MessengerFactory(MessageSerializer.createJson()));
             Logger.logInfo(localId + ": Initializing network");
             if (!this.initializeNetwork(network)) {

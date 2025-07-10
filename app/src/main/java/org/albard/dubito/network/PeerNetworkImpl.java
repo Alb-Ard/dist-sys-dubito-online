@@ -5,10 +5,11 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.albard.dubito.connection.PeerConnection;
@@ -17,6 +18,7 @@ import org.albard.dubito.messaging.MessageReceiver;
 import org.albard.dubito.messaging.MessengerFactory;
 import org.albard.dubito.messaging.handlers.MessageHandler;
 import org.albard.dubito.messaging.messages.GameMessage;
+import org.albard.utils.Listeners;
 import org.albard.utils.Locked;
 import org.albard.utils.Logger;
 import org.albard.utils.ObservableHashMap;
@@ -28,25 +30,47 @@ public final class PeerNetworkImpl implements PeerNetwork {
     private final Locked<ObservableMap<PeerId, PeerConnection>> connections = Locked
             .withExistingLock(new ObservableHashMap<>(), this.connectionsLock);
     private final PeerConnectionReceiver connectionReceiver;
-    private final PeerIdExchanger peerIdExchanger;
-
-    private BiConsumer<PeerId, PeerConnection> peerConnectedListener;
-    private Consumer<PeerId> peerDisconnectedListener;
+    private final PeerExchanger peerIdExchanger;
     private final Set<MessageHandler> messageHandlers = Collections.synchronizedSet(new HashSet<>());
     private final Set<MessageHandler> messageHandlersToRemove = Collections.synchronizedSet(new HashSet<>());
+    private final Set<PeerConnectedListener> peerConnectedListeners = Collections.synchronizedSet(new HashSet<>());
+    private final Set<Consumer<PeerId>> peerDisconnectedListeners = Collections.synchronizedSet(new HashSet<>());
+    // Used to keep track of connections that are being established but are not
+    // complete
+    private final Set<PeerEndPoint> pendingConnectionEndPoints = Collections.synchronizedSet(new HashSet<>());
 
     private PeerNetworkImpl(final PeerId localPeerId, final PeerConnectionReceiver receiver) {
-        this.peerIdExchanger = new PeerIdExchanger(localPeerId);
+        this.peerIdExchanger = new PeerExchanger(localPeerId, receiver.getBindEndPoint());
         this.connectionReceiver = receiver;
         this.connectionReceiver.setPeerConnectedListener(c -> {
-            try {
-                if (this.containsPeerAtEndPoint(c.getRemoteEndPoint())) {
-                    return;
-                }
-                System.out.println(localPeerId + ": Received connection from " + c.getRemoteEndPoint());
-                this.peerIdExchanger.exchangeIds(c).ifPresent(remotePeerId -> this.addConnection(remotePeerId, c));
-            } catch (final Exception ex) {
-                System.err.println(ex.getMessage());
+            final boolean handleResult = this.peerIdExchanger.exchangeIds(c).map(connectionData -> {
+                return this.runLocked("peerConnectedListener", () -> {
+                    // If the remote peer send "0.0.0.0" as it's server IP, then override it with
+                    // the IP he has connected with
+                    final PeerEndPoint serverEndPoint = connectionData.getValue().getHost().equals("0.0.0.0")
+                            ? PeerEndPoint.ofValues(c.getRemoteEndPoint().getHost(),
+                                    connectionData.getValue().getPort())
+                            : connectionData.getValue();
+                    if (this.containsPeerAtEndPoint(c.getRemoteEndPoint())
+                            || this.containsPeerAtEndPoint(serverEndPoint)
+                            || !this.pendingConnectionEndPoints.add(serverEndPoint)) {
+                        Logger.logInfo(this.getLocalPeerId() + ": Connection to " + c.getRemoteEndPoint()
+                                + " is already being established, skipping...");
+                        return false;
+                    }
+                    Logger.logInfo(this.getLocalPeerId() + ": Completing connection to " + connectionData.getKey()
+                            + " - " + c.getRemoteEndPoint() + " (and server " + serverEndPoint + ")");
+                    if (!this.addConnection(connectionData.getKey(), c)) {
+                        Logger.logError(this.getLocalPeerId() + ": Connection to " + c.getRemoteEndPoint()
+                                + " FAILED (Could not add connection)");
+                        return false;
+                    }
+                    this.pendingConnectionEndPoints.remove(serverEndPoint);
+                    this.onPeerConnected(connectionData.getKey(), c, serverEndPoint);
+                    return true;
+                }, () -> false);
+            }).orElse(false);
+            if (!handleResult) {
                 try {
                     c.close();
                 } catch (final IOException ex) {
@@ -57,16 +81,14 @@ public final class PeerNetworkImpl implements PeerNetwork {
         this.connections.getValue().addListener(new ObservableMapListener<PeerId, PeerConnection>() {
             @Override
             public void entryAdded(final PeerId key, final PeerConnection value) {
-                if (PeerNetworkImpl.this.peerConnectedListener != null) {
-                    PeerNetworkImpl.this.peerConnectedListener.accept(key, value);
-                }
+                Logger.logInfo(localPeerId + ": Added connection to peer " + key + " via " + value.getRemoteEndPoint());
             }
 
             @Override
             public void entryRemoved(final PeerId key, final PeerConnection value) {
-                if (PeerNetworkImpl.this.peerDisconnectedListener != null) {
-                    PeerNetworkImpl.this.peerDisconnectedListener.accept(key);
-                }
+                Logger.logInfo(
+                        localPeerId + ": Removed connection to peer " + key + " via " + value.getRemoteEndPoint());
+                Listeners.runAll(PeerNetworkImpl.this.peerDisconnectedListeners, key);
             }
         });
     }
@@ -89,21 +111,29 @@ public final class PeerNetworkImpl implements PeerNetwork {
 
     @Override
     public boolean connectToPeer(final PeerEndPoint peerEndPoint) {
-        System.out.println(this.getLocalPeerId() + ": Connecting to " + peerEndPoint);
-        if (this.containsPeerAtEndPoint(peerEndPoint)) {
-            return true;
-        }
-        if (!this.connectionsLock.tryLock()) {
-            return false;
-        }
-        try {
+        return this.runLocked("connectToPeer", () -> {
+            Logger.logInfo(this.getLocalPeerId() + ": Connecting to " + peerEndPoint);
+            if (this.containsPeerAtEndPoint(peerEndPoint) || !this.pendingConnectionEndPoints.add(peerEndPoint)) {
+                Logger.logInfo(this.getLocalPeerId() + ": Peer " + peerEndPoint + " already connected, skipping...");
+                return true;
+            }
             PeerConnection connection = null;
             try {
                 final PeerConnection createdConnection = PeerConnection.createAndConnect("0.0.0.0", 0,
                         peerEndPoint.getHost(), peerEndPoint.getPort(), this.connectionReceiver.getMessengerFactory());
                 connection = createdConnection;
-                return this.peerIdExchanger.exchangeIds(connection)
-                        .map(remotePeerId -> this.addConnection(remotePeerId, createdConnection)).orElse(false);
+                final var connectionData = this.peerIdExchanger.exchangeIds(connection);
+                if (connectionData.isEmpty()) {
+                    Logger.logError(
+                            this.getLocalPeerId() + ": Connection to " + peerEndPoint + " FAILED (Ping not received)");
+                    return false;
+                }
+                if (!this.addConnection(connectionData.get().getKey(), createdConnection)) {
+                    return false;
+                }
+                this.onPeerConnected(connectionData.get().getKey(), createdConnection, connectionData.get().getValue());
+                Logger.logInfo(this.getLocalPeerId() + ": Connection to " + peerEndPoint + " completed");
+                return true;
             } catch (final Exception ex) {
                 Logger.logError(this.getLocalPeerId() + ": Connection to " + peerEndPoint + " FAILED ("
                         + ex.getMessage() + ")");
@@ -115,18 +145,15 @@ public final class PeerNetworkImpl implements PeerNetwork {
                     Logger.logError(ex2.getMessage());
                 }
                 return false;
+            } finally {
+                this.pendingConnectionEndPoints.remove(peerEndPoint);
             }
-        } finally {
-            this.connectionsLock.unlock();
-        }
+        }, () -> false);
     }
 
     @Override
     public boolean disconnectFromPeer(final PeerId peerId) {
-        if (!this.connectionsLock.tryLock()) {
-            return false;
-        }
-        try {
+        return this.runLocked("disconnectFromPeer", () -> {
             final PeerConnection connection = this.connections.getValue().remove(peerId);
             if (connection == null) {
                 Logger.logError(this.getLocalPeerId() + ": Disconnecting from " + peerId + ", but peer was not found!");
@@ -139,19 +166,27 @@ public final class PeerNetworkImpl implements PeerNetwork {
                 Logger.logError(ex.getMessage());
             }
             return true;
-        } finally {
-            this.connectionsLock.unlock();
-        }
+        }, () -> false);
     }
 
     @Override
-    public void setPeerConnectedListener(final BiConsumer<PeerId, PeerConnection> listener) {
-        this.peerConnectedListener = listener;
+    public void addPeerConnectedListener(final PeerConnectedListener listener) {
+        this.peerConnectedListeners.add(listener);
     }
 
     @Override
-    public void setPeerDisconnectedListener(final Consumer<PeerId> listener) {
-        this.peerDisconnectedListener = listener;
+    public void removePeerConnectedListener(final PeerConnectedListener listener) {
+        this.peerConnectedListeners.remove(listener);
+    }
+
+    @Override
+    public void addPeerDisconnectedListener(final Consumer<PeerId> listener) {
+        this.peerDisconnectedListeners.add(listener);
+    }
+
+    @Override
+    public void removePeerDisconnectedListener(final Consumer<PeerId> listener) {
+        this.peerDisconnectedListeners.remove(listener);
     }
 
     @Override
@@ -197,12 +232,13 @@ public final class PeerNetworkImpl implements PeerNetwork {
         return this.peerIdExchanger.getLocalPeerId();
     }
 
+    private void onPeerConnected(final PeerId id, final PeerConnection connection, final PeerEndPoint remoteEndPoint) {
+        Set.copyOf(this.peerConnectedListeners).forEach(l -> l.peerConnected(id, connection, remoteEndPoint));
+    }
+
     private boolean addConnection(final PeerId id, final PeerConnection connection) {
-        if (!this.connectionsLock.tryLock()) {
-            return false;
-        }
-        try {
-            System.out.println(this.getLocalPeerId() + ": Adding connection " + id);
+        return this.runLocked("addConnection", () -> {
+            Logger.logInfo(this.getLocalPeerId() + ": Adding connection " + id);
             if (id == null) {
                 Logger.logError(this.getLocalPeerId() + ": Provided Id for connection " + connection.getRemoteEndPoint()
                         + " is null (maybe Id exchange failed...)");
@@ -225,9 +261,7 @@ public final class PeerNetworkImpl implements PeerNetwork {
             connection.addMessageListener(this::onMessageReceived);
             connection.addClosedListener(() -> this.disconnectFromPeer(id));
             return true;
-        } finally {
-            this.connectionsLock.unlock();
-        }
+        }, () -> false);
     }
 
     private boolean containsPeerAtEndPoint(final PeerEndPoint peerEndPoint) {
@@ -248,5 +282,27 @@ public final class PeerNetworkImpl implements PeerNetwork {
         return MessageReceiver.handleMessageAndUpdateHandlers(message, this.messageHandlers,
                 this.messageHandlersToRemove);
     }
+
+    private <X> X runLocked(final String caller, final Supplier<X> action, final Supplier<X> failedAction) {
+        try {
+            Logger.logDebug(this.getLocalPeerId() + ": " + caller + " ACQUIRING LOCK...");
+            if (!this.connectionsLock.tryLock(1, TimeUnit.SECONDS)) {
+                Logger.logError(this.getLocalPeerId() + ": " + caller + " ACQUIRE FAILED (Timeout)");
+                return failedAction.get();
+            }
+        } catch (final InterruptedException ex) {
+            Logger.logError(this.getLocalPeerId() + ": " + caller + " ACQUIRE  FAILED (" + ex.getMessage() + ")");
+            return failedAction.get();
+        }
+        Logger.logDebug(this.getLocalPeerId() + ": " + caller + " LOCK ACQUIRED");
+        try {
+            return action.get();
+        } catch (final Exception ex) {
+            Logger.logError(this.getLocalPeerId() + ": " + caller + " ACTION FAILED (" + ex.getMessage() + ")");
+            return failedAction.get();
+        } finally {
+            Logger.logDebug(this.getLocalPeerId() + ": " + caller + " LOCK RELEASED");
+            this.connectionsLock.unlock();
+        }
     }
 }
