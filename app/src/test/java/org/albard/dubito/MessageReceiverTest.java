@@ -14,7 +14,7 @@ public final class MessageReceiverTest {
     @Test
     void testCreate() {
         Assertions.assertDoesNotThrow(() -> MessageReceiver.createFromStream(new ByteArrayInputStream(new byte[0]),
-                x -> TestUtilities.createMessageSerializer(TestUtilities.createMessage(), new byte[0]).deserializeAll(x,
+                x -> TestUtilities.createMessageSerializer(TestUtilities.createMessage(), new byte[0]).deserialize(x,
                         GameMessage.class)));
     }
 
@@ -23,7 +23,7 @@ public final class MessageReceiverTest {
         final GameMessage expectedMessage = TestUtilities.createMessage();
         try (final InputStream inputStream = new ByteArrayInputStream(new byte[0])) {
             final MessageReceiver receiver = MessageReceiver.createFromStream(inputStream, x -> TestUtilities
-                    .createMessageSerializer(expectedMessage, "Test".getBytes()).deserializeAll(x, GameMessage.class));
+                    .createMessageSerializer(expectedMessage, "Test".getBytes()).deserialize(x, GameMessage.class));
             receiver.addMessageListener(m -> {
                 Assertions.assertEquals(expectedMessage, m);
                 return true;

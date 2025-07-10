@@ -67,8 +67,8 @@ public final class TcpPeerConnection implements PeerConnection {
     }
 
     @Override
-    public void removeMessageListener(final MessageHandler listener) {
-        this.messageReceiver.removeMessageListener(listener);
+    public void queueRemoveMessageListener(final MessageHandler listener) {
+        this.messageReceiver.queueRemoveMessageListener(listener);
     }
 
     @Override

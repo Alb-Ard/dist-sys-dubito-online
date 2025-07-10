@@ -13,6 +13,8 @@ dependencies {
     implementation("com.jgoodies:jgoodies-binding:2.13.0")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
+    // https://search.maven.org/artifact/org.mockito/mockito-core/5.18.0/jar
+    testImplementation("org.mockito:mockito-core:5.18.0")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

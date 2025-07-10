@@ -10,6 +10,7 @@ import org.albard.dubito.app.models.AppStateModel;
 import org.albard.dubito.network.PeerEndPoint;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
+import org.albard.utils.Locked;
 import org.albard.utils.Logger;
 
 public final class ClientGameApp extends GameApp {
@@ -60,20 +61,20 @@ public final class ClientGameApp extends GameApp {
     }
 
     private List<PeerId> waitForPlayerOrder(final PeerNetwork network) throws InterruptedException {
-        final PlayerOrderMessage[] orderMessages = new PlayerOrderMessage[1];
+        final Locked<Optional<PlayerOrderMessage>> orderMessages = Locked.of(Optional.empty());
         network.addOnceMessageListener(message -> {
-            if (message instanceof PlayerOrderMessage orderMessage) {
+            if (message instanceof final PlayerOrderMessage orderMessage) {
                 System.out
                         .println(this.getLocalId() + ": Player order has been received: " + orderMessage.getPlayers());
-                orderMessages[0] = orderMessage;
+                orderMessages.exchange(x -> Optional.of(orderMessage));
                 return true;
             }
             return false;
         });
-        while (orderMessages[0] == null) {
+        while (orderMessages.getValue().isEmpty()) {
             Logger.logInfo(this.getLocalId() + ": Waiting for player order");
             Thread.sleep(1000);
         }
-        return orderMessages[0].getPlayers();
+        return orderMessages.getValue().get().getPlayers();
     }
 }

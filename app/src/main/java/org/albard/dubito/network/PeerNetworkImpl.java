@@ -1,6 +1,7 @@
 package org.albard.dubito.network;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -12,6 +13,7 @@ import java.util.stream.Collectors;
 
 import org.albard.dubito.connection.PeerConnection;
 import org.albard.dubito.connection.PeerConnectionReceiver;
+import org.albard.dubito.messaging.MessageReceiver;
 import org.albard.dubito.messaging.MessengerFactory;
 import org.albard.dubito.messaging.handlers.MessageHandler;
 import org.albard.dubito.messaging.messages.GameMessage;
@@ -27,10 +29,11 @@ public final class PeerNetworkImpl implements PeerNetwork {
             .withExistingLock(new ObservableHashMap<>(), this.connectionsLock);
     private final PeerConnectionReceiver connectionReceiver;
     private final PeerIdExchanger peerIdExchanger;
-    private final Set<MessageHandler> messageReceiverListeners = new HashSet<>();
 
     private BiConsumer<PeerId, PeerConnection> peerConnectedListener;
     private Consumer<PeerId> peerDisconnectedListener;
+    private final Set<MessageHandler> messageHandlers = Collections.synchronizedSet(new HashSet<>());
+    private final Set<MessageHandler> messageHandlersToRemove = Collections.synchronizedSet(new HashSet<>());
 
     private PeerNetworkImpl(final PeerId localPeerId, final PeerConnectionReceiver receiver) {
         this.peerIdExchanger = new PeerIdExchanger(localPeerId);
@@ -102,7 +105,8 @@ public final class PeerNetworkImpl implements PeerNetwork {
                 return this.peerIdExchanger.exchangeIds(connection)
                         .map(remotePeerId -> this.addConnection(remotePeerId, createdConnection)).orElse(false);
             } catch (final Exception ex) {
-                System.err.println(ex.getMessage());
+                Logger.logError(this.getLocalPeerId() + ": Connection to " + peerEndPoint + " FAILED ("
+                        + ex.getMessage() + ")");
                 try {
                     if (connection != null) {
                         connection.close();
@@ -172,19 +176,20 @@ public final class PeerNetworkImpl implements PeerNetwork {
     @Override
     public void sendMessage(final GameMessage message) {
         final Set<PeerConnection> receipients = getMessageActualReceipients(message);
-        System.out.println(
+        Logger.logInfo(
                 this.getLocalPeerId() + ": Sending " + message.getClass().getSimpleName() + " to " + receipients);
         receipients.forEach(e -> e.sendMessage(message));
     }
 
     @Override
     public void addMessageListener(final MessageHandler listener) {
-        this.messageReceiverListeners.add(listener);
+        this.messageHandlersToRemove.remove(listener);
+        this.messageHandlers.add(listener);
     }
 
     @Override
-    public void removeMessageListener(final MessageHandler listener) {
-        this.messageReceiverListeners.remove(listener);
+    public void queueRemoveMessageListener(final MessageHandler listener) {
+        this.messageHandlersToRemove.add(listener);
     }
 
     @Override
@@ -240,6 +245,8 @@ public final class PeerNetworkImpl implements PeerNetwork {
     }
 
     private boolean onMessageReceived(final GameMessage message) {
-        return this.messageReceiverListeners.stream().map(l -> l.handleMessage(message)).anyMatch(r -> r);
+        return MessageReceiver.handleMessageAndUpdateHandlers(message, this.messageHandlers,
+                this.messageHandlersToRemove);
+    }
     }
 }

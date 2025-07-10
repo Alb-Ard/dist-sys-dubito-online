@@ -1,12 +1,10 @@
 package org.albard.dubito.messaging;
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.net.SocketException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.List;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.function.Function;
@@ -14,45 +12,43 @@ import java.util.function.Function;
 import org.albard.dubito.messaging.handlers.MessageHandler;
 import org.albard.dubito.messaging.messages.GameMessage;
 import org.albard.utils.Locked;
+import org.albard.utils.Logger;
 import org.albard.utils.ObservableCloseable;
 
 public final class BufferedMessageReceiver implements MessageReceiver, ObservableCloseable {
-    private final record MessageListenersState(Set<MessageHandler> listeners, Queue<GameMessage> bufferedMessages) {
+    private final record ReceiverState(Set<MessageHandler> handlers, Set<MessageHandler> handlersToRemove,
+            Queue<GameMessage> bufferedMessages) {
     }
 
     private final Thread receiveThread;
-    private final Locked<MessageListenersState> messageListenersState = Locked
-            .of(new MessageListenersState(new HashSet<>(), new LinkedList<>()));
+    private final Locked<ReceiverState> state = Locked
+            .of(new ReceiverState(new HashSet<>(), new HashSet<>(), new LinkedList<>()));
     private final Set<ClosedListener> closedListeners = Collections.synchronizedSet(new HashSet<>());
 
     public BufferedMessageReceiver(final InputStream stream,
-            final Function<InputStream, List<GameMessage>> deserializer) {
+            final Function<InputStream, Optional<GameMessage>> deserializer) {
         this.receiveThread = Thread.ofVirtual().unstarted(() -> {
-            final byte[] buffer = new byte[1024];
             while (true) {
                 try {
-                    final int readByteCount = stream.read(buffer);
-                    if (readByteCount <= 0) {
-                        break;
-                    }
-                    System.out.println("Received  " + readByteCount + "b");
-                    final byte[] messageBuffer = new byte[readByteCount];
-                    System.arraycopy(buffer, 0, messageBuffer, 0, readByteCount);
-                    deserializer.apply(new ByteArrayInputStream(messageBuffer)).forEach(message -> {
-                        this.messageListenersState.exchange(s -> {
-                            if (s.listeners.isEmpty()) {
+                    final boolean isSuccess = deserializer.apply(stream).map(message -> {
+                        this.state.exchange(s -> {
+                            if (s.handlers.isEmpty()) {
                                 s.bufferedMessages.add(message);
-                            } else {
-                                s.listeners.forEach(l -> l.handleMessage(message));
+                                return s;
                             }
+                            MessageReceiver.handleMessageAndUpdateHandlers(message, s.handlers, s.handlersToRemove);
                             return s;
                         });
-                    });
-                } catch (final SocketException ex) {
-                    System.err.println(ex.getMessage());
-                    break;
+                        return true;
+                    }).orElse(false);
+                    if (!isSuccess) {
+                        Logger.logInfo("Message deserialize failed, closing...");
+                        break;
+                    }
                 } catch (final Exception ex) {
-                    System.err.println(ex.getMessage());
+                    Logger.logError("Message deserialize failed (" + ex.getClass().getSimpleName() + ":"
+                            + ex.getMessage() + "), closing...");
+                    break;
                 }
             }
             this.closedListeners.forEach(l -> l.closed());
@@ -60,7 +56,7 @@ public final class BufferedMessageReceiver implements MessageReceiver, Observabl
     }
 
     static MessageReceiver createFromStream(final InputStream stream,
-            final Function<InputStream, List<GameMessage>> deserializer) {
+            final Function<InputStream, Optional<GameMessage>> deserializer) {
         final BufferedMessageReceiver receiver = new BufferedMessageReceiver(stream, deserializer);
         receiver.start();
         return receiver;
@@ -68,13 +64,14 @@ public final class BufferedMessageReceiver implements MessageReceiver, Observabl
 
     @Override
     public void addMessageListener(final MessageHandler listener) {
-        this.messageListenersState.exchange(s -> {
-            final int previousListenerCount = s.listeners.size();
-            s.listeners.add(listener);
-            if (previousListenerCount <= 0) {
+        this.state.exchange(s -> {
+            final int previousCount = s.handlers.size();
+            s.handlersToRemove.remove(listener);
+            s.handlers.add(listener);
+            if (previousCount <= 0) {
                 while (!s.bufferedMessages.isEmpty()) {
                     final GameMessage message = s.bufferedMessages.remove();
-                    s.listeners.forEach(l -> l.handleMessage(message));
+                    MessageReceiver.handleMessageAndUpdateHandlers(message, s.handlers, s.handlersToRemove);
                 }
             }
             return s;
@@ -82,9 +79,9 @@ public final class BufferedMessageReceiver implements MessageReceiver, Observabl
     }
 
     @Override
-    public void removeMessageListener(final MessageHandler listener) {
-        this.messageListenersState.exchange(s -> {
-            s.listeners.remove(listener);
+    public void queueRemoveMessageListener(final MessageHandler listener) {
+        this.state.exchange(s -> {
+            s.handlersToRemove.add(listener);
             return s;
         });
     }

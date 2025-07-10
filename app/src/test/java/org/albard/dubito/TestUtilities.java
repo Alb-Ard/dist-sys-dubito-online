@@ -62,18 +62,10 @@ public final class TestUtilities {
 
     public static ObjectSerializer<GameMessage> createMessageSerializer(final GameMessage deserializedMessage,
             final byte[] serializedData) {
-        return new ObjectSerializer<GameMessage>() {
-            @Override
-            public <Y extends GameMessage> Optional<Y> deserialize(final InputStream data, final Class<Y> dataClass) {
-                return dataClass.isAssignableFrom(deserializedMessage.getClass()) ? Optional.of((Y) deserializedMessage)
-                        : Optional.empty();
-            }
-
-            @Override
-            public byte[] serialize(final GameMessage data) {
-                return serializedData;
-            }
-        };
+        final ObjectSerializer<GameMessage> serializer = mock();
+        when(serializer.deserialize(any(), any())).thenReturn(Optional.of(deserializedMessage));
+        when(serializer.serialize(any())).thenReturn(serializedData);
+        return serializer;
     }
 
     public static <X extends GameMessage> List<X> addMessageListener(final Class<X> messageClass,

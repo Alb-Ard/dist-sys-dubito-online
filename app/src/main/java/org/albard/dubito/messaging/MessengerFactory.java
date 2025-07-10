@@ -19,6 +19,6 @@ public class MessengerFactory {
 
     public MessageReceiver createReceiver(final Socket socket) throws IOException {
         return MessageReceiver.createFromStream(socket.getInputStream(),
-                x -> this.messageSerializer.deserializeAll(x, GameMessage.class));
+                x -> this.messageSerializer.deserialize(x, GameMessage.class));
     }
 }
