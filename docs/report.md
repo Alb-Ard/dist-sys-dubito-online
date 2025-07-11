@@ -178,8 +178,8 @@ The project's infrastructure was developed and composed as such:
 - At the practical and at testing level however, only one server was initialized on the machine. All clients were also run on the same machine for development and simplicity purposes.
   It was also tested that it's possible for clients to be distributed across the world as long as the
   leader’s firewall accepts connections from outside the network;
-- When starting the game, server connects each player in a lobby to each other;
-- During game sessions, players interact with each other, acting both as clients and servers;
+- When starting the game, server connects each player in a lobby to each other, creating a new P2P network;
+- During game sessions, players interact with each other, acting both as clients and servers for each other;
 - Communication is performed via *custom messaging system*, where multiple types of messages where developed for each possible event that would normally occur in the application
   (both for lobbies and in-game events);
 
@@ -197,14 +197,47 @@ The project's infrastructure was developed and composed as such:
 > Component diagrams are welcome here
 
 ### Modelling
+There are 2 main files that act as the focal point for the distributed enhancements of the entire
+project, those being `PeerNetworkImpl` and `PeerGraphNetwork`.
+These classes utilize a series of smaller files which abstract the entire distributed mechanism for the project, 
+which are:
+- `PeerConnection` (main interface to create connections);
+- `PeerConnectionReceiver` (helps users to receive connections and establish bounds);
+- `PeerExchanger` (lets users exchange their Peer IDs between each other);
+- `MessageHandler` (along `PeerConnection`, the most important class. It allows users to properly handle messages received by server or other users);
+- `PeerEndPoint` (Used to keep track of connections that are being established but are not yet complete).
 
+`PeerNetworkImpl` is an implementation of the `PeerNetwork` interface, acting as a more generic network to define a clear,
+consistent connection between user and server. Along with that, its other main usage is to keep track and update the following information:
+- current session between server and user;
+- online players;
+- open lobbies.
+
+Meanwhile `PeerGraphNetwork` acts as a more specialized version of the `PeerNetworkImpl`, it's an
+object that manages each connected peer's server end point, establishing a complex web of connections between user players.
+Its main priorities are:
+- keeping players connected to each other;
+- update game state for each player, making sure that each player has a consistent and UP-TO-DATE view;
+- handle possible user peer disconnect to allow remaining players to continue playing.
 
 #### Entities
 The domain entities are:
 
 - Players;
 - Servers;
-- ...
+
+#### Events
+Domain events change depending whether the user is in game session or not:
+
+- Before the game:
+  * connects to server;
+  * sets their username;
+  * creates a lobby;
+  * sets password for the lobby;
+  * joins a lobby;
+- After the game:
+  * plays cards from his hand;
+  * calls another player "liar".
 
 - which __domain entities__ are there?
     * e.g. _users_, _products_, _orders_, _etc._
@@ -225,8 +258,17 @@ The domain entities are:
 > Class diagram are welcome here
 
 ### Interaction
-- how do components _communicate_? _when_? _what_? 
-- _which_ __interaction patterns__ do they enact?
+Almost all events that occur in-game require first an input from the user.
+When a player is in a lobby:
+1. user sends an input to the server, which is then serialized into a specific message depending on the button
+ that was pressed;
+2. server receives message and performs a specific action accordingly (changin username, creating a new lobby, attempting to join a lobby);
+Once the game starts, events are handled differently:
+1. player sends either a message declaring to have played some cards or that he's calling the previous player a liar;
+2. other players receive said message and update their internal game state accordingly.
+
+
+
 
 > Sequence diagrams are welcome here
 
