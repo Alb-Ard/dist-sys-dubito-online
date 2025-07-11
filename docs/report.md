@@ -183,7 +183,9 @@ The project's infrastructure was developed and composed as such:
 - Communication is performed via *custom messaging system*, where multiple types of messages where developed for each possible event that would normally occur in the application
   (both for lobbies and in-game events);
 
-![Infrastructure](report_images/infrastructure.png "Infrastructure Diagram")
+![Infrastructure](report_images/component_diagram.png "Infrastructure Diagram")
+
+*Diagram to show the infrastructure*
 
 - are there infrastructural components that need to be introduced? how many?
     * e.g. clients, servers, load balancers, caches, databases, message brokers, queues, workers, proxies, firewalls, CDNs, etc.
@@ -268,6 +270,9 @@ Once the game starts, events are handled differently:
 2. other players receive said message and update their internal game state accordingly.
 
 
+![Infrastructure](report_images/userLobbyInteraction.png "Infrastructure Diagram")
+
+*Diagram to show the infrastructure*
 
 
 > Sequence diagrams are welcome here
