@@ -448,15 +448,24 @@ Project deployment was done following these instructions:
 Here we have provided all the necessaries steps to play the game:
 1. Launch at least one `LobbyServer` that users can later join into;
 2. Launch the game: after clicking *Start* button, players will input the server IP address and port of the currently active server
-   (default one has IP:     , port:    );
+   (default one has IP: 127.0.0.1, port: 9000);
+   ![StartScreen](report_images/startScreen.png "Start Screen")
+   ![serverConnectScreen](report_images/serverConnectScreen.png "Connect to server Screen")
 3. Once connected to the server, player can either set a new username at the bottom of the view;
 4. **Lobby Creation**: user can click the *Create Lobby* button to set up a new lobby. Lobby is created with a new name and a possible password: the lobby will be shown to other players
    as soon as the owner of said lobby presses the *Save* button;
+   ![EmptyLobbyListScreen](report_images/lobbyEmptyScreen.png "No Lobbies found Screen")
+   ![CreateLobbyScreen](report_images/createLobbyScreen.png "Connect to server Screen")
 5. **Lobby Join**: users will see at the top of their view all currently available lobbies. Pressing the *Join* button near one of them to enter;
 6. (Optional) If the lobby is password protected, users must first input the correct password in order to enter said lobby;
+   ![LobbyScreen](report_images/lobbyScreen.png "Lobbies list updated Screen")
+   ![PasswordScreen](report_images/insertPasswordScreen.png "insert password Screen")
+   ![LobbyWithPlayersScreen](report_images/lobbyWithPlayers.png "Connect to server Screen")
 7. Lobby owner can press *Start* button in their view to start a new game session once there is at least one more user;
 8. In game, players (in turn order) can either throw cards or call other players liar;
 9. Game continues until only one player remains (in order to leave, they must close their window).
+   ![gameSessionScreen](report_images/gameSession.png "Example of 3 player session Screen")
+   ![endGameScreen](report_images/endGame.png "End of game Screen for 2 players")
 
 
 | Throw Cards | Call Liar |
@@ -465,16 +474,20 @@ Here we have provided all the necessaries steps to play the game:
 *Table to showcase game key bindings*
 
 
-- how to use your software?
-    * provide instructions
-    * provide expected outcomes
-    * provide screenshots if possible
-
-
 ## Self-evaluation
 
 ### Andrea Bianchi
+While working on this project, i've discovered many interesting and peculiar findings on distributed systems
+and how they operate. The work proved to be quite a challenging task, more than what we initially thought.
+Both me and my colleague were quite busy with our everyday life, spending what we could of our free time studying and continuing
+development for the project. Despite that, once everything started to "click", we've both felt a great sense of satisfaction and accomplishment.
+The main strenghts of the project i feel are its quite intricate (yet easy to understand) messaging system, that allowed us to create fluid and consistent
+interactions between each player (and between user and server while in lobby).
+These strenghts came at quite the cost though: implementing our initial model design into a working system felt at first easy to apply, but we soon found out
+many issues and bugs caused by message serialization (especially regarding key bindings) and the initial setup of P2P network for users in a lobby when starting the game.
 
+Overall, i personally feel satisfied and i'm happy to have finally completed this long (but enjoyable) journey.
+and the setup for the P2P network
 ### Alberto Arduini
 - An individual section is required for each member of the group
 - Each member must self-evaluate their work, listing the strengths and weaknesses of the product
