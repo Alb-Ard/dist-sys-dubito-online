@@ -63,7 +63,7 @@ public class GameBoardView extends JPanel {
         for (int i = 0; i < nPlayers; i++) {
             final Player player = this.controller.getSessionPlayers().get(i);
             final GameBoardPlayerPanel playerPanel = new GameBoardPlayerPanel(player, PLAYER_ROTATIONS.get(i),
-                    this::playCards, this::callLiar, this.getPlayerNameByIndex(player));
+                    this::playCards, this::callLiar, this.getPlayerNameByIndex(player), this.enableCallLiarButton());
             this.add(playerPanel, PLAYER_POSITIONS.get(i));
             playerPanels.add(playerPanel);
         }
@@ -140,6 +140,10 @@ public class GameBoardView extends JPanel {
     private void refreshPlayerPanel(final int playerIndex, final boolean forceInactive) {
         this.playerPanels.get(playerIndex).refresh(() -> this.controller.getSessionPlayers().get(playerIndex),
                 () -> !forceInactive && this.controller.isActivePlayer(playerIndex));
+    }
+
+    private boolean enableCallLiarButton() {
+        return !this.controller.getCurrentGameState().getPreviousPlayerPlayedCards().isEmpty();
     }
 
     private void endGame() {

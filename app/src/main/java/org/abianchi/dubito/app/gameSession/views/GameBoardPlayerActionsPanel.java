@@ -21,15 +21,15 @@ final class GameBoardPlayerActionsPanel extends JPanel {
     private final JLabel playerNameLabel;
 
     public GameBoardPlayerActionsPanel(final int initialLivesCount, final boolean vertical, final String playerName,
-            final Runnable playCardsListener, final Runnable callLiarListener) {
+            final Runnable playCardsListener, final Runnable callLiarListener, final boolean callLiarEnabler) {
         /** buttons and label for player's lives */
         if (vertical) {
             this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         }
         this.livesLabel = new JLabel(getLivesText(initialLivesCount));
-        this.playerNameLabel = new JLabel(playerName.length() > 15 ? playerName.substring(0, 16) + "..." : playerName);
-        JButton throwCardsButton = new JButton("Throw Cards (T)");
-        JButton callLiarButton = new JButton("Call Liar (F)");
+        this.playerNameLabel = new JLabel(playerName.length() > 12 ? playerName.substring(0, 12) + "..." : playerName);
+        GameButton throwCardsButton = new GameButton("Throw Cards (T)");
+        GameButton callLiarButton = new GameButton("Call Liar (F)");
         this.add(livesLabel);
         this.add(playerNameLabel);
         this.add(throwCardsButton);

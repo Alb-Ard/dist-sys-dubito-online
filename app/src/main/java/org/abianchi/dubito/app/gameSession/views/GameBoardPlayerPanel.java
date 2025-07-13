@@ -11,8 +11,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import javax.swing.BoxLayout;
-import javax.swing.JPanel;
+import javax.swing.*;
 
 import org.abianchi.dubito.app.gameSession.models.Card;
 import org.abianchi.dubito.app.gameSession.models.Player;
@@ -30,15 +29,17 @@ public final class GameBoardPlayerPanel extends JPanel {
     private boolean isActive = false;
 
     public GameBoardPlayerPanel(final Player player, final Optional<Rotation> rotation,
-            final Consumer<List<Card>> playCardsListener, final Runnable callLiarListener, final String playerName) {
+            final Consumer<List<Card>> playCardsListener, final Runnable callLiarListener, final String playerName,
+                                final boolean callLiarEnabler) {
         this.rotation = rotation;
         this.playerCardPanel.setLayout(
                 new BoxLayout(playerCardPanel, rotation.map(x -> BoxLayout.PAGE_AXIS).orElse(BoxLayout.LINE_AXIS)));
         this.actionsPanel = new GameBoardPlayerActionsPanel(player.getLives(), rotation.isPresent(), playerName,
-                () -> playCardsListener.accept(this.getSelectedCards()), callLiarListener);
+                () -> playCardsListener.accept(this.getSelectedCards()), callLiarListener, callLiarEnabler);
         this.add(this.playerCardPanel);
         this.add(this.actionsPanel);
         this.actionsPanel.setActive(this.isActive);
+        System.out.println(Arrays.stream(this.actionsPanel.getComponents()).map(Component::getClass).toList());
         this.updateCards(player.getHand());
     }
 
@@ -58,7 +59,7 @@ public final class GameBoardPlayerPanel extends JPanel {
 
     private void updateCards(final List<Card> hand) {
         // Don't update if all the cards match
-        if (hand.equals(this.getCardViews().stream().map(x -> x.getCard()).toList())) {
+        if (hand.equals(this.getCardViews().stream().map(CardView::getCard).toList())) {
             return;
         }
         this.playerCardPanel.removeAll();
@@ -92,7 +93,7 @@ public final class GameBoardPlayerPanel extends JPanel {
     }
 
     private List<Card> getSelectedCards() {
-        return this.getCardViews().stream().filter(x -> x.isSelected()).map(x -> x.getCard()).toList();
+        return this.getCardViews().stream().filter(AbstractButton::isSelected).map(CardView::getCard).toList();
     }
 
     /** method used to add buttons for all the cards */
