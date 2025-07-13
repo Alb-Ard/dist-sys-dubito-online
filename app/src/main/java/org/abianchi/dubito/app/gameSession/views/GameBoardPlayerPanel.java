@@ -29,26 +29,25 @@ public final class GameBoardPlayerPanel extends JPanel {
     private boolean isActive = false;
 
     public GameBoardPlayerPanel(final Player player, final Optional<Rotation> rotation,
-            final Consumer<List<Card>> playCardsListener, final Runnable callLiarListener, final String playerName,
-                                final boolean callLiarEnabler) {
+            final Consumer<List<Card>> playCardsListener, final Runnable callLiarListener, final String playerName) {
         this.rotation = rotation;
         this.playerCardPanel.setLayout(
                 new BoxLayout(playerCardPanel, rotation.map(x -> BoxLayout.PAGE_AXIS).orElse(BoxLayout.LINE_AXIS)));
         this.actionsPanel = new GameBoardPlayerActionsPanel(player.getLives(), rotation.isPresent(), playerName,
-                () -> playCardsListener.accept(this.getSelectedCards()), callLiarListener, callLiarEnabler);
+                () -> playCardsListener.accept(this.getSelectedCards()), callLiarListener);
         this.add(this.playerCardPanel);
         this.add(this.actionsPanel);
         this.actionsPanel.setActive(this.isActive);
-        System.out.println(Arrays.stream(this.actionsPanel.getComponents()).map(Component::getClass).toList());
         this.updateCards(player.getHand());
     }
 
     // Use suppliers since the runnable invoked in the debouncer always gets the
     // most up-to-date models instead of the ones that were captured when the method
     // was called
-    public void refresh(final Supplier<Player> playerSupplier, final Supplier<Boolean> isActiveSupplier) {
+    public void refresh(final Supplier<Player> playerSupplier, final Supplier<Boolean> isActiveSupplier,
+                        final boolean callLiarEnabled) {
         this.refreshDebouncer.debounce(() -> this.runLocked(() -> {
-            this.setActive(isActiveSupplier.get());
+            this.setActive(isActiveSupplier.get(), callLiarEnabled);
             final Player player = playerSupplier.get();
             this.actionsPanel.setLivesCount(player.getLives());
             this.updateCards(player.getHand());
@@ -69,7 +68,7 @@ public final class GameBoardPlayerPanel extends JPanel {
         }
     }
 
-    private void setActive(final boolean isActive) {
+    private void setActive(final boolean isActive, final boolean callLiarEnabled) {
         this.runLocked(() -> {
             // Don't update if the state hasn't changed
             if (this.isActive == isActive) {
@@ -84,6 +83,10 @@ public final class GameBoardPlayerPanel extends JPanel {
                 }
             }
             this.actionsPanel.setActive(isActive);
+            JLabel livesLabel = (JLabel)this.actionsPanel.getComponent(0);
+            if(!livesLabel.getText().contains("0")) {
+                this.actionsPanel.getComponent(3).setEnabled(callLiarEnabled);
+            }
         });
     }
 

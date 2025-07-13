@@ -21,7 +21,7 @@ final class GameBoardPlayerActionsPanel extends JPanel {
     private final JLabel playerNameLabel;
 
     public GameBoardPlayerActionsPanel(final int initialLivesCount, final boolean vertical, final String playerName,
-            final Runnable playCardsListener, final Runnable callLiarListener, final boolean callLiarEnabler) {
+            final Runnable playCardsListener, final Runnable callLiarListener) {
         /** buttons and label for player's lives */
         if (vertical) {
             this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
@@ -50,7 +50,9 @@ final class GameBoardPlayerActionsPanel extends JPanel {
         Action callLiarAction = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                callLiarListener.run();
+                if(callLiarButton.isEnabled()) {
+                    callLiarListener.run();
+                }
             }
         };
 
