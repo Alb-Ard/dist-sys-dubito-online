@@ -436,12 +436,34 @@ The original game was also tested on Linux.
     * how to _install_ them?
 
 ## Deployment
-
-- should one install your software from scratch, how to do it?
-    * provide instructions
-    * provide expected outcomes
+Project deployment was done following these instructions:
+1. Build
+   *
+2. Start Server
+   *
+3. Start Game
+   *
 
 ## User Guide
+Here we have provided all the necessaries steps to play the game:
+1. Launch at least one `LobbyServer` that users can later join into;
+2. Launch the game: after clicking *Start* button, players will input the server IP address and port of the currently active server
+   (default one has IP:     , port:    );
+3. Once connected to the server, player can either set a new username at the bottom of the view;
+4. **Lobby Creation**: user can click the *Create Lobby* button to set up a new lobby. Lobby is created with a new name and a possible password: the lobby will be shown to other players
+   as soon as the owner of said lobby presses the *Save* button;
+5. **Lobby Join**: users will see at the top of their view all currently available lobbies. Pressing the *Join* button near one of them to enter;
+6. (Optional) If the lobby is password protected, users must first input the correct password in order to enter said lobby;
+7. Lobby owner can press *Start* button in their view to start a new game session once there is at least one more user;
+8. In game, players (in turn order) can either throw cards or call other players liar;
+9. Game continues until only one player remains (in order to leave, they must close their window).
+
+
+| Throw Cards | Call Liar |
+|-------------|-----------|
+| T           | F         |
+*Table to showcase game key bindings*
+
 
 - how to use your software?
     * provide instructions
