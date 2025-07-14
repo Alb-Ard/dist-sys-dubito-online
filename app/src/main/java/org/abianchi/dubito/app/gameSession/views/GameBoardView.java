@@ -4,6 +4,7 @@ import org.abianchi.dubito.app.gameSession.controllers.GameSessionController;
 import org.abianchi.dubito.app.gameSession.models.Card;
 import org.abianchi.dubito.app.gameSession.models.GameState;
 import org.abianchi.dubito.app.gameSession.models.Player;
+import org.abianchi.dubito.app.gameSession.views.GameBoardPlayerPanel.PlayerState;
 import org.albard.utils.Debouncer;
 import org.albard.utils.Logger;
 
@@ -138,11 +139,18 @@ public class GameBoardView extends JPanel {
     }
 
     private void refreshPlayerPanel(final int playerIndex, final boolean forceInactive) {
-        this.playerPanels.get(playerIndex).refresh(() -> this.controller.getSessionPlayers().get(playerIndex),
-                () -> !forceInactive && this.controller.isActivePlayer(playerIndex), this.enableCallLiarButton());
+        this.playerPanels.get(playerIndex).refresh(() -> {
+            // Instead of passing the player model directly, copy its data (hand and lifes)
+            // so that, if it gets modified while updating the panel, we don't get into an
+            // inconsistent state
+            final Player player = this.controller.getSessionPlayers().get(playerIndex);
+            final boolean isPlayerActive = !forceInactive && this.controller.isActivePlayer(playerIndex);
+            return new PlayerState(List.copyOf(player.getHand()), player.getLives(), isPlayerActive,
+                    isPlayerActive && this.canCurrentPlayerCallLiar());
+        });
     }
 
-    private boolean enableCallLiarButton() {
+    private boolean canCurrentPlayerCallLiar() {
         return !this.controller.getCurrentGameState().getPreviousPlayerPlayedCards().isEmpty();
     }
 

@@ -18,6 +18,9 @@ import org.abianchi.dubito.app.gameSession.models.Player;
 import org.albard.utils.Debouncer;
 
 public final class GameBoardPlayerPanel extends JPanel {
+    public static record PlayerState(List<Card> hand, int lifeCount, boolean isActive, boolean canCallLiar) {
+    }
+
     // Use a reentrant lock, so that when a method tries to re-lock from the same
     // thread, we don't have a deadlock
     private final Lock refreshLock = new ReentrantLock();
@@ -26,7 +29,7 @@ public final class GameBoardPlayerPanel extends JPanel {
     private final JPanel playerCardPanel = new JPanel();
     private final Optional<Rotation> rotation;
 
-    private boolean isActive = false;
+    private volatile boolean isActive = false;
 
     public GameBoardPlayerPanel(final Player player, final Optional<Rotation> rotation,
             final Consumer<List<Card>> playCardsListener, final Runnable callLiarListener, final String playerName) {
@@ -41,16 +44,15 @@ public final class GameBoardPlayerPanel extends JPanel {
         this.updateCards(player.getHand());
     }
 
-    // Use suppliers since the runnable invoked in the debouncer always gets the
-    // most up-to-date models instead of the ones that were captured when the method
-    // was called
-    public void refresh(final Supplier<Player> playerSupplier, final Supplier<Boolean> isActiveSupplier,
-                        final boolean callLiarEnabled) {
+    // Use a supplier so that the runnable invoked in the debouncer always gets the
+    // most up-to-date data instead of the state that was captured when the method
+    // is called
+    public void refresh(final Supplier<PlayerState> playerStateSupplier) {
         this.refreshDebouncer.debounce(() -> this.runLocked(() -> {
-            this.setActive(isActiveSupplier.get(), callLiarEnabled);
-            final Player player = playerSupplier.get();
-            this.actionsPanel.setLivesCount(player.getLives());
-            this.updateCards(player.getHand());
+            final PlayerState playerState = playerStateSupplier.get();
+            this.setActive(playerState.isActive(), playerState.canCallLiar());
+            this.actionsPanel.setLivesCount(playerState.lifeCount());
+            this.updateCards(playerState.hand());
             this.revalidate();
             this.repaint();
         }));
@@ -62,9 +64,14 @@ public final class GameBoardPlayerPanel extends JPanel {
             return;
         }
         this.playerCardPanel.removeAll();
+        this.actionsPanel.setThrowCardsEnabled(false);
         for (final Card card : hand) {
             final CardView buttonCard = creteCardView(card, this.rotation, this.isActive);
             this.playerCardPanel.add(buttonCard);
+            buttonCard.addItemListener(e -> {
+                final int selectedCardCount = this.getSelectedCards().size();
+                this.actionsPanel.setThrowCardsEnabled(selectedCardCount > 0 && selectedCardCount < 4);
+            });
         }
     }
 
@@ -83,10 +90,7 @@ public final class GameBoardPlayerPanel extends JPanel {
                 }
             }
             this.actionsPanel.setActive(isActive);
-            JLabel livesLabel = (JLabel)this.actionsPanel.getComponent(0);
-            if(!livesLabel.getText().contains("0")) {
-                this.actionsPanel.getComponent(3).setEnabled(callLiarEnabled);
-            }
+            this.actionsPanel.setCallLiarEnabled(callLiarEnabled);
         });
     }
 

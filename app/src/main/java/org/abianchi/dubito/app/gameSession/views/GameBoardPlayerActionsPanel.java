@@ -1,11 +1,9 @@
 package org.abianchi.dubito.app.gameSession.views;
 
-import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 
 import javax.swing.AbstractAction;
-import javax.swing.AbstractButton;
 import javax.swing.Action;
 import javax.swing.ActionMap;
 import javax.swing.BoxLayout;
@@ -19,6 +17,11 @@ import javax.swing.KeyStroke;
 final class GameBoardPlayerActionsPanel extends JPanel {
     private final JLabel livesLabel;
     private final JLabel playerNameLabel;
+    private final JButton callLiarButton;
+    private final JButton throwCardsButton;
+
+    private volatile boolean canCallLiar = false;
+    private volatile boolean canThrowCards = false;
 
     public GameBoardPlayerActionsPanel(final int initialLivesCount, final boolean vertical, final String playerName,
             final Runnable playCardsListener, final Runnable callLiarListener) {
@@ -28,33 +31,29 @@ final class GameBoardPlayerActionsPanel extends JPanel {
         }
         this.livesLabel = new JLabel(getLivesText(initialLivesCount));
         this.playerNameLabel = new JLabel(playerName.length() > 12 ? playerName.substring(0, 12) + "..." : playerName);
-        GameButton throwCardsButton = new GameButton("Throw Cards (T)");
-        GameButton callLiarButton = new GameButton("Call Liar (F)");
+        this.throwCardsButton = new GameButton("Throw Cards (T)");
+        this.callLiarButton = new GameButton("Call Liar (F)");
         this.add(livesLabel);
         this.add(playerNameLabel);
         this.add(throwCardsButton);
         this.add(callLiarButton);
 
         // Add an action map/input map to the content pane
-        InputMap inputMap = this.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
-        ActionMap actionMap = this.getActionMap();
+        final InputMap inputMap = this.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        final ActionMap actionMap = this.getActionMap();
 
-        // Create actions for throw cards and call liar
-        Action throwCardsAction = new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
+        // Create wrapper actions for throw cards and call liar listeners
+        final Action throwCardsAction = createAction(() -> {
+            if (this.canThrowCards) {
                 playCardsListener.run();
             }
-        };
+        });
 
-        Action callLiarAction = new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if(callLiarButton.isEnabled()) {
-                    callLiarListener.run();
-                }
+        final Action callLiarAction = createAction(() -> {
+            if (this.canCallLiar) {
+                callLiarListener.run();
             }
-        };
+        });
 
         // Bind the T key to the throw cards action
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_T, 0), "throwCards");
@@ -64,29 +63,39 @@ final class GameBoardPlayerActionsPanel extends JPanel {
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_F, 0), "callLiar");
         actionMap.put("callLiar", callLiarAction);
 
-        throwCardsButton.addActionListener(e -> playCardsListener.run());
-        callLiarButton.addActionListener(e -> callLiarListener.run());
+        this.throwCardsButton.addActionListener(throwCardsAction);
+        this.callLiarButton.addActionListener(callLiarAction);
     }
 
     public void setLivesCount(final int livesCount) {
         this.livesLabel.setText(getLivesText(livesCount));
     }
 
+    public void setCallLiarEnabled(final boolean isEnabled) {
+        this.canCallLiar = isEnabled;
+        this.callLiarButton.setEnabled(isEnabled);
+    }
+
+    public void setThrowCardsEnabled(final boolean isEnabled) {
+        this.canThrowCards = isEnabled;
+        this.throwCardsButton.setEnabled(isEnabled);
+    }
+
     public void setActive(final boolean isActive) {
-        for (final Component component : this.getComponents()) {
-            if (component instanceof AbstractButton) {
-                component.setEnabled(isActive);
-            } else if (component instanceof JPanel subPanel) {
-                // For button panels
-                for (final Component subComponent : subPanel.getComponents()) {
-                    subComponent.setEnabled(isActive);
-                }
-            }
-        }
+        this.throwCardsButton.setEnabled(isActive && this.canThrowCards);
+        this.callLiarButton.setEnabled(isActive && this.canCallLiar);
     }
 
     private static String getLivesText(final int initialLivesCount) {
         return "Lives: " + initialLivesCount;
     }
 
+    private static Action createAction(final Runnable action) {
+        return new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                action.run();
+            }
+        };
+    }
 }
