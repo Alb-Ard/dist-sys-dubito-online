@@ -99,8 +99,11 @@ public final class LobbyManagementController {
                 });
             });
         }).ifPresentOrElse(app -> {
-            app.addGameStartedListener(this::leaveLobby);
-            stateModel.setState(State.IN_GAME);
+            app.addGameStartedListener(() -> {
+                stateModel.setState(State.IN_GAME);
+                this.leaveLobby();
+            });
+            stateModel.setState(State.CONNECTING_TO_GAME);
             this.gameStartedListener.accept(app);
         }, () -> Logger.logError("Could not create GameApp, game start failed!"));
     }

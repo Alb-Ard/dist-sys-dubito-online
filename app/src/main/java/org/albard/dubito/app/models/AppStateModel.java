@@ -10,7 +10,8 @@ import org.albard.mvc.ModelProperty;
 
 public final class AppStateModel extends AbstractModel<AppStateModel> {
     public enum State {
-        IN_MAIN_MENU, IN_LOBBY_SERVER_CONNECTION, IN_LOBBY_LIST, REQUESTING_LOBBY_PASSWORD, IN_LOBBY, IN_GAME
+        IN_MAIN_MENU, IN_LOBBY_SERVER_CONNECTION, IN_LOBBY_LIST, REQUESTING_LOBBY_PASSWORD, IN_LOBBY,
+        CONNECTING_TO_GAME, IN_GAME
     }
 
     public static final ModelProperty<State> STATE_PROPERTY = defineProperty("state");

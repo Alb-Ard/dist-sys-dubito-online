@@ -14,8 +14,8 @@ import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
 import org.albard.utils.Logger;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSessionController<X>
         implements MessageHandler {
@@ -38,12 +38,12 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
     }
 
     @Override
-    public boolean handleMessage(GameMessage message) {
+    public boolean handleMessage(final GameMessage message) {
         // sender di messaggio avvisa che ha pescato una nuova mano
-        if (message instanceof NewHandDrawnMessage handDrawnMessage) {
+        if (message instanceof final NewHandDrawnMessage handDrawnMessage) {
             Logger.logInfo("Player " + handDrawnMessage.getSender() + " has drawn a new hand: "
                     + handDrawnMessage.getNewHand());
-            Player player = this.getPlayerById(message.getSender());
+            final Player player = this.getPlayerById(message.getSender());
             player.receiveNewHand(handDrawnMessage.getNewHand().stream().map(Card::ofType).toList());
             // devo qua segnalare il refresh della view (senza avere un riferimento alla
             // view) devo rendere osservable questo Controller (GameOnlineSessionController)
@@ -52,7 +52,7 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
             return true;
         }
         // sender ha lanciato le carte
-        if (message instanceof CardsThrownMessage cardsThrownMessage) {
+        if (message instanceof final CardsThrownMessage cardsThrownMessage) {
             Logger.logInfo("Player " + cardsThrownMessage.getSender() + " has throw cards: "
                     + cardsThrownMessage.getThrownCards());
             final List<Card> playedCards = cardsThrownMessage.getThrownCards().stream().map(Card::ofType).toList();
@@ -66,7 +66,7 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
             this.onChanged.run();
             return true;
         }
-        if (message instanceof RoundCardGeneratedMessage roundCardGeneratedMessage) {
+        if (message instanceof final RoundCardGeneratedMessage roundCardGeneratedMessage) {
             Logger.logInfo("Player " + roundCardGeneratedMessage.getSender() + " has set the round card to "
                     + roundCardGeneratedMessage.getRoundCard());
             this.getCurrentGameState().setRoundCardType(roundCardGeneratedMessage.getRoundCard());
@@ -131,10 +131,8 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
     @Override
     protected void giveNewHand() {
         // When new hands are given, I only want to generate a hand for my local player
-        List<Card> newHand = new ArrayList<>();
-        for (int i = 0; i < Player.MAX_HAND_SIZE; i++) {
-            newHand.add(Card.random());
-        }
+        final List<Card> newHand = Stream.iterate(0, i -> i + 1).limit(Player.MAX_HAND_SIZE).map(x -> Card.random())
+                .toList();
         this.localPlayer.receiveNewHand(newHand);
     }
 
@@ -146,7 +144,7 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
         Logger.logInfo("Playing cards " + cards);
         if (this.isCurrentPlayerLocal()) {
             Logger.logInfo("Sending thrown cards...");
-            CardsThrownMessage message = new CardsThrownMessage(sessionNetwork.getLocalPeerId(), null,
+            final CardsThrownMessage message = new CardsThrownMessage(sessionNetwork.getLocalPeerId(), null,
                     cards.stream().map(Card::getCardType).toList());
             Logger.logInfo("The message is " + message);
             sessionNetwork.sendMessage(message);
@@ -159,7 +157,7 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
     public void callLiar() {
         // gestione messaggio callLiar come con playCard
         if (this.isCurrentPlayerLocal()) {
-            CallLiarMessage message = new CallLiarMessage(sessionNetwork.getLocalPeerId(), null);
+            final CallLiarMessage message = new CallLiarMessage(sessionNetwork.getLocalPeerId(), null);
             Logger.logInfo("The message is " + message);
             sessionNetwork.sendMessage(message);
         }
@@ -167,9 +165,10 @@ public class GameOnlineSessionController<X extends OnlinePlayer> extends GameSes
         this.onChanged.run();
     }
 
-    // con questo prendiamo il primo player della sessione con lo specifico Id
-    // passato
-    private X getPlayerById(PeerId id) {
+    /**
+     * Searches for the player in this session with the given id.
+     */
+    private X getPlayerById(final PeerId id) {
         return this.getSessionPlayers().stream().filter(el -> el.getOnlineId().equals(id)).findFirst().get();
     }
 

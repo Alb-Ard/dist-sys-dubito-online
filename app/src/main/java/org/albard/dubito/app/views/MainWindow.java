@@ -44,11 +44,13 @@ public final class MainWindow extends JFrame {
         final JoinProtectedLobbyView joinLobbyView = new JoinProtectedLobbyView(joinLobbyModel, stateModel);
         final LobbyListView lobbyListView = new LobbyListView(lobbyListModel, stateModel, userModel);
         final CurrentLobbyView currentLobbyView = new CurrentLobbyView(currentLobbyModel, stateModel);
+        final ConnectingToGameView connectingToGameView = new ConnectingToGameView(stateModel);
         this.getContentPane().add(mainMenuView);
         this.getContentPane().add(connectionView);
         this.getContentPane().add(lobbyListView);
         this.getContentPane().add(currentLobbyView);
         this.getContentPane().add(joinLobbyView);
+        this.getContentPane().add(connectingToGameView);
         // Setup listeners
         connectionView.getConnectCommand().addListener(connectionController::connectTo);
         lobbyListView.getCreateLobbyCommand()
