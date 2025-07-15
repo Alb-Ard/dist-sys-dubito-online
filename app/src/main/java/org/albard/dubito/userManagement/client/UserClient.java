@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -13,7 +14,9 @@ import org.albard.dubito.network.PeerNetwork;
 import org.albard.dubito.userManagement.User;
 import org.albard.dubito.userManagement.messages.UpdateUserMessage;
 import org.albard.dubito.userManagement.messages.UserListUpdatedMessage;
-import org.albard.dubito.utils.Locked;
+import org.albard.utils.Listeners;
+import org.albard.utils.Locked;
+import org.albard.utils.Logger;
 
 public final class UserClient {
     private final PeerNetwork network;
@@ -37,11 +40,12 @@ public final class UserClient {
     }
 
     public User getLocalUser() {
-        return this.getUser(this.network.getLocalPeerId());
+        return this.getUser(this.network.getLocalPeerId()).get();
     }
 
-    public User getUser(final PeerId id) {
-        return this.users.getValue().get(id);
+    public Optional<User> getUser(final PeerId id) {
+        final Map<PeerId, User> users = this.users.getValue();
+        return users.containsKey(id) ? Optional.of(users.get(id)) : Optional.empty();
     }
 
     public Set<User> getUsers() {
@@ -65,11 +69,13 @@ public final class UserClient {
     }
 
     private void updateUserList(final Set<User> newUsers) {
-        final Set<User> updatedUsers = Set.copyOf(this.users.exchange(users -> {
+        this.users.exchange(users -> {
+            Logger.logInfo(
+                    this.network.getLocalPeerId() + ": Received updated user list with " + newUsers.size() + " users");
             users.clear();
             newUsers.forEach(u -> users.put(u.peerId(), u));
             return users;
-        }).values());
-        this.userListChangedListeners.forEach(l -> l.accept(updatedUsers));
+        });
+        Listeners.runAll(this.userListChangedListeners, newUsers);
     }
 }

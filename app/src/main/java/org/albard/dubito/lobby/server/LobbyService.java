@@ -9,8 +9,9 @@ import org.albard.dubito.lobby.models.Lobby;
 import org.albard.dubito.lobby.models.LobbyId;
 import org.albard.dubito.lobby.models.LobbyInfo;
 import org.albard.dubito.network.PeerId;
-import org.albard.dubito.utils.Either;
-import org.albard.dubito.utils.Locked;
+import org.albard.utils.Either;
+import org.albard.utils.Locked;
+import org.albard.utils.Logger;
 
 public final class LobbyService {
     public static record LobbyResult(Lobby lobby, boolean isDeleted) {
@@ -59,7 +60,7 @@ public final class LobbyService {
                 return lobbies;
             }
             final Lobby newLobby = new Lobby(LobbyId.createNew(), owner, info);
-            System.out.println(new StringBuilder().append("Creating new lobby \"").append(info.name())
+            Logger.logInfo(new StringBuilder().append("Creating new lobby \"").append(info.name())
                     .append("\" owned by \"").append(owner).append(getLobbyCount()).toString());
             lobbies.put(newLobby.getId(), newLobby);
             result.setLobby(newLobby, false);

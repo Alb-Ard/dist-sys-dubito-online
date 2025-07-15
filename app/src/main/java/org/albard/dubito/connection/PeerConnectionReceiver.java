@@ -6,6 +6,7 @@ import java.net.UnknownHostException;
 import java.util.function.Consumer;
 
 import org.albard.dubito.messaging.MessengerFactory;
+import org.albard.dubito.network.PeerEndPoint;
 
 public interface PeerConnectionReceiver extends Closeable {
     public static PeerConnectionReceiver createBound(String bindAddress, int bindPort,
@@ -18,4 +19,6 @@ public interface PeerConnectionReceiver extends Closeable {
     public void setPeerConnectedListener(Consumer<PeerConnection> listener);
 
     public MessengerFactory getMessengerFactory();
+
+    public PeerEndPoint getBindEndPoint();
 }

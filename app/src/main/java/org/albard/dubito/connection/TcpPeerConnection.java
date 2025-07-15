@@ -12,7 +12,8 @@ import org.albard.dubito.messaging.MessengerFactory;
 import org.albard.dubito.messaging.handlers.MessageHandler;
 import org.albard.dubito.messaging.messages.GameMessage;
 import org.albard.dubito.network.PeerEndPoint;
-import org.albard.dubito.utils.ObservableCloseable;
+import org.albard.utils.Logger;
+import org.albard.utils.ObservableCloseable;
 
 public final class TcpPeerConnection implements PeerConnection {
     private final Socket socket;
@@ -29,7 +30,7 @@ public final class TcpPeerConnection implements PeerConnection {
                 try {
                     this.close();
                 } catch (final IOException ex) {
-                    System.err.println(ex.getMessage());
+                    Logger.logError(ex.getMessage());
                 }
             });
         }
@@ -56,6 +57,7 @@ public final class TcpPeerConnection implements PeerConnection {
 
     @Override
     public void sendMessage(final GameMessage message) {
+        Logger.logInfo(this + ": Sending message " + message.getClass().getSimpleName());
         this.messageSender.sendMessage(message);
     }
 
@@ -65,8 +67,8 @@ public final class TcpPeerConnection implements PeerConnection {
     }
 
     @Override
-    public void removeMessageListener(final MessageHandler listener) {
-        this.messageReceiver.removeMessageListener(listener);
+    public void queueRemoveMessageListener(final MessageHandler listener) {
+        this.messageReceiver.queueRemoveMessageListener(listener);
     }
 
     @Override
@@ -81,7 +83,7 @@ public final class TcpPeerConnection implements PeerConnection {
 
     @Override
     public PeerEndPoint getRemoteEndPoint() {
-        return PeerEndPoint.createFromAddress(this.socket.getRemoteSocketAddress());
+        return PeerEndPoint.ofAddress(this.socket.getRemoteSocketAddress());
     }
 
     @Override

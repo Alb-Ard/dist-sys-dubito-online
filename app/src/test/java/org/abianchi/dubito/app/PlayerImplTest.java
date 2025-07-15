@@ -16,19 +16,17 @@ public class PlayerImplTest {
 
     @BeforeEach
     void setUp() {
-        for(int i = 0; i < Player.MAXHANDSIZE ; i ++){
+        for (int i = 0; i < Player.MAX_HAND_SIZE; i++) {
             this.newHand.add(new CardImpl(Optional.empty()));
         }
         this.testPlayer.receiveNewHand(this.newHand);
     }
 
-
-
     @Test
     void playerNewHandTest() {
-        Assertions.assertTrue(this.testPlayer.getHand().size() == Player.MAXHANDSIZE);
+        Assertions.assertTrue(this.testPlayer.getHand().size() == Player.MAX_HAND_SIZE);
         final List<Card> differentHand = new ArrayList<>();
-        for (int i = 0; i < 5 ; i ++){
+        for (int i = 0; i < 5; i++) {
             differentHand.add(new CardImpl(Optional.empty()));
         }
         this.testPlayer.receiveNewHand(differentHand);
@@ -38,7 +36,7 @@ public class PlayerImplTest {
     @Test
     void playerPlayTest() {
         this.testPlayer.playCards(this.newHand.subList(0, 2));
-        Assertions.assertTrue(this.testPlayer.getHand().size() < Player.MAXHANDSIZE);
+        Assertions.assertTrue(this.testPlayer.getHand().size() < Player.MAX_HAND_SIZE);
     }
 
     @Test
@@ -48,6 +46,5 @@ public class PlayerImplTest {
         this.testPlayer.loseLife();
         Assertions.assertTrue(this.testPlayer.getLives() == 0);
     }
-
 
 }
