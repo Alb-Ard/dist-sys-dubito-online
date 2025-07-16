@@ -47,20 +47,6 @@ Additionally, users who create games will become those lobbies' *owners*, which 
 
 ## Requirements
 
-- Requirements are divided into:
-    - **Functional**: some functionality the software should provide to the user
-    - **Non-functional**: requirements that do not directly concern behavioural aspects, such as consistency, availability, etc.
-    - **Implementation**: constrain the entire phase of system realization, for instance by requiring the use of a specific programming language and/or a specific software tool
-        + these constraints should be adequately justified by political / economic / administrative reasons...
-        + ... otherwise, implementation choices should emerge _as a consequence of_ design
-
-- If there are domain-specific terms, these should be explained in a glossary
-
-- Each requirement must have its own __acceptance criteria__
-    + these will be important for the validation phase
-
----
-
 The following sections group the system requirements by type and by domain functionality.
 Each requirement will be followed by its own acceptance criteria(s).
 
@@ -101,7 +87,7 @@ Each requirement will be followed by its own acceptance criteria(s).
 
 - 1.2.1: The app must let every player know which cards they have in their hand and what's the current round card value.
     - The user must be able to see *only* their hand and the cards that comprise it, without having the ability to see other players' hands.
-    - The app *must* clearly show the current round card value so that players may know which of their cards can be discarded safely.
+    - The app must clearly show the current round card value so that players may know which of their cards can be discarded safely.
 - 1.2.2: The app must let each player discard a variable amount of cards from their hand.
     - During their turn, a player must be capable of selecting up to 3 cards from their hand that can then be discarded with the press of a button or a key.
     - The app must notify every other users how many cards the turn player has discarded.
@@ -128,14 +114,14 @@ Each requirement will be followed by its own acceptance criteria(s).
 
 - 2.1: The lobby management should not have network partition protection systems in place.
     - If the lobby management system has network problems or is not available, then the users can not access it.
-    - By consequence, if a single user loses connection to the lobby management system, it's the user responsibility to find the issue.
+    - By consequence, if a single user loses connection to the lobby management system, it's the user responsibility to connect back to it.
 - 2.2: The lobby management must provide always consistency and correctness of data.
-    - The information the users receve from the lobby management system must always be corrent and up-to-date, taking into account network delays.
+    - The information the users receve from the lobby management system must always be correct and up-to-date, taking into account network delays.
 - 2.3: The game management should not have network partition protection systems in place.
     - If a users loses connection to the game, he won't be able to connect back.
 - 2.4: The game management should notify each player of other users' actions in a consistent manner, while still keeping a certain level of availability.
     - When a player discards a certain amount of cards, even players that are not immediately after them in the turn order should be notified of the game change that occurred.
-    - When a new round starts, each player must have their UI updated *when it's their turn* (they must have the most recent and updated view of the game).
+    - When a new round starts, each player must have their UI updated (they must have the most recent and updated view of the game).
 
 ### 3. Implementation
 
@@ -144,63 +130,33 @@ Each requirement will be followed by its own acceptance criteria(s).
 
 ## Design
 
-This chapter explains the strategies used to meet the requirements identified in the analysis, describing its architecture,
-infrastructure and important aspects that will later be expanded in the implementation.
-
+This chapter explains the strategies used to meet the requirements identified in the analysis, describing its architecture, infrastructure and important aspects that will later be expanded in the implementation.
 
 ### Architecture
 
 The project follows the MVC architecture to develop its main logic and program.
 
 Focusing on the distributed part, the project is divided into 2 main different parts, each focusing on one specific aspect of the previously established requirements:
-- The lobby system was developed following the **client-server architecture**, one of the most typical distributed application structure. This allowed us to partition tasks/workloads 
-between the providers of a resource or service (the server lobby) and the service requesters (the user clients). Clients and servers exchange messages in a request–response messaging pattern:
-each user may make one or multiple specific requests, after which servers provide the user clients with the necessary functions/services in order to satisfy the user's request. That includes: accessing any currently 
-available lobbies, create new ones, set their own username, start a new game. The server can also receive and handle requests from many distinct clients in a short period, with a certain limit. Server relies on a scheduling 
-system to prioritize incoming requests from clients to accommodate them. Also, servers provide encryption of lobbies using a simple password system to protect certain lobbies;
-- The main game establishes communications between each user using **Peer-To-Peer (P2P)**. A peer-to-peer network is designed around the notion of *equal peer nodes* simultaneously functioning 
-as both "clients" and "servers" to the other nodes on the network. Each in-game user, along with remaining connected to the lobby server, also becomes a peer.
-Each player can then send messages/resources based on their in-game actions (discarding cards, calling liar), without requiring the usage 
-of a central coordination system when updating the game state after each actions.
-
-The project overall primarily follows the **Transmission Control Protocol (TCP)**, one of the main protocols of the Internet protocol suite. TCP provides reliable, ordered, 
-and error-checked delivery of a stream of data between applications running on hosts communicating via an IP network. This was chosen because users do not need to know the 
-particular mechanisms for sending data to other players (in other words, TCP offers a certain level of *transparency*). We've also chosen TCP protocol since the lobby system and game application 
-required more focus on *consistency*, making sure that each message sent by the system to its users would be correct, rather than focusing on its availabilty.
-
+- The lobby system was developed following the **client-server** achitecture, one of the most typical distributed application structure. This allowed us to partition tasks/workloads between the providers of a resource or service (the server lobby) and the service requesters (the user clients). Clients can request resources or operations to the server, and the server will respond with the required data. The server can also send unsolicited data to the clients, to notify when a change in the system has happened;
+- The main game is, instead, build using a **Peer-To-Peer (P2P)** architecture. A peer-to-peer network is designed around the notion of *equal peer nodes* simultaneously functioning as both "clients" and "servers" to the other nodes on the network. Each in-game user, along with remaining connected to the lobby server, also becomes a peer.
+Each player can then send resources or operation results based on their in-game actions (discarding cards, calling liar) to the other peers, without requiring the usage of a central coordination system when updating the game state after each actions.
 
 ### Infrastructure
 The project's infrastructure was developed and composed as such:
 
-- Each player is considered a client. N players can connect to a server with specific IP address and port;
-- Each player is capable of creating a lobby (either password-protected or not), containing up to a max of 4 players;
-- Theoretically, multiple servers can be located on the same machine;
-- At the practical and at testing level however, only one server was initialized on the machine. All clients were also run on the same machine for development and simplicity purposes.
-  It was also tested that it's possible for clients to be distributed across the world as long as the
-  leader’s firewall accepts connections from outside the network;
-- When starting the game, server connects each player in a lobby to each other, creating a new P2P network;
-- During game sessions, players interact with each other, acting both as clients and servers for each other;
-- Communication is performed via *custom messaging system*, where multiple types of messages where developed for each possible event that would normally occur in the application
-  (both for lobbies and in-game events);
+- The distributed configuration is, usually, the following:
+    - $[1,N]$ machines host the lobby server(s)
+    - $[0,N]$ machines act as clients
+- Each client can connect to a lobby server with its IP address and port;
+- Each player is capable of creating a lobby (either password-protected or not), containing up to a max of $4$ players, where other players may join;
+- When starting the game, the lobby owner player creates a new P2P network, while the lobby server sends to all other players in the lobby the owner's IP and port, so that they can connect to it;
 
 ![Infrastructure](report_images/component_diagram.png "Infrastructure Diagram")
 
 *Diagram to show the infrastructure*
 
-- are there infrastructural components that need to be introduced? how many?
-    * e.g. clients, servers, load balancers, caches, databases, message brokers, queues, workers, proxies, firewalls, CDNs, etc.
-- how do components	_distribute_ over the network? _where_?
-    * e.g. do servers / brokers / databases / etc. sit on the same machine? on the same network? on the same datacenter? on the same continent?
-
-- how do components _find_ each other?
-    * how to _name_ components?
-    * e.g. DNS, _service discovery_, _load balancing_, _etc._
-
-> Component diagrams are welcome here
-
 ### Modelling
-There are 2 main files that act as the focal point for the distributed enhancements of the entire
-project, those being `PeerNetworkImpl` and `PeerGraphNetwork`.
+There are 2 main files that act as the focal point for the distributed enhancements of the entire project, those being `PeerNetworkImpl` and `PeerGraphNetwork`.
 These classes utilize a series of smaller files which abstract the entire distributed mechanism for the project, 
 which are:
 - `PeerConnection` (main interface to create connections);
@@ -288,85 +244,49 @@ Once the game starts, events are handled differently:
 
 ### Data and Consistency Issues
 
-- Is there any data that needs to be stored?
-    * _what_ data? _where_? _why_?
-
-- how should _persistent data_ be __stored__?
-    * e.g. relations, documents, key-value, graph, etc.
-    * why?
-
-- Which components perform queries on the database?
-    * _when_? _which_ queries? _why_?
-    * concurrent read? concurrent write? why?
-
-- Is there any data that needs to be shared between components?
-    * _why_? _what_ data?
+All data in the system is *volatile*, meaning it does not need to be stored on disk or in a database.
+For this reason all information is kept in memory by the lobby server(s), and it is lost when they are shutdown.
+A representation of this data is sent to the clients, based on their status:
+- Clients not in a lobby receive the lobby list, with only a subset of their information available;
+- Clients in a lobby receive the full lobby information;
+- All clients receive the full clients list.
 
 ### Fault-Tolerance
 
-- Is there any form of data __replication__ / federation / sharing?
-    * _why_? _how_ does it work?
+The system does not implement any fault-tolerance at the application layer, intstead it offloads it to the underlying network protocol. 
+This was chosed since the requirements do not specify any kind or auto-reconnection or retry-mechanisms.
 
-- Is there any __heart-beating__, __timeout__, __retry mechanism__?
-    * _why_? _among_ which components? _how_ does it work?
-
-- Is there any form of __error handling__?
-    * _what_ happens when a component fails? _why_? _how_?
+A partial fault-tolerance strategy may be to host multiple lobby servers on different machines.
+This gives the users choice of connecting to a different server in case the one they wanted is not available.
+Howerer, no data is shared between servers, so each server has an indipendent lobby list.
+An improvement spot may be to use a shared, distributed database of lobbies, so that multiple servers can use the same lobby list.
 
 ### Availability
-In case of network partitioning, the system prioritizes consistency over availability. The main focus
-of the project is making sure that the right clients enter the respective game session and that each
-player receives the correct game state when it's their turn to play. In case a
-client goes offline while in a lobby, a message is sent to other lobby users to notify them of that disconnection,
-without any attempt performed to retry connecting to the lobby (the disconnected user must restart the application, connect to the
-server and find the lobby once again, if it hasn't started the game). If a player disconnects during play session, the system still does not
-try to reconnect said player, updating instead the other users' views by showing that the disconnected players has lost all its lives and is now considered
-a loser and continuing the turn order as normal. If only one user remains in game while every other player has disconnected, that player is declared as the winner of the game.
 
-- Is there any __caching__ mechanism?
-    * _where_? _why_?
+In case of network partitioning, as specified by the requirements, the system prioritizes consistency over availability.
+This means that:
+- In case a client goes offline while it is in a lobby, the lobby server removes them form the lobby, and the other lobby users are notified of the disconnection.
+- If a non-owner client disconnects during a game session, the owner removes them from the game.
+- If the owner client disconnects during a game session, the other clients perform a *host-migration*, where the next valid player becomes the game owner.
 
-- Is there any form of __load balancing__?
-    * _where_? _why_?
-
-- In case of __network partitioning__, how does the system behave?
-    * _why_? _how_?
+In any case, the system does not try to reconnect in case of a disconnection.
 
 ### Security
-Authentication is an optional action performed only during lobby creation. Whenever a user sets a new lobby, it can decide
-to add an extra form of authentication by establishing a lobby password. Whenever another user tries to join a protected
-lobby, it is first sent to a new view where the system forces the user to input the correct password.
-User written password is given to the server, who retrieves the lobby's password to compare the two. If they are the same, server
-sends a JoinLobbyMessage to the owner and adds the new user to the lobby list (if it's not full). Otherwise, server sends to the new user
-a JoinLobbyFailedMessage, asking for the user to retry inputting the correct password.
-These passwords are not encrypted and are handled by server as simple strings.
 
-- Is there any form of __authentication__?
-    * _where_? _why_?
+Clients are not authenticated by the system, since requirements do not specify it.
 
-- Is there any form of __authorization__?
-    * which sort of _access control_?
-    * which sorts of users / _roles_? which _access rights_?
-
-- Are __cryptographic schemas__ being used?
-    * e.g. token verification, 
-    * e.g. data encryption, etc.
-
---- 
-<!-- Riparti da qui  -->
+Authotization is optional and it is performed by the lobby server when a client tries to join a password protected lobby.
+Whenever an user sets a new lobby, it can decide to set a lobby password. 
+Whenever another user tries to join a protected lobby, it is required to send a password along with the join request.
+If the passwords match, the user is added to the lobby (if it's not full). Otherwise, the server sends an error back to the client.
+These passwords are not encrypted and are handled by the sytems as simple strings.
 
 ## Implementation
 
-- which __network protocols__ to use?
-    * e.g. UDP, TCP, HTTP, WebSockets, gRPC, XMPP, AMQP, MQTT, etc.
-- how should _in-transit data_ be __represented__?
-    * e.g. JSON, XML, YAML, Protocol Buffers, etc.
-- how should _databases_ be __queried__?
-    * e.g. SQL, NoSQL, etc.
-- how should components be _authenticated_?
-    * e.g. OAuth, JWT, etc.
-- how should components be _authorized_?
-    * e.g. RBAC, ABAC, etc.
+The project uses **Transmission Control Protocol (TCP)** as its netowrk protocol. We chose it instead of UDP since it fits best with our requirements: TCP provides reliable, ordered, and error-checked delivery of a stream of data between applications running on hosts communicating via an IP network, and since out use cases require more focus on *consistency* and *reliability* instead of fast delivery, this was the obvious choice.
+
+The application data transmitted over the network is encoded using **JSON**. This was chosen both because of its maturity as a standard, which implies robust support from languages and libraries, and because of its ability to represent complex data without becoming too verbose.
+We used the library **jackson** for serialization, because it had better support out of the box for handling inheritance of classes, which is used for the messages representation.
 
 ### Technological details
 
@@ -394,22 +314,6 @@ Tests are mainly divided into these sections:
    capable of communicating with other in-game players;
    * Focus points of these tests would be whether a peer would exchange messages, how the peer network would handle
    each update and making sure that each peer in the network would be UP-TO-DATE during their turn.
-
-
-- how were individual components **_unit_-test**ed?
-- how was communication, interaction, and/or integration among components tested?
-- how to **_end-to-end_-test** the system?
-    * e.g. production vs. test environment
-
-- for each test specify:
-    * rationale of individual tests
-    * how were the test automated
-    * how to run them
-    * which requirement they are testing, if any
-
-> recall that _deployment_ __automation__ is commonly used to _test_ the system in _production-like_ environment
-
-> recall to test corner cases (crashes, errors, etc.)
 
 ### Acceptance test
 Manual testing was performed in order to:
@@ -445,6 +349,7 @@ Project deployment was done following these instructions:
    *
 
 ## User Guide
+
 Here we have provided all the necessaries steps to play the game:
 1. Launch at least one `LobbyServer` that users can later join into;
 2. Launch the game: after clicking *Start* button, players will input the server IP address and port of the currently active server
