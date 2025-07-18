@@ -153,6 +153,14 @@ The project's infrastructure was developed and composed as such:
 - When starting the game, the lobby owner player creates a new P2P network, while the lobby server sends to all other players in the lobby the owner's IP and port, so that they can connect to it;
 
 ```plantuml
+@startuml
+[Lobby Server] as LS
+[Client] -> LS : connect
+LS .. (Lobby) : create
+[Client] .. (Lobby) : create
+[Client] .. (Lobby) : join
+
+@enduml
 
 ```
 
@@ -216,7 +224,7 @@ The system is supported by other classes that create the infrastructure needed t
 - GamePeer
 
 #### Events
-Domain events change depending whether the user is in game session or not:
+Domain events change depending on whether the user is in game session or not:
 
 Events can be divided in groups:
 
@@ -452,7 +460,59 @@ The distributed components always react to messages by updating their local stat
 Specifically:
 - The lobby server contains and owns the active lobbies and users, while keeping track of which users are in which lobbies and who owns every lobby. Its state is then replicated on the clients;
 - The lobby clients contain a view of the active lobbies, users and, optionally, the current lobby in which they are in. It does *not* own this state, and is always being updated based on server's state. Also, every modification/operation is always first sent to the server for approval before being applied.
-- The game clients contain the active game state (which includes the state of all players in a game). It is owned locally by each player and it is updated based on events received by the game owner and by other clients.
+- The game clients contain the active game state (which includes the state of all players in a game). It is owned locally by each player, and it is updated based on events received by the game owner and by other clients.
+
+```plantuml
+@startuml
+
+
+[*] --> LobbyServer
+
+LobbyServer -> LobbyServerUpdated : NewUser
+LobbyServer -> LobbyServerUpdated : NewLobby
+LobbyServer -> LobbyServerUpdated : UpdatedLobby
+LobbyServer -> LobbyServerUpdated : UpdatedUsername
+
+LobbyServerUpdated -> Game : StartGame
+
+@enduml
+```
+*Lobby State Diagram*
+
+```plantuml
+@startuml
+left to right direction
+[*] --> PlayerStart
+PlayerStart --> PlayerHandFull : NewRound
+state forkState <<fork>>
+PlayerHandFull --> forkState
+forkState --> PlayerPlayed : Throw Card
+state emptyHand <<choice>>
+PlayerPlayed --> emptyHand
+emptyHand --> PlayerPlayed : cardsInHand > 0
+emptyHand --> PlayerEmptyHand : cardsInHand == 0
+state callLiar <<choice>>
+forkState --> callLiar : Call Liar
+callLiar --> PlayerLifeLost : Wrong Call
+state endGame <<choice>>
+PlayerLifeLost --> endGame
+endGame --> DeadPlayer : life == 0
+endGame --> joinState : life > 0
+DeadPlayer --> [*]
+state joinState <<join>>
+PlayerLifeLost --> joinState
+state winState <<choice>>
+callLiar --> winState : Good Call
+winState --> WinnerPlayer : Player Wins
+WinnerPlayer --> [*]
+winState --> joinState : Other Players Alive
+PlayerEmptyHand --> joinState : No More Cards to Play
+joinState --> PlayerHandFull : NewRound
+
+@enduml
+
+```
+*Game Diagram*
 
 ### Data and Consistency Issues
 
@@ -553,7 +613,15 @@ public abstract class GameMessageBase implements GameMessage {
 }
 ```
 
-*Abstract Class that implements `GameMessage`, this is extended by each type of game message used during gameplay sections*
+*Abstract Class that implements `GameMessage`*
+
+The `GameMessageBase` shown here is then extended by multiple different types of `GameMessage`, each one for a specific purpose. These can be divided into these groups:
+
+-  *Connection Messages*, used to handle connections between users (used to create the P2P network used during game sessions);
+-  *Lobby Messages*, created to manage lobbies (creation, join, disconnect, failures, start of game);
+-  *Game Session Messages*, developed to treat game interactions (player order, new hand for players, new round card, liar and throw actions);
+-  *User Management Messages*, just a couple of messages to update user list to each connected user (new user connected, username updated);
+
 
 ### Technological details
 
@@ -561,7 +629,7 @@ We used the following technologies and libraries:
 
 - Java 21 as our programming language;
 - Swing as GUI framework;
-- JUnit 5 as a testing enviroment;
+- JUnit 5 as a testing environment;
 - Mockito for building mocks when testing;
 - Jackson for JSON serialization
 - JGoodies Binding as support for model-view bindings;
