@@ -142,6 +142,7 @@ Focusing on the distributed part, the project is divided into 2 main different p
 Each player can then send resources or operation results based on their in-game actions (discarding cards, calling liar) to the other peers, without requiring the usage of a central coordination system when updating the game state after each action.
 
 ### Infrastructure
+
 The project's infrastructure was developed and composed as such:
 
 - The distributed configuration is, usually, the following:
@@ -158,74 +159,98 @@ The project's infrastructure was developed and composed as such:
 *Diagram to show the infrastructure*
 
 ### Modelling
-There are 2 main files that act as the focal point for the distributed enhancements of the entire project, those being `PeerNetworkImpl` and `PeerGraphNetwork`.
-These classes utilize a series of smaller files which abstract the entire distributed mechanism for the project, 
-which are:
-- `PeerConnection` (main interface to create connections);
-- `PeerConnectionReceiver` (helps users to receive connections and establish bounds);
-- `PeerExchanger` (lets users exchange their Peer IDs between each other);
-- `MessageHandler` (along `PeerConnection`, the most important class. It allows users to properly handle messages received by server or other users);
-- `PeerEndPoint` (Used to keep track of connections that are being established but are not yet complete).
 
-`PeerNetworkImpl` is an implementation of the `PeerNetwork` interface, acting as a more generic network to define a clear,
-consistent connection between user and server. Along with that, its other main usage is to keep track and update the following information:
-- current session between server and user;
-- online players;
-- open lobbies.
+The distributed system is based on the `PeerNetwork` interface. It declares a contract for interacting with the network in terms of Peers and messages, abstracting away how the network is managed.
 
-Meanwhile `PeerGraphNetwork` acts as a more specialized version of the `PeerNetworkImpl`, it's an
-object that manages each connected peer's server end point, establishing a complex web of connections between user players.
-Its main priorities are:
-- keeping players connected to each other;
-- update game state for each player, making sure that each player has a consistent and UP-TO-DATE view;
-- handle possible user peer disconnect to allow remaining players to continue playing.
+This iterface is then implemented in `PeerNetworkImpl`, which acts as a simple server for other clients, with the ability to connect to other networks.
+
+Then, on top of those, the factory `PeerGraphNetwork` creates a P2P `PeerNetwork` where all clients are connected to one another automatically, by implementing an auto-discovery system for clients.
+
+```plantuml
+@startuml
+
+interface PeerNetwork {
+    + connectToPeer(endPoint: PeerEndPoint): boolean
+    + diconnectFromPeer(peerId: PeerId): boolean
+
+    + sendMessage(message: GameMessage)
+    + addMessageListener(handler: MessageHandler)
+
+    + getPeers(): Map<PeerId, PeerConnection>
+    + getLocalPeerId(): PeerId
+
+    {static} + createBound(): PeerNetwork
+}
+
+class PeerNetworkImpl {
+    {static} + createBound(): PeerNetwork
+}
+
+abstract class PeerGraphNetwork {
+    {static} + createBound(): PeerNetwork
+}
+
+PeerNetworkImpl ..|> PeerNetwork
+PeerGraphNetwork .. PeerNetwork
+
+@enduml
+```
+
+The system is supported by other classes that create the infrastructure needed to create the distributed system, which are:
+- `PeerConnection`: An interface for a client connected to a server;
+    - Implemented in `TcpPeerConnection`;
+- `PeerConnectionReceiver`: An interface for a server receiving `PeerConnection`s;
+    - Implemented in `TcpPeerConnectionReceivr`;
+- `PeerExchanger`: Exhanges the initial information between two clients after they connect;
+- `MessageHandler`: A functional interface for receiving messages incoming from the network;
+- `ObjectSerializer`: An interface for an object that can serialize/deserialize another object, so that it can be sent over the network.
+    - Implemented in `JsonObjectSerializer`.
+- `PeerEndPoint`: A serializable data class wrapping an IP/port pair.
+- `PeerId`: A serializable data class wrapping an opaque identifier for a peer.
+
 
 #### Entities
-The domain entities are:
 
-- Players;
-- Servers;
+- LobbyServer
+- LobbyClient
+- GamePeer
 
 #### Events
-Domain events change depending on whether the user is in game session or not:
+Domain events change depending whether the user is in game session or not:
 
-- Before the game:
-  * connects to server;
-  * sets their username;
-  * creates a lobby;
-  * sets password for the lobby;
-  * joins a lobby;
-- After the game:
-  * plays cards from his hand;
-  * calls another player "liar".
+Events can be divided in groups:
 
-- which __domain entities__ are there?
-    * e.g. _users_, _products_, _orders_, _etc._
+- Lobby management events:
+    - A user requested to create a new lobby;
+    - A user requested to change the information of a lobby;
+    - A user requested to join a lobby;
+    - A user requested to leave a lobby;
+    - A user requested to start a game;
+    - The lobby list is updated;
+    - The current client's lobby information is updated;
 
-- how do _domain entities_ __map to__ _infrastructural components_?
-    * e.g. state of a video game on central server, while inputs/representations on clients
-    * e.g. where to store messages in an IM app? for how long?
+- User management events:
+    - A new user has connected;
+    - A user has disconnected;
+    - A user requested to change its username;
+    - The user list is updated;
 
-- which __domain events__ are there?
-    * e.g. _user registered_, _product added to cart_, _order placed_, _etc._
-
-- which sorts of __messages__ are exchanged?
-    * e.g. _commands_, _events_, _queries_, _etc._
-
-- what information does the __state__ of the system comprehend
-    * e.g. _users' data_, _products' data_, _orders' data_, _etc._
-
-> Class diagram are welcome here
+- Game events:
+  - The current round card is changed
+  - A user hand is changed
+  - A user plays cards from his hand;
+  - A user calls the previous user a liar.
 
 ### Interaction
-Almost all events that occur in-game require first an input from the user.
-When a player is in a lobby:
-1. user sends an input to the server, which is then serialized into a specific message depending on the button
- that was pressed;
-2. server receives message and performs a specific action accordingly (changin username, creating a new lobby, attempting to join a lobby);
-Once the game starts, events are handled differently:
-1. player sends either a message declaring to have played some cards or that he's calling the previous player a liar;
-2. other players receive said message and update their internal game state accordingly.
+
+At a high level, interactions between components can be grouped by:
+- When the user is not in a game:
+    1. A client sends a message on the network to the server;
+    2. The server receives message and performs a specific action accordingly, replying to the client and/or notifing all clients;
+- When the user is in a game:
+    1. A client send a message to all other clients, so that the state remains synchronized between all clients.
+
+More in detail, the interactions for specific actions are the following:
 
 ```plantuml
 @startuml
@@ -248,6 +273,7 @@ LS -> U1: Send Lobby List
 @enduml
 ```
 *Application Startup and User Setup sequence diagram*
+
 ```plantuml
 @startuml
 participant User1 as U1
@@ -267,6 +293,7 @@ US -> U2: Updated User List
 @enduml
 ```
 *Change of username sequence diagram*
+
 ```plantuml
 @startuml
 participant User1 as U1
@@ -286,6 +313,7 @@ LS -> U2: Updated Lobby List
 @enduml
 ```
 *Creation of new lobby sequence diagram*
+
 ```plantuml
 @startuml
 participant User1 as U1
@@ -309,6 +337,7 @@ LS -> U2: Updated Lobby Info
 @enduml
 ```
 *Update of lobby (either setting username or password) sequence diagram*
+
 ```plantuml
 @startuml
 participant UserJoiningLobby as U1
@@ -336,6 +365,7 @@ end
 @enduml
 ```
 *Lobby Join sequence diagram*
+
 ```plantuml
 @startuml
 participant UserOwner as U1
@@ -365,6 +395,7 @@ end
 @enduml
 ```
 *Start of game sequence diagram*
+
 ```plantuml
 @startuml
 participant Player1Owner as U1
@@ -416,12 +447,12 @@ end
 
 ### Behaviour
 
-- how does _each_ component __behave__ individually (e.g. in _response_ to _events_ or messages)?
-    * some components may be _stateful_, others _stateless_
+The distributed components always react to messages by updating their local state, optionally notifing other components of their new state.
 
-- which components are in charge of updating the __state__ of the system? _when_? _how_?
-
-> State diagrams are welcome here
+Specifically:
+- The lobby server contains and owns the active lobbies and users, while keeping track of which users are in which lobbies and who owns every lobby. Its state is replicated on the clients;
+- The lobby clients contain a view of the active lobbies, users and, optionally, the current lobby in which they are in. It does *not* own this state, and is is always updated based on the server and every modification/operation is always sent to the server for approval.
+- The game clients contain the active game state (which includes the state of all players in a game). It is owned locally by each player and it is updated based on events received by the game owner and by other clients.
 
 ### Data and Consistency Issues
 
@@ -469,11 +500,23 @@ The project uses **Transmission Control Protocol (TCP)** as its network protocol
 The application data transmitted over the network is encoded using **JSON**. This was chosen both because of its maturity as a standard, which implies robust support from languages and libraries, and because of its ability to represent complex data without becoming too verbose.
 We used the library **jackson** for serialization, because it had better support out of the box for handling inheritance of classes, which is used for the messages' representation.
 
-We have developed our **ad-hoc messaging protocol** in order to exchange data between users
+We have developed our **ad-hoc messaging protocol** in order to exchange data between users.
+It is based on the `GameMessage` interface, which defines the message *sender* (the peer who sent the message on the network) and the *receipients* (an optional set of peers that will receive the message. If not provided, the message is considered a broadcast).
 
 ### Technological details
 
-- any particular _framework_ / _technology_ being exploited goes here
+We used the following technologies and libraries:
+
+- Java 21 as our programming language;
+- Swing as GUI framework;
+- JUnit 5 as a testing enviroment;
+- Mockito for building mocks when testing;
+- Jackson for JSON serialization
+- JGoodies Binding as support for model-view bindings;
+- Gradle as build system;
+- Git as source control;
+- GitHub for hosting the repository;
+- GitHub issues and pull requests for assigning and tracking tasks;
 
 ## Validation
 
