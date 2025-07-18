@@ -17,7 +17,7 @@ final report/artifact."
 
 ## Abstract
 
-This project's objective is to recreate a version of the famous card game called "Dubito", following the rules and ideas of the videogames "Liar's Bar" and "Master Bluff". 
+This project's objective is to recreate a version of the famous card game called "Dubito", following the rules and ideas of the videogame "Liar's Bar" and "Master Bluff". 
 
 The game rules are the following:
 - At the start of each round each player receives 5 cards and a specific type of card is declared (Kings, Queens, Aces);
@@ -43,7 +43,7 @@ All users will be able to:
 - Use the application to create or find a game to play with other users;
 - Participate in a game by doing the actions expressed in the rules.
 
-Additionally, users who create games will become those lobbies' *owners*, which will give them additional funcionality to manage the game(s) they create.
+Additionally, users who create games will become those lobbies' *owners*, which will give them additional functionality to manage the game(s) they create.
 
 ## Requirements
 
@@ -59,21 +59,21 @@ Each requirement will be followed by its own acceptance criteria(s).
 - 1.1.2: The app must let an user join an existing lobby, even if password-protected, while it is not in a lobby.
     - The user must be able to join a lobby from the list (see Req. 1.1.1) if the lobby has not reached the maximum number of participants.
     - If the lobby is password protected the app must prompt the user for the password. 
-    - When an user succesfully joins a lobby, all other users should be notifyed of the updated participant count for the lobby.
-    - The funtionality must be available only when the user is not in a lobby already.
+    - When an user successfully joins a lobby, all other users should be notified of the updated participant count for the lobby.
+    - The functionality must be available only when the user is not in a lobby already.
     - The user must not be able to join multiple lobbies concurrently.
-- 1.1.3: The app must let an user create a new lobby, while the user is not in a lobby.
-    - The user must be able create a new lobby that other users will be able to see and join.
-    - The funtionality must be available only when the user is not in a lobby already.
+- 1.1.3: The app must let a user create a new lobby, while the user is not in a lobby.
+    - The user must be able to create a new lobby that other users will be able to see and join.
+    - The functionality must be available only when the user is not in a lobby already.
     - When a user creates a lobby, it becomes also it's owner.
     - The user can't be whe owner of multiple lobbies concurrently.
 - 1.1.4: The app must let a lobby owner set the lobby name and password.
-    - The the lobby owner must be able to insert or change the lobby name and the password.
+    - The lobby owner must be able to insert or change the lobby name and the password.
     - The name must not be empty, while the password *may* be empty.
     - When the changes are applied, all other users (both in the lobby and outside) must receive the updated information.
 - 1.1.5: The app must let a user that is in a lobby leave it.
     - The app must let a user exit from the lobby it is in, notifying all other users of the updated user count for the lobby.
-    - The funtionality must be available only when the user is in a lobby.
+    - The functionality must be available only when the user is in a lobby.
 - 1.1.6: The app must let the lobby owner delete its lobby.
     - The lobby owner must be able to delete its lobby, notifying all users that the lobby doesn't exist anymore and kicking out the users who where in the lobby.
 - 1.1.7: The app must let the lobby owner start the game with all the lobby users as participants.
@@ -108,7 +108,7 @@ Each requirement will be followed by its own acceptance criteria(s).
 
 - 1.3.1 The app must let a user set its display name.
     - The user must be able to set a name that will be shown to other users.
-    - No restriction should be applied if the name is alreday used, so two users can have the same name.
+    - No restriction should be applied if the name is already used, so two users can have the same name.
 
 ### 2. Non-functional
 
@@ -116,7 +116,7 @@ Each requirement will be followed by its own acceptance criteria(s).
     - If the lobby management system has network problems or is not available, then the users can not access it.
     - By consequence, if a single user loses connection to the lobby management system, it's the user responsibility to connect back to it.
 - 2.2: The lobby management must provide always consistency and correctness of data.
-    - The information the users receve from the lobby management system must always be correct and up-to-date, taking into account network delays.
+    - The information the users receive from the lobby management system must always be correct and up-to-date, taking into account network delays.
 - 2.3: The game management should not have network partition protection systems in place.
     - If a users loses connection to the game, he won't be able to connect back.
 - 2.4: The game management should notify each player of other users' actions in a consistent manner, while still keeping a certain level of availability.
@@ -137,9 +137,9 @@ This chapter explains the strategies used to meet the requirements identified in
 The project follows the MVC architecture to develop its main logic and program.
 
 Focusing on the distributed part, the project is divided into 2 main different parts, each focusing on one specific aspect of the previously established requirements:
-- The lobby system was developed following the **client-server** achitecture, one of the most typical distributed application structure. This allowed us to partition tasks/workloads between the providers of a resource or service (the server lobby) and the service requesters (the user clients). Clients can request resources or operations to the server, and the server will respond with the required data. The server can also send unsolicited data to the clients, to notify when a change in the system has happened;
+- The lobby system was developed following the **client-server** architecture, one of the most typical distributed application structure. This allowed us to partition tasks/workloads between the providers of a resource or service (the server lobby) and the service requesters (the user clients). Clients can request resources or operations to the server, and the server will respond with the required data. The server can also send unsolicited data to the clients, to notify when a change in the system has happened;
 - The main game is, instead, build using a **Peer-To-Peer (P2P)** architecture. A peer-to-peer network is designed around the notion of *equal peer nodes* simultaneously functioning as both "clients" and "servers" to the other nodes on the network. Each in-game user, along with remaining connected to the lobby server, also becomes a peer.
-Each player can then send resources or operation results based on their in-game actions (discarding cards, calling liar) to the other peers, without requiring the usage of a central coordination system when updating the game state after each actions.
+Each player can then send resources or operation results based on their in-game actions (discarding cards, calling liar) to the other peers, without requiring the usage of a central coordination system when updating the game state after each action.
 
 ### Infrastructure
 The project's infrastructure was developed and composed as such:
@@ -187,7 +187,7 @@ The domain entities are:
 - Servers;
 
 #### Events
-Domain events change depending whether the user is in game session or not:
+Domain events change depending on whether the user is in game session or not:
 
 - Before the game:
   * connects to server;
@@ -266,7 +266,7 @@ US -> U2: Updated User List
 
 @enduml
 ```
-*change of username sequence diagram*
+*Change of username sequence diagram*
 ```plantuml
 @startuml
 participant User1 as U1
@@ -308,7 +308,7 @@ LS -> U2: Updated Lobby Info
 
 @enduml
 ```
-*update of lobby (either setting username or password) sequence diagram*
+*Update of lobby (either setting username or password) sequence diagram*
 ```plantuml
 @startuml
 participant UserJoiningLobby as U1
@@ -364,7 +364,7 @@ end
 
 @enduml
 ```
-*start of game sequence diagram*
+*Start of game sequence diagram*
 ```plantuml
 @startuml
 participant Player1Owner as U1
@@ -412,7 +412,7 @@ end
 
 @enduml
 ```
-*in-game interaction sequence diagram*
+*In-game interaction sequence diagram*
 
 ### Behaviour
 
@@ -434,12 +434,12 @@ A representation of this data is sent to the clients, based on their status:
 
 ### Fault-Tolerance
 
-The system does not implement any fault-tolerance at the application layer, intstead it offloads it to the underlying network protocol. 
-This was chosed since the requirements do not specify any kind or auto-reconnection or retry-mechanisms.
+The system does not implement any fault-tolerance at the application layer, instead it offloads it to the underlying network protocol. 
+This was chosen since the requirements do not specify any kind or auto-reconnection or retry-mechanisms.
 
 A partial fault-tolerance strategy may be to host multiple lobby servers on different machines.
 This gives the users choice of connecting to a different server in case the one they wanted is not available.
-Howerer, no data is shared between servers, so each server has an indipendent lobby list.
+However, no data is shared between servers, so each server has an independent lobby list.
 An improvement spot may be to use a shared, distributed database of lobbies, so that multiple servers can use the same lobby list.
 
 ### Availability
@@ -456,18 +456,18 @@ In any case, the system does not try to reconnect in case of a disconnection.
 
 Clients are not authenticated by the system, since requirements do not specify it.
 
-Authotization is optional and it is performed by the lobby server when a client tries to join a password protected lobby.
-Whenever an user sets a new lobby, it can decide to set a lobby password. 
+Authorization is optional and it is performed by the lobby server when a client tries to join a password protected lobby.
+Whenever a user sets a new lobby, it can decide to set a lobby password. 
 Whenever another user tries to join a protected lobby, it is required to send a password along with the join request.
 If the passwords match, the user is added to the lobby (if it's not full). Otherwise, the server sends an error back to the client.
-These passwords are not encrypted and are handled by the sytems as simple strings.
+These passwords are not encrypted and are handled by the systems as simple strings.
 
 ## Implementation
 
-The project uses **Transmission Control Protocol (TCP)** as its netowrk protocol. We chose it instead of UDP since it fits best with our requirements: TCP provides reliable, ordered, and error-checked delivery of a stream of data between applications running on hosts communicating via an IP network, and since out use cases require more focus on *consistency* and *reliability* instead of fast delivery, this was the obvious choice.
+The project uses **Transmission Control Protocol (TCP)** as its network protocol. We chose it instead of UDP since it fits best with our requirements: TCP provides reliable, ordered, and error-checked delivery of a stream of data between applications running on hosts communicating via an IP network, and since out use cases require more focus on *consistency* and *reliability* instead of fast delivery, this was the obvious choice.
 
 The application data transmitted over the network is encoded using **JSON**. This was chosen both because of its maturity as a standard, which implies robust support from languages and libraries, and because of its ability to represent complex data without becoming too verbose.
-We used the library **jackson** for serialization, because it had better support out of the box for handling inheritance of classes, which is used for the messages representation.
+We used the library **jackson** for serialization, because it had better support out of the box for handling inheritance of classes, which is used for the messages' representation.
 
 We have developed our **ad-hoc messaging protocol** in order to exchange data between users
 
@@ -569,7 +569,7 @@ While working on this project, i've discovered many interesting and peculiar fin
 and how they operate. The work proved to be quite a challenging task, more than what we initially thought.
 Both me and my colleague were quite busy with our everyday life, spending what we could of our free time studying and continuing
 development for the project. Despite that, once everything started to "click", we've both felt a great sense of satisfaction and accomplishment.
-The main strenghts of the project i feel are its quite intricate (yet easy to understand) messaging system, that allowed us to create fluid and consistent
+The main strengths of the project i feel are its quite intricate (yet easy to understand) messaging system, that allowed us to create fluid and consistent
 interactions between each player (and between user and server while in lobby).
 These strenghts came at quite the cost though: implementing our initial model design into a working system felt at first easy to apply, but we soon found out
 many issues and bugs caused by message serialization (especially regarding key bindings) and the initial setup of P2P network for users in a lobby when starting the game.
