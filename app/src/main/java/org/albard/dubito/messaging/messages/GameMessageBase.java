@@ -20,4 +20,35 @@ public abstract class GameMessageBase implements GameMessage {
     public Set<PeerId> getReceipients() {
         return this.receipients == null ? null : Set.copyOf(this.receipients);
     }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((sender == null) ? 0 : sender.hashCode());
+        result = prime * result + ((receipients == null) ? 0 : receipients.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        GameMessageBase other = (GameMessageBase) obj;
+        if (sender == null) {
+            if (other.sender != null)
+                return false;
+        } else if (!sender.equals(other.sender))
+            return false;
+        if (receipients == null) {
+            if (other.receipients != null)
+                return false;
+        } else if (!receipients.equals(other.receipients))
+            return false;
+        return true;
+    }
 }

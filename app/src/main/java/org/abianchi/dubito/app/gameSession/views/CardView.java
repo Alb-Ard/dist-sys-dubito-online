@@ -2,192 +2,70 @@ package org.abianchi.dubito.app.gameSession.views;
 
 import org.abianchi.dubito.app.gameSession.models.Card;
 import org.abianchi.dubito.app.gameSession.models.CardType;
+import org.albard.utils.Logger;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.net.URL;
-import java.awt.geom.AffineTransform;
+import java.util.Optional;
 
-public class CardView extends ImageIcon {
+public class CardView extends JToggleButton {
+    private static final String IMAGE_FOLDER_PATH = "card_images/";
+    private static final String CARD_BACK_IMAGE_FILE_PATH = IMAGE_FOLDER_PATH + "card_back.png";
 
-    private static final String IMAGE_PATH = "card_images/";
+    private final Card card;
+    private final String cardImagePath;
 
-    private String cardImagePath;
+    private Optional<Rotation> rotation;
 
-    private Card card;
-
-    private boolean isClicked;
-
-    private boolean isRotatedLeft = false;
-    private boolean isRotatedRight = false;
-
-    public CardView(Card card) {
-        this.isClicked = false;
+    public CardView(final Card card) {
+        this.rotation = Optional.empty();
         this.card = card;
-        switch(this.card.getCardType()){
+        switch (this.card.getCardType()) {
             case ACE_OF_HEARTS, ACE_OF_SPADES:
-                cardImagePath = IMAGE_PATH + "ace" + chooseSeedImage(card.getCardType());
+                this.cardImagePath = IMAGE_FOLDER_PATH + "ace" + getCardTypeSeedName(card.getCardType());
                 break;
             case QUEEN_OF_HEARTS, QUEEN_OF_SPADES:
-                cardImagePath = IMAGE_PATH + "queen" + chooseSeedImage(card.getCardType());
+                this.cardImagePath = IMAGE_FOLDER_PATH + "queen" + getCardTypeSeedName(card.getCardType());
                 break;
             case KING_OF_HEARTS, KING_OF_SPADES:
-                cardImagePath = IMAGE_PATH + "king" + chooseSeedImage(card.getCardType());
+                this.cardImagePath = IMAGE_FOLDER_PATH + "king" + getCardTypeSeedName(card.getCardType());
                 break;
             default:
-                cardImagePath = IMAGE_PATH + "joker_card.png";
+                this.cardImagePath = IMAGE_FOLDER_PATH + "joker_card.png";
                 break;
         }
-        URL resourceUrl = ClassLoader.getSystemClassLoader().getResource(cardImagePath);
-        if(resourceUrl != null) {
-            try {
-                BufferedImage originalImage = ImageIO.read(resourceUrl);
-                Image correctSizeImage = originalImage.getScaledInstance(70, 120,Image.SCALE_SMOOTH);
-                this.setImage(correctSizeImage);
-
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
+        this.setImageFromPath(this.cardImagePath);
     }
 
-    private String chooseSeedImage(CardType cardType) {
+    private static String getCardTypeSeedName(CardType cardType) {
         return cardType.name().contains("HEARTS") ? "_of_hearts.png" : "_of_spades.png";
     }
 
-    public void click() {this.isClicked = !this.isClicked;}
-
-    public void rotateCard(boolean clockwise) {
+    public void setRotation(Optional<Rotation> rotation) {
         // Set rotation flags
-        if (clockwise) {
-            this.isRotatedLeft = true;
-            this.isRotatedRight = false;
-        } else {
-            this.isRotatedLeft = false;
-            this.isRotatedRight = true;
-        }
-
-        // Get the current image
-        Image currentImage = this.getImage();
-
-        // Convert to BufferedImage to perform rotation
-        BufferedImage bufferedImage = new BufferedImage(
-                currentImage.getWidth(null),
-                currentImage.getHeight(null),
-                BufferedImage.TYPE_INT_ARGB
-        );
-
-        // Draw the current image into the buffered image
-        Graphics2D g2d = bufferedImage.createGraphics();
-        g2d.drawImage(currentImage, 0, 0, null);
-        g2d.dispose();
-
-        // Create a rotated version (90 degrees left or right)
-        int width = bufferedImage.getWidth();
-        int height = bufferedImage.getHeight();
-
-        // The rotated image will have swapped dimensions
-        BufferedImage rotatedImage = new BufferedImage(
-                height, width, bufferedImage.getType()
-        );
-
-        g2d = rotatedImage.createGraphics();
-
-        // Set up the affine transform for rotation
-        AffineTransform transform = new AffineTransform();
-
-        // Move to the center of the new image
-        transform.translate(height / 2.0, width / 2.0);
-
-        // Rotate 90 degrees clockwise or counter-clockwise
-        double angle = clockwise ? Math.PI / 2 : -Math.PI / 2;
-        transform.rotate(angle);
-
-        // Move back to adjust for the rotation
-        transform.translate(-width / 2.0, -height / 2.0);
-
-        // Apply the transformation
-        g2d.setTransform(transform);
-        g2d.drawImage(bufferedImage, 0, 0, null);
-        g2d.dispose();
-
-        // Set the rotated image as the new image
-        this.setImage(rotatedImage);
+        this.rotation = rotation;
+        this.setImageFromPath(this.cardImagePath);
     }
 
-    /** method to make the card visible or not, by changing it into the card_back.png image */
     public void setCardVisibility(boolean visible) {
-        /*
-        String imagePath = visible ? cardImagePath : IMAGE_PATH + "card_back.png";
-        URL resourceUrl = ClassLoader.getSystemClassLoader().getResource(imagePath);
+        final String imagePath = visible ? cardImagePath : CARD_BACK_IMAGE_FILE_PATH;
+        this.setImageFromPath(imagePath);
+    }
 
-        if(resourceUrl != null) {
+    private void setImageFromPath(final String imagePath) {
+        ImageUtilities.loadImageFromPath(imagePath, 70, 150).ifPresentOrElse(image -> SwingUtilities.invokeLater(() -> {
             try {
-                BufferedImage originalImage = ImageIO.read(resourceUrl);
-                Image correctSizeImage = originalImage.getScaledInstance(70, 120, Image.SCALE_SMOOTH);
-                this.setImage(correctSizeImage);
-
-                // Re-apply rotation if needed
-                if (isRotatedLeft) {
-                    rotateCard(true);
-                } else if (isRotatedRight) {
-                    rotateCard(false);
-                }
-
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+                this.setIcon(new ImageIcon(this.rotation.map(r -> ImageUtilities.rotateImage(image, r)).orElse(image)));
+            } catch (Exception ex) {
+                ex.printStackTrace();
             }
-        }*/
-        if (visible) {
-            // Show the actual card image
-            URL resourceUrl = ClassLoader.getSystemClassLoader().getResource(cardImagePath);
-            if(resourceUrl != null) {
-                try {
-                    BufferedImage originalImage = ImageIO.read(resourceUrl);
-                    Image correctSizeImage = originalImage.getScaledInstance(70, 120, Image.SCALE_SMOOTH);
-                    this.setImage(correctSizeImage);
-                    // check if it must be rotate either left or right
-                    if (this.isRotatedLeft) {
-                        rotateCard(true);
-                    }
-                    if (this.isRotatedRight) {
-                        rotateCard(false);
-                    }
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        } else {
-            // Show blank card image (card back)
-            URL resourceUrl = ClassLoader.getSystemClassLoader().getResource(IMAGE_PATH + "card_back.png");
-            if(resourceUrl != null) {
-                try {
-                    BufferedImage originalImage = ImageIO.read(resourceUrl);
-                    Image correctSizeImage = originalImage.getScaledInstance(70, 120, Image.SCALE_SMOOTH);
-                    this.setImage(correctSizeImage);
-                    // check if it must be rotate either left or right
-                    if (this.isRotatedLeft) {
-                        rotateCard(true);
-                    }
-                    if (this.isRotatedRight) {
-                        rotateCard(false);
-                    }
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
+        }), () -> Logger.logError("Image not found: " + imagePath));
     }
 
     public String getCardImagePath() {
         return this.cardImagePath;
     }
 
-    public Card getCard() { return this.card; }
-
-    public boolean isClicked() { return this.isClicked; }
-
+    public Card getCard() {
+        return this.card;
+    }
 }

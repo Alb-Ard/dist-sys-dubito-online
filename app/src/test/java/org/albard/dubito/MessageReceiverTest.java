@@ -14,15 +14,16 @@ public final class MessageReceiverTest {
     @Test
     void testCreate() {
         Assertions.assertDoesNotThrow(() -> MessageReceiver.createFromStream(new ByteArrayInputStream(new byte[0]),
-                TestUtilities.createMessageSerializer(TestUtilities.createMessage(), new byte[0])::deserialize));
+                x -> TestUtilities.createMessageSerializer(TestUtilities.createMessage(), new byte[0]).deserialize(x,
+                        GameMessage.class)));
     }
 
     @Test
     void testReceive() throws IOException, InterruptedException {
         final GameMessage expectedMessage = TestUtilities.createMessage();
         try (final InputStream inputStream = new ByteArrayInputStream(new byte[0])) {
-            final MessageReceiver receiver = MessageReceiver.createFromStream(inputStream,
-                    TestUtilities.createMessageSerializer(expectedMessage, "Test".getBytes())::deserialize);
+            final MessageReceiver receiver = MessageReceiver.createFromStream(inputStream, x -> TestUtilities
+                    .createMessageSerializer(expectedMessage, "Test".getBytes()).deserialize(x, GameMessage.class));
             receiver.addMessageListener(m -> {
                 Assertions.assertEquals(expectedMessage, m);
                 return true;

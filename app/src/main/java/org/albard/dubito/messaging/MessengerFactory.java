@@ -3,10 +3,13 @@ package org.albard.dubito.messaging;
 import java.io.IOException;
 import java.net.Socket;
 
-public class MessengerFactory {
-    private final MessageSerializer messageSerializer;
+import org.albard.dubito.messaging.messages.GameMessage;
+import org.albard.dubito.serialization.ObjectSerializer;
 
-    public MessengerFactory(final MessageSerializer messageSerializer) {
+public class MessengerFactory {
+    private final ObjectSerializer<GameMessage> messageSerializer;
+
+    public MessengerFactory(final ObjectSerializer<GameMessage> messageSerializer) {
         this.messageSerializer = messageSerializer;
     }
 
@@ -15,6 +18,7 @@ public class MessengerFactory {
     }
 
     public MessageReceiver createReceiver(final Socket socket) throws IOException {
-        return MessageReceiver.createFromStream(socket.getInputStream(), this.messageSerializer::deserialize);
+        return MessageReceiver.createFromStream(socket.getInputStream(),
+                x -> this.messageSerializer.deserialize(x, GameMessage.class));
     }
 }

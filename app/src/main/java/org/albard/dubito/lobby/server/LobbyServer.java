@@ -1,6 +1,7 @@
 package org.albard.dubito.lobby.server;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import org.albard.dubito.lobby.messages.CreateLobbyFailedMessage;
@@ -10,10 +11,13 @@ import org.albard.dubito.lobby.messages.JoinLobbyMessage;
 import org.albard.dubito.lobby.messages.LeaveLobbyFailedMessage;
 import org.albard.dubito.lobby.messages.LeaveLobbyMessage;
 import org.albard.dubito.lobby.messages.LobbyCreatedMessage;
+import org.albard.dubito.lobby.messages.LobbyGameStartedMessage;
 import org.albard.dubito.lobby.messages.LobbyJoinedMessage;
 import org.albard.dubito.lobby.messages.LobbyLeavedMessage;
 import org.albard.dubito.lobby.messages.LobbyListUpdatedMessage;
 import org.albard.dubito.lobby.messages.LobbyUpdatedMessage;
+import org.albard.dubito.lobby.messages.StartLobbyGameFailedMessage;
+import org.albard.dubito.lobby.messages.StartLobbyGameMessage;
 import org.albard.dubito.lobby.messages.UpdateLobbyFailedMessage;
 import org.albard.dubito.lobby.messages.UpdateLobbyInfoMessage;
 import org.albard.dubito.lobby.models.Lobby;
@@ -21,6 +25,7 @@ import org.albard.dubito.lobby.models.LobbyDisplay;
 import org.albard.dubito.lobby.models.LobbyId;
 import org.albard.dubito.lobby.models.LobbyInfo;
 import org.albard.dubito.messaging.messages.GameMessage;
+import org.albard.dubito.network.PeerEndPoint;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.network.PeerNetwork;
 import org.albard.dubito.userManagement.User;
@@ -74,6 +79,10 @@ public final class LobbyServer {
             this.leaveLobby(leaveLobbyMessage.getLobbyId(), leaveLobbyMessage.getSender());
             return true;
         }
+        if (message instanceof StartLobbyGameMessage startGameMessage) {
+            this.startLobbyGame(startGameMessage.getLobbyId(), startGameMessage.getSender());
+            return true;
+        }
         return false;
     }
 
@@ -124,6 +133,20 @@ public final class LobbyServer {
             }
             this.sendLobbyListTo(null);
         });
+    }
+
+    private void startLobbyGame(final LobbyId lobbyId, final PeerId sender) {
+        Optional.ofNullable(this.service.getLobbies().get(lobbyId)).ifPresentOrElse(lobby -> {
+            if (lobby.getParticipants().size() < 2) {
+                this.network.sendMessage(new StartLobbyGameFailedMessage(this.network.getLocalPeerId(), Set.of(sender),
+                        List.of("Not enough participants")));
+                return;
+            }
+            final PeerEndPoint ownerEndPoint = this.network.getPeers().get(sender).getRemoteEndPoint();
+            this.network.sendMessage(new LobbyGameStartedMessage(this.network.getLocalPeerId(),
+                    Set.copyOf(lobby.getParticipants()), lobbyId, ownerEndPoint));
+        }, () -> this.network.sendMessage(new StartLobbyGameFailedMessage(this.network.getLocalPeerId(), Set.of(sender),
+                List.of("Lobby not found"))));
     }
 
     private void sendLobbyUpdatedToParticipants(final Lobby newLobby) {

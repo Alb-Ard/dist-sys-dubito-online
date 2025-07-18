@@ -4,8 +4,8 @@ import java.net.InetSocketAddress;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.albard.dubito.utils.ObservableMap;
-import org.albard.dubito.utils.ObservableMapListener;
+import org.albard.utils.ObservableMap;
+import org.albard.utils.ObservableMapListener;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

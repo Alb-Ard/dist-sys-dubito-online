@@ -18,8 +18,8 @@ public final class PeerEndPointPair {
     }
 
     public static PeerEndPointPair createFromSocket(final Socket socket) {
-        return new PeerEndPointPair(PeerEndPoint.createFromAddress(socket.getLocalSocketAddress()),
-                PeerEndPoint.createFromAddress(socket.getRemoteSocketAddress()));
+        return new PeerEndPointPair(PeerEndPoint.ofAddress(socket.getLocalSocketAddress()),
+                PeerEndPoint.ofAddress(socket.getRemoteSocketAddress()));
     }
 
     public PeerEndPoint getLocalEndPoint() {
