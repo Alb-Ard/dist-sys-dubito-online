@@ -151,7 +151,9 @@ The project's infrastructure was developed and composed as such:
 - Each player is capable of creating a lobby (either password-protected or not), containing up to a max of $4$ players, where other players may join;
 - When starting the game, the lobby owner player creates a new P2P network, while the lobby server sends to all other players in the lobby the owner's IP and port, so that they can connect to it;
 
-![Infrastructure](report_images/component_diagram.png "Infrastructure Diagram")
+```plantuml
+
+```
 
 *Diagram to show the infrastructure*
 
@@ -225,13 +227,192 @@ Once the game starts, events are handled differently:
 1. player sends either a message declaring to have played some cards or that he's calling the previous player a liar;
 2. other players receive said message and update their internal game state accordingly.
 
+```plantuml
+@startuml
+participant User1 as U1
+participant Server as S
+participant UserServer as US
+participant LobbyServer as LS
+participant User2 as U2
 
-![Infrastructure](report_images/userLobbyInteraction.png "Infrastructure Diagram")
+Note over U1, U2: Phase 1: User 1 Setup
 
-*Diagram to show the infrastructure*
+U1 ->S: Connect (WebSocket/TCP)
+S -> US: Peer Connected
+US -> US: Peer Added
+US -> U1: Send Updated Connected Clients List
+US -> U2: Send Updated Connected Clients List
+US -> LS: Peer Added
+LS -> U1: Send Lobby List
+
+@enduml
+```
+*Application Startup and User Setup sequence diagram*
+```plantuml
+@startuml
+participant User1 as U1
+participant Server as S
+participant UserServer as US
+participant User2 as U2
+
+Note over U1, U2: Phase 2: Change username
+
+U1 -> S : Set Username
+S -> US: Set Peer Username
+US -> US: Username Changed
+US -> U1: Updated User List
+US -> U2: Updated User List
 
 
-> Sequence diagrams are welcome here
+@enduml
+```
+*change of username sequence diagram*
+```plantuml
+@startuml
+participant User1 as U1
+participant Server as S
+participant LobbyServer as LS
+participant User2 as U2
+
+Note over U1, U2: Phase 3: Lobby Creation
+
+U1 -> S : Create new Lobby
+S -> LS: Create new Lobby
+LS -> LS: Lobby Created
+LS -> U1: Updated Lobby List
+LS -> U2: Updated Lobby List
+
+
+@enduml
+```
+*Creation of new lobby sequence diagram*
+```plantuml
+@startuml
+participant User1 as U1
+participant Server as S
+participant LobbyServer as LS
+participant UserInLobby as U2
+participant UserNotInLobby as U3
+
+Note over U1, U3: Phase 4: Lobby Update
+
+U1 -> S : Update Lobby With Name and/or password
+S -> LS: Update Lobby
+LS -> LS: Lobby Updated
+LS -> U1: Updated Lobby List
+LS -> U2: Updated Lobby List
+LS -> U3: Updated Lobby List
+LS -> U1: Updated Lobby Info
+LS -> U2: Updated Lobby Info
+
+
+@enduml
+```
+*update of lobby (either setting username or password) sequence diagram*
+```plantuml
+@startuml
+participant UserJoiningLobby as U1
+participant Server as S
+participant LobbyServer as LS
+participant UserInLobby as U2
+participant UserNotInLobby as U3
+
+Note over U1, U3: Phase 5: Lobby Join
+
+U1 -> S : Join Lobby
+alt password-protected
+S -> LS: Validate Password
+else wrong password
+LS -> U1: Join Failed
+else no password
+LS -> LS: Lobby Updated
+LS -> U1: Updated Lobby List
+LS -> U2: Updated Lobby List
+LS -> U3: Updated Lobby List
+LS -> U1: Updated Lobby Info
+LS -> U2: Updated Lobby Info
+end
+
+@enduml
+```
+*Lobby Join sequence diagram*
+```plantuml
+@startuml
+participant UserOwner as U1
+participant Server as S
+participant LobbyServer as LS
+participant UserClient1 as U2
+participant UserClient2 as U3
+
+Note over U1, U3: Phase 6: Start Game
+
+U1 -> S : Start Game
+S -> LS : Start Game
+alt impossible state to start game
+    LS -> U1: Failed
+else start game
+  LS -> U1: Starting Game
+  LS -> U2: Starting Game
+  LS -> U3: Starting Game
+  U2 -> U1: Connect to Owner
+  U3 -> U1: Connect to Owner
+  U2 -> U1: Ready
+  U3 -> U1: Ready
+  U1 -> U2: Send Player Order
+  U1 -> U3: Send Player Order
+end
+
+@enduml
+```
+*start of game sequence diagram*
+```plantuml
+@startuml
+participant Player1Owner as U1
+participant Player2 as U2
+participant Player3 as U3
+
+Note over U1, U3: Phase 7: Game Interaction
+
+alt new Round Start
+    U1 -> U1: Start New round
+    activate U1
+    U1 -> U1: Create New Hand
+    U1 -> U2: Send Player Hand
+    U1 -> U3: Send Player Hand
+    U1 -> U2: Send Round Card Message
+    U1 -> U3: Send Round Card Message
+    U2 -> U2: Start New Round
+    activate U2
+    U2 -> U2: Create New Hand
+    U2 -> U1: Send Player Hand
+    U2 -> U3: Send Player Hand
+    deactivate U2
+    U3 -> U3: Start New Round
+    activate U3
+    U3 -> U3: Create New Hand
+    U3 -> U1: Send Player Hand
+    U3 -> U2: Send Player Hand
+    deactivate U3
+    deactivate U1
+end
+
+alt throw cards
+    U1 -> U1: Throw Cards
+    U1 -> U2: Send Throw Card Message
+    U1 -> U3: Send Throw Card Message
+end
+
+alt call liar
+    U1 -> U1: Call Liar
+    U1 -> U2: Send Call Liar Message
+    U1 -> U3: Send Call Liar Message
+    Note over U1, U3: This is followed by start of new round
+end
+
+
+@enduml
+```
+*in-game interaction sequence diagram*
 
 ### Behaviour
 
@@ -287,6 +468,8 @@ The project uses **Transmission Control Protocol (TCP)** as its netowrk protocol
 
 The application data transmitted over the network is encoded using **JSON**. This was chosen both because of its maturity as a standard, which implies robust support from languages and libraries, and because of its ability to represent complex data without becoming too verbose.
 We used the library **jackson** for serialization, because it had better support out of the box for handling inheritance of classes, which is used for the messages representation.
+
+We have developed our **ad-hoc messaging protocol** in order to exchange data between users
 
 ### Technological details
 
