@@ -447,11 +447,11 @@ end
 
 ### Behaviour
 
-The distributed components always react to messages by updating their local state, optionally notifing other components of their new state.
+The distributed components always react to messages by updating their local state, optionally notifying other components of their new state.
 
 Specifically:
-- The lobby server contains and owns the active lobbies and users, while keeping track of which users are in which lobbies and who owns every lobby. Its state is replicated on the clients;
-- The lobby clients contain a view of the active lobbies, users and, optionally, the current lobby in which they are in. It does *not* own this state, and is is always updated based on the server and every modification/operation is always sent to the server for approval.
+- The lobby server contains and owns the active lobbies and users, while keeping track of which users are in which lobbies and who owns every lobby. Its state is then replicated on the clients;
+- The lobby clients contain a view of the active lobbies, users and, optionally, the current lobby in which they are in. It does *not* own this state, and is always being updated based on server's state. Also, every modification/operation is always first sent to the server for approval before being applied.
 - The game clients contain the active game state (which includes the state of all players in a game). It is owned locally by each player and it is updated based on events received by the game owner and by other clients.
 
 ### Data and Consistency Issues
@@ -461,7 +461,7 @@ For this reason all information is kept in memory by the lobby server(s), and it
 A representation of this data is sent to the clients, based on their status:
 - Clients not in a lobby receive the lobby list, with only a subset of their information available;
 - Clients in a lobby receive the full lobby information;
-- All clients receive the full clients list.
+- All clients connected to the server receive the full clients list after every update.
 
 ### Fault-Tolerance
 
@@ -502,6 +502,58 @@ We used the library **jackson** for serialization, because it had better support
 
 We have developed our **ad-hoc messaging protocol** in order to exchange data between users.
 It is based on the `GameMessage` interface, which defines the message *sender* (the peer who sent the message on the network) and the *receipients* (an optional set of peers that will receive the message. If not provided, the message is considered a broadcast).
+```
+public abstract class GameMessageBase implements GameMessage {
+    private final PeerId sender;
+    private final Set<PeerId> receipients;
+
+    public GameMessageBase(final PeerId sender, final Set<PeerId> receipients) {
+        this.sender = sender;
+        this.receipients = receipients;
+    }
+
+    public PeerId getSender() {
+        return this.sender;
+    }
+
+    public Set<PeerId> getReceipients() {
+        return this.receipients == null ? null : Set.copyOf(this.receipients);
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((sender == null) ? 0 : sender.hashCode());
+        result = prime * result + ((receipients == null) ? 0 : receipients.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        GameMessageBase other = (GameMessageBase) obj;
+        if (sender == null) {
+            if (other.sender != null)
+                return false;
+        } else if (!sender.equals(other.sender))
+            return false;
+        if (receipients == null) {
+            if (other.receipients != null)
+                return false;
+        } else if (!receipients.equals(other.receipients))
+            return false;
+        return true;
+    }
+}
+```
+
+*Abstract Class that implements `GameMessage`, this is extended by each type of game message used during gameplay sections*
 
 ### Technological details
 
@@ -608,17 +660,20 @@ Here we have provided all the necessaries steps to play the game:
 ## Self-evaluation
 
 ### Andrea Bianchi
-While working on this project, i've discovered many interesting and peculiar findings on distributed systems
+I was in charge of developing the main game app for the project. My main focus was developing
+the offline version (models, views, controllers) and focusing on the messaging system we've created together, generating new types of messages
+that would expand the game logic into the online `PeerGraphNetwork` that would be created for the players. We've also helped each other as best as we could
+during development, setting many meeting sessions (both online and in-presence) to develop together what we thought was necessary at each step of the way.
+While working on this project, I've discovered many interesting and peculiar findings on distributed systems
 and how they operate. The work proved to be quite a challenging task, more than what we initially thought.
 Both me and my colleague were quite busy with our everyday life, spending what we could of our free time studying and continuing
 development for the project. Despite that, once everything started to "click", we've both felt a great sense of satisfaction and accomplishment.
-The main strengths of the project i feel are its quite intricate (yet easy to understand) messaging system, that allowed us to create fluid and consistent
+The main strengths of the project I feel are its quite intricate (yet easy to understand) messaging system, that allowed us to create fluid and consistent
 interactions between each player (and between user and server while in lobby).
 These strenghts came at quite the cost though: implementing our initial model design into a working system felt at first easy to apply, but we soon found out
 many issues and bugs caused by message serialization (especially regarding key bindings) and the initial setup of P2P network for users in a lobby when starting the game.
 
 Overall, i personally feel satisfied and i'm happy to have finally completed this long (but enjoyable) journey.
-and the setup for the P2P network
 ### Alberto Arduini
 - An individual section is required for each member of the group
 - Each member must self-evaluate their work, listing the strengths and weaknesses of the product
