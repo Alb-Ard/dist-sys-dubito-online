@@ -153,12 +153,30 @@ The project's infrastructure was developed and composed as such:
 - When starting the game, the lobby owner player creates a new P2P network, while the lobby server sends to all other players in the lobby the owner's IP and port, so that they can connect to it;
 
 ```plantuml
+
 @startuml
-[Lobby Server] as LS
-[Client] -> LS : connect
-LS .. (Lobby) : create
-[Client] .. (Lobby) : create
-[Client] .. (Lobby) : join
+
+frame "Clients [0..N]" {
+  [Client 1]
+  [Client 2]
+  [Client 3]
+  [Client 4]
+}
+
+frame "Lobby Servers [1..N ]" {
+  [Lobby Server 1]
+}
+
+[Client 1] --> [Lobby Server 1] : connects
+[Client 2] --> [Lobby Server 1] : connects
+[Client 3] --> [Lobby Server 1] : connects
+[Client 4] --> [Lobby Server 1] : connects
+
+[Lobby Server 1] ..> (Lobby 1) : creates
+[Client 1] ..> (Lobby 1) : creates
+[Client 2] ..> (Lobby 1) : joins
+[Client 3] ..> (Lobby 1) : joins
+[Client 4] ..> (Lobby 1) : joins
 
 @enduml
 
@@ -464,55 +482,32 @@ Specifically:
 
 ```plantuml
 @startuml
-
-
 [*] --> LobbyServer
+LobbyServer : this hosts Lobbies
+LobbyServer --> LobbyServerUpdated : NewUser
+LobbyServer --> LobbyServerUpdated : NewLobby
+LobbyServer --> LobbyServerUpdated : UpdatedLobby
+LobbyServer --> LobbyServerUpdated : UpdatedUsername
 
-LobbyServer -> LobbyServerUpdated : NewUser
-LobbyServer -> LobbyServerUpdated : NewLobby
-LobbyServer -> LobbyServerUpdated : UpdatedLobby
-LobbyServer -> LobbyServerUpdated : UpdatedUsername
+LobbyServerUpdated --> GameSession : StartGame
 
-LobbyServerUpdated -> Game : StartGame
+state GameSession {
+   GameSession : all the states of the application while playing the game
+   GameSession --> GameStart : PlayerOrderEstablished
+   GameStart --> NewRound : NewRound
+   NewRound : players play in turn order their cards
+   state callLiar <<choice>>
+   NewRound --> callLiar : callLiar
+   callLiar --> NewRound : Players Alive > 1
+   callLiar --> GameOver : Only One Player Left
+   GameOver --> [*]
+   
+}
+
 
 @enduml
 ```
-*Lobby State Diagram*
-
-```plantuml
-@startuml
-left to right direction
-[*] --> PlayerStart
-PlayerStart --> PlayerHandFull : NewRound
-state forkState <<fork>>
-PlayerHandFull --> forkState
-forkState --> PlayerPlayed : Throw Card
-state emptyHand <<choice>>
-PlayerPlayed --> emptyHand
-emptyHand --> PlayerPlayed : cardsInHand > 0
-emptyHand --> PlayerEmptyHand : cardsInHand == 0
-state callLiar <<choice>>
-forkState --> callLiar : Call Liar
-callLiar --> PlayerLifeLost : Wrong Call
-state endGame <<choice>>
-PlayerLifeLost --> endGame
-endGame --> DeadPlayer : life == 0
-endGame --> joinState : life > 0
-DeadPlayer --> [*]
-state joinState <<join>>
-PlayerLifeLost --> joinState
-state winState <<choice>>
-callLiar --> winState : Good Call
-winState --> WinnerPlayer : Player Wins
-WinnerPlayer --> [*]
-winState --> joinState : Other Players Alive
-PlayerEmptyHand --> joinState : No More Cards to Play
-joinState --> PlayerHandFull : NewRound
-
-@enduml
-
-```
-*Game Diagram*
+*Application State Diagram*
 
 ### Data and Consistency Issues
 
