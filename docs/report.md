@@ -152,37 +152,86 @@ The project's infrastructure was developed and composed as such:
 - Each player is capable of creating a lobby (either password-protected or not), containing up to a max of $4$ players, where other players may join;
 - When starting the game, the lobby owner player creates a new P2P network, while the lobby server sends to all other players in the lobby the owner's IP and port, so that they can connect to it;
 
+
 ```plantuml
 
 @startuml
 
-frame "Clients [0..N]" {
-  [Client 1]
-  [Client 2]
-  [Client 3]
-  [Client 4]
-}
+() Serialization
+[JsonSerialization]
+[JsonSerialization] -- [Serialization]
 
-frame "Lobby Servers [1..N ]" {
-  [Lobby Server 1]
-}
+() Connectivity
+[TcpConnectivity]
+[TcpConnectivity] -- [Connectivity]
 
-[Client 1] --> [Lobby Server 1] : connects
-[Client 2] --> [Lobby Server 1] : connects
-[Client 3] --> [Lobby Server 1] : connects
-[Client 4] --> [Lobby Server 1] : connects
+[Networking]
+[Networking] --> [Messaging]
+[Networking] --> [Connectivity]
 
-[Lobby Server 1] ..> (Lobby 1) : creates
-[Client 1] ..> (Lobby 1) : creates
-[Client 2] ..> (Lobby 1) : joins
-[Client 3] ..> (Lobby 1) : joins
-[Client 4] ..> (Lobby 1) : joins
+[Messaging]
+[Messaging] --> [Serialization]
 
 @enduml
 
 ```
 
-*Diagram to show the infrastructure*
+*Infrastructure of the backend libraries*
+
+```plantuml
+
+@startuml
+
+() Networking
+
+() Messaging
+
+frame "Client" {
+	[LobbyClient]
+	[UserClient]
+	[DubitoGame]
+	[Mvc]
+}
+
+[DubitoGame] --> [Mvc]
+[DubitoGame] --> [LobbyClient]
+[DubitoGame] --> [UserClient]
+
+[UserClient] .. [Messaging]
+[LobbyClient] .. [Messaging]
+
+[UserClient] .. [Networking]
+[LobbyClient] .. [Networking]
+
+@enduml
+
+```
+
+*Client-side infrastructure*
+
+```plantuml
+
+@startuml
+
+() Networking
+() Messaging
+
+frame "Server" {
+	[LobbyServer]
+	[UserServer]
+}
+
+[LobbyServer] .. [Messaging]
+[UserServer] .. [Messaging]
+
+[LobbyServer] .. [Networking]
+[UserServer] .. [Networking]
+
+@enduml
+
+```
+
+*Server-side infrastructure*
 
 ### Modelling
 
@@ -482,32 +531,67 @@ Specifically:
 
 ```plantuml
 @startuml
-[*] --> LobbyServer
-LobbyServer : this hosts Lobbies
-LobbyServer --> LobbyServerUpdated : NewUser
-LobbyServer --> LobbyServerUpdated : NewLobby
-LobbyServer --> LobbyServerUpdated : UpdatedLobby
-LobbyServer --> LobbyServerUpdated : UpdatedUsername
+[*] --> Disconnected
 
-LobbyServerUpdated --> GameSession : StartGame
+Disconnected --> ListingLobbies : Connect to Lobby Server
 
-state GameSession {
-   GameSession : all the states of the application while playing the game
-   GameSession --> GameStart : PlayerOrderEstablished
-   GameStart --> NewRound : NewRound
-   NewRound : players play in turn order their cards
-   state callLiar <<choice>>
-   NewRound --> callLiar : callLiar
-   callLiar --> NewRound : Players Alive > 1
-   callLiar --> GameOver : Only One Player Left
-   GameOver --> [*]
-   
-}
+ListingLobbies --> ListingLobbies : Change username
+ListingLobbies --> JoiningLobby : Join lobby
+ListingLobbies --> InLobby : Create lobby
 
+state JoiningLobby <<choice>>
+JoiningLobby --> RequestPassword : Lobby is protected
+JoiningLobby --> InLobby : Lobby is not protected
+
+RequestPassword --> JoiningProtectedLobby : Join protected lobby
+
+state JoiningProtectedLobby <<choice>>
+JoiningProtectedLobby --> InLobby : Password is correct
+JoiningProtectedLobby --> RequestPassword : Password is incorrect
+
+InLobby --> ListingLobbies : Leave lobby
+InLobby --> WaitingForPlayers : Game started
+
+WaitingForPlayers -> InGame : All players ready
 
 @enduml
 ```
 *Application State Diagram*
+
+```plantuml
+
+@startuml
+
+[*] --> PlayerTurn
+
+state PlayerTurn {
+	[*] --> MyTurn : Local player is owner and is alive
+	[*] --> OthersTurn : Local player is not owner or is dead
+	
+	MyTurn --> OthersTurn : Local player has thrown cards
+	MyTurn --> CallingLiar : Local player calls previous player liar
+	MyTurn --> RoundEnding : No one called liar and all cards have been played
+	
+	OthersTurn --> MyTurn : All other players have thrown cards
+	OthersTurn --> CallingLiar : Another player calls previous player liar
+	OthersTurn --> RoundEnding : No one called liar and all cards have been played
+}
+
+state GameStateChanging {
+	state CallingLiar <<choice>>
+	CallingLiar --> RoundEnding : Previous player lied
+	CallingLiar --> RoundEnding : Previous player did not lie
+	
+	state RoundEnding <<choice>>
+	RoundEnding --> PlayerTurn : No one has won
+	RoundEnding --> GameOver : Someone has won
+	
+	GameOver --> [*]
+}
+
+@enduml
+
+```
 
 ### Data and Consistency Issues
 
