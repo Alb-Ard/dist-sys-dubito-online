@@ -605,12 +605,12 @@ A representation of this data is sent to the clients, based on their status:
 ### Fault-Tolerance
 
 The system does not implement any fault-tolerance at the application layer, instead it offloads it to the underlying network protocol. 
-This was chosen since the requirements do not specify any kind or auto-reconnection or retry mechanisms.
+This was chosen since the requirements do not specify any kind of auto-reconnection or retry mechanisms.
 
 A partial fault-tolerance strategy may be to host multiple lobby servers on different machines.
-This gives the user choice of connecting to a different server in case the one they wanted is not available.
+This gives the user the choice of connecting to a different server in case the one they wanted is not available.
 However, no data is shared between servers, so each server has an independent lobby list.
-An improvement whould be using a shared, distributed database of lobbies, so that multiple servers can use the same lobby list.
+An improvement would be using a shared, distributed database of lobbies, so that multiple servers can use the same lobby list.
 
 ### Availability
 
@@ -634,8 +634,8 @@ These passwords are not encrypted and are handled by the systems as simple strin
 
 ## Implementation
 
-The project uses **Transmission Control Protocol (TCP)** as its network protocol, which was chosen it instead of UDP since it fits best with our requirements.
-TCP provides reliable, ordered, and error-checked delivery of a data stream between applications, and since out use cases focus on *consistency* and *reliability* instead of fast delivery, this was the obvious choice.
+The project uses **Transmission Control Protocol (TCP)** as its network protocol, which was chosen instead of UDP since it fits best with our requirements.
+TCP provides reliable, ordered, and error-checked delivery of a data stream between applications, and since our use cases focus on *consistency* and *reliability* instead of fast delivery, this was the obvious choice.
 
 The application data transmitted over the network is encoded using **Json**. 
 This was chosen both because of its maturity as a standard, which implies robust support from languages and libraries, and because of its ability to represent complex data without becoming too verbose.
@@ -716,7 +716,7 @@ Tests are mainly divided into these sections:
 - **Game Tests**
     * Tests made to check the correct execution of the main game loop and interaction between game entities and *offline* players;
 - **Utilities Tests**
-    * Since many utilities where created for the project, a series of tests were made to check if they would correctly work in their required scenarios;
+    * Since many utilities were created for the project, a series of tests were made to check if they would correctly work in their required scenarios;
 - **Networking Tests**
     * Being a core and complex part of the project, many tests were created to ensure all the networking components of the project were working correctly;
     * This includes testing basic connection between two peers, the exchange of basic peer information and the management of a network of peers, along with many other test cases;
@@ -792,14 +792,14 @@ that would expand the game logic into the online `PeerGraphNetwork` that would b
 during development, setting many meeting sessions (both online and in-presence) to develop together what we thought was necessary at each step of the way.
 While working on this project, I've discovered many interesting and peculiar findings on distributed systems
 and how they operate. The work proved to be quite a challenging task, more than what we initially thought.
-Both me and my colleague were quite busy with our everyday life, spending what we could of our free time studying and continuing
-development for the project. Despite that, once everything started to "click", we've both felt a great sense of satisfaction and accomplishment.
+Both me and my colleague were quite busy with our everyday life, spending what little free time we had to study and continue the project's development.
+Despite that, once everything started to "click", we've both felt a great sense of satisfaction and accomplishment.
 The main strengths of the project I feel are its quite intricate (yet easy to understand) messaging system, that allowed us to create fluid and consistent
 interactions between each player (and between user and server while in lobby).
 These strenghts came at quite the cost though: implementing our initial model design into a working system felt at first easy to apply, but we soon found out
 many issues and bugs caused by message serialization (especially regarding key bindings) and the initial setup of P2P network for users in a lobby when starting the game.
 
-Overall, i personally feel satisfied and i'm happy to have finally completed this long (but enjoyable) journey.
+Overall, I personally feel satisfied and i'm happy to have finally completed this long (but enjoyable) journey.
 
 ### Alberto Arduini
 
@@ -812,7 +812,7 @@ In particular, the `LobbyClient` and `LobbyServer` services abstractions (and th
 
 In regards to the networking system, I feel it was a good exercise to understand how a complex network architecture can be built and managed by an application.
 I'm especially satisfied with the use of interfaces for enabling the possibility of switching the underlying behavior of the network.
-As an example, we could pretty easily change the serialization method from Json to Xml, or we could use Udp or add encryption to the existing Tcp connections by implementing a new class or two.
+As an example, we could pretty easily change the serialization method from Json to Xml, or we could use UDP or add encryption to the existing TCP connections by implementing a new class or two.
 This also extends to the whole network management: we could switch from a client-server architecture to a peer-to-peer one without having to change the application code.
 
 This, however, came at the cost of complexity: correctly implementing the whole system took a lot of time and effort, and ensuring that all edge case were managed was not always easy.
