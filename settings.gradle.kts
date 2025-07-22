@@ -6,4 +6,6 @@ plugins {
 }
 
 rootProject.name = "dubito-online"
-include("app")
+include("lib")
+include("lobbyServerHost")
+include("gameApp")
