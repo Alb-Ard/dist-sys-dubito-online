@@ -15,6 +15,5 @@ dependencies {
 }
 
 application {
-    // Define the main class for the application.
-    mainClass = "org.albard.dubito.app.DubitoApp"
+    mainClass = "org.albard.dubito.lobby.app.server.LobbyServerHost"
 }

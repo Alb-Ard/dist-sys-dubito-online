@@ -1,7 +1,9 @@
 package org.albard.dubito.app.views;
 
 import java.awt.BorderLayout;
-import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import javax.swing.DefaultListModel;
@@ -23,7 +25,6 @@ import org.albard.mvc.BoundComponentFactory;
 import org.albard.mvc.ExecutableViewCommand;
 import org.albard.mvc.SimpleComponentFactory;
 import org.albard.mvc.ViewCommand;
-import org.albard.utils.Debouncer;
 
 public final class LobbyListView extends JPanel {
     private final ExecutableViewCommand<Runnable> createLobbyCommand = new ExecutableViewCommand<>();
@@ -58,35 +59,41 @@ public final class LobbyListView extends JPanel {
             final DefaultListModel<LobbyDisplay> listModel, final JComponent lobbyList,
             final Consumer<LobbyDisplay> lobbySelectedListener) {
         return new ListDataListener() {
-            private final Debouncer repaintDeboucer = new Debouncer(Duration.ofMillis(150));
-
             @Override
             public void intervalAdded(final ListDataEvent e) {
-                this.repaint();
+                this.update(e, (index, lobbies) -> {
+                    final LobbyListItemView item = new LobbyListItemView(lobbies.get(index));
+                    item.getLobbySelectedCommand().addListener(x -> lobbySelectedListener.accept(x));
+                    lobbyList.add(item);
+                });
             }
 
             @Override
             public void intervalRemoved(final ListDataEvent e) {
-                this.repaint();
+                this.update(e, (index, lobbies) -> {
+                    lobbyList.remove(index);
+                });
             }
 
             @Override
             public void contentsChanged(final ListDataEvent e) {
-                this.repaint();
+                this.update(e, (index, lobbies) -> {
+                    if (lobbyList.getComponent(index) instanceof LobbyListItemView item) {
+                        item.updateInfo(lobbies.get(index));
+                    }
+                });
             }
 
-            private void repaint() {
-                this.repaintDeboucer.debounce(() -> {
-                    SwingUtilities.invokeLater(() -> {
-                        noLobbiesLabel.setVisible(listModel.size() <= 0);
-                        lobbyList.removeAll();
-                        for (int i = 0; i < listModel.size(); i++) {
-                            final LobbyListItemView item = new LobbyListItemView(listModel.get(i));
-                            item.getLobbySelectedCommand().addListener(x -> lobbySelectedListener.accept(x));
-                            lobbyList.add(item);
-                        }
-                        lobbyList.invalidate();
-                    });
+            private void update(final ListDataEvent e, final BiConsumer<Integer, List<LobbyDisplay>> action) {
+                final List<LobbyDisplay> lobbies = Arrays.stream(listModel.toArray()).map(LobbyDisplay.class::cast)
+                        .toList();
+                SwingUtilities.invokeLater(() -> {
+                    for (int i = e.getIndex0(); i <= e.getIndex1(); i++) {
+                        action.accept(i, lobbies);
+                    }
+                    noLobbiesLabel.setVisible(listModel.size() <= 0);
+                    lobbyList.revalidate();
+                    lobbyList.repaint();
                 });
             }
         };

@@ -13,18 +13,29 @@ import org.albard.mvc.ExecutableViewCommand;
 import org.albard.mvc.ViewCommand;
 
 public final class LobbyListItemView extends JPanel {
+    private final JLabel descriptionLabel;
     private final ExecutableViewCommand<Consumer<LobbyDisplay>> lobbySelectedCommand = new ExecutableViewCommand<>();
 
+    private LobbyDisplay currentInfo;
+
     public LobbyListItemView(final LobbyDisplay lobby) {
+        this.currentInfo = lobby;
         this.setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
-        this.add(new JLabel(createLobbyDescription(lobby)));
+        this.descriptionLabel = new JLabel();
         final JButton joinButton = new GameButton("Join >");
-        joinButton.addActionListener(e -> this.lobbySelectedCommand.execute(l -> l.accept(lobby)));
+        this.add(descriptionLabel);
         this.add(joinButton);
+        joinButton.addActionListener(e -> this.lobbySelectedCommand.execute(l -> l.accept(this.currentInfo)));
+        this.updateInfo(lobby);
     }
 
     public ViewCommand<Consumer<LobbyDisplay>> getLobbySelectedCommand() {
         return this.lobbySelectedCommand;
+    }
+
+    public void updateInfo(final LobbyDisplay info) {
+        this.currentInfo = info;
+        this.descriptionLabel.setText(createLobbyDescription(info));
     }
 
     private static String createLobbyDescription(final LobbyDisplay lobby) {

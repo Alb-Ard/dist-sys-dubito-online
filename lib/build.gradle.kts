@@ -21,8 +21,3 @@ dependencies {
 tasks.named<Test>("test") {
     useJUnitPlatform()
 }
-
-application {
-    // Define the main class for the application.
-    mainClass = "org.abianchi.dubito.app.App"
-}
