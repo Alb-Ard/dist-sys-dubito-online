@@ -35,8 +35,8 @@ The game rules are the following:
 The project will result in a *group* of applications that will let the users host, join and play games of dubito with other users.
 
 The complete work is comprised of two applications:
-- The LobbyServer, a CLI application that will host a server where users can connect to create and join lobbies;
-- The GameApp, a Swing graphical application that the users can use to connect to a LobbyServer where they can play the game.
+- The LobbyServerHost, a CLI application that will host a server where users can connect to create and join lobbies;
+- The GameApp, a Swing graphical application that the users can use to connect to a LobbyServerHost where they can play the game.
 
 ### Interactions and use cases
 All users will be able to:
@@ -233,11 +233,11 @@ frame "Server" {
 
 *Server-side infrastructure*
 
-### Modelling
+### Modeling
 
 The distributed system is based on the `PeerNetwork` interface. It declares a contract for interacting with the network in terms of Peers and messages, abstracting away how the network is managed.
 
-This iterface is then implemented in `PeerNetworkImpl`, which acts as a simple server for other clients, with the ability to connect to other networks.
+This interface is then implemented in `PeerNetworkImpl`, which acts as a simple server for other clients, with the ability to connect to other networks.
 
 Then, on top of those, the factory `PeerGraphNetwork` creates a P2P `PeerNetwork` where all clients are connected to one another automatically, by implementing an auto-discovery system for clients.
 
@@ -274,9 +274,9 @@ PeerGraphNetwork .. PeerNetwork
 The system is supported by other classes that create the infrastructure needed to create the distributed system, which are:
 - `PeerConnection`: An interface for a client connected to a server;
     - Implemented in `TcpPeerConnection`;
-- `PeerConnectionReceiver`: An interface for a server receiving `PeerConnection`s;
+- `PeerConnectionReceiver`: An interface for a server listening to `PeerConnection`;
     - Implemented in `TcpPeerConnectionReceivr`;
-- `PeerExchanger`: Exhanges the initial information between two clients after they connect;
+- `PeerExchanger`: Exchanges the initial information between two clients after they connect;
 - `MessageHandler`: A functional interface for receiving messages incoming from the network;
 - `ObjectSerializer`: An interface for an object that can serialize/deserialize another object, so that it can be sent over the network.
     - Implemented in `JsonObjectSerializer`.
@@ -286,9 +286,9 @@ The system is supported by other classes that create the infrastructure needed t
 
 #### Entities
 
-- LobbyServer
-- LobbyClient
-- GamePeer
+- LobbyServer: the networked entity that provides the list of lobbies and users;
+- LobbyClient: a client that connects to the LobbyServer and consumes the lobby and user lists;
+- GamePeer: a peer connected to other peers during an active game.
 
 #### Events
 Domain events change depending on whether the user is in game session or not:
@@ -321,7 +321,7 @@ Events can be divided in groups:
 At a high level, interactions between components can be grouped by:
 - When the user is not in a game:
     1. A client sends a message on the network to the server;
-    2. The server receives message and performs a specific action accordingly, replying to the client and/or notifing all clients;
+    2. The server receives message and performs a specific action accordingly, replying to the client and/or notifying all clients;
 - When the user is in a game:
     1. A client send a message to all other clients, so that the state remains synchronized between all clients.
 
@@ -520,7 +520,7 @@ end
 ```
 *In-game interaction sequence diagram*
 
-### Behaviour
+### Behavior
 
 The distributed components always react to messages by updating their local state, optionally notifying other components of their new state.
 
@@ -596,7 +596,7 @@ state TurnEnd {
 ### Data and Consistency Issues
 
 All data in the system is *volatile*, meaning it does not need to be stored on disk or in a database.
-For this reason all information is kept in memory by the lobby server(s), and it is lost when they are shutdown.
+For this reason all information is kept in memory by the lobby server(s), and it is lost when they are closed.
 A representation of this data is sent to the clients, based on their status:
 - Clients not in a lobby receive the lobby list, with only a subset of their information available;
 - Clients in a lobby receive the full lobby information;
@@ -605,12 +605,12 @@ A representation of this data is sent to the clients, based on their status:
 ### Fault-Tolerance
 
 The system does not implement any fault-tolerance at the application layer, instead it offloads it to the underlying network protocol. 
-This was chosen since the requirements do not specify any kind or auto-reconnection or retry-mechanisms.
+This was chosen since the requirements do not specify any kind or auto-reconnection or retry mechanisms.
 
 A partial fault-tolerance strategy may be to host multiple lobby servers on different machines.
-This gives the users choice of connecting to a different server in case the one they wanted is not available.
+This gives the user choice of connecting to a different server in case the one they wanted is not available.
 However, no data is shared between servers, so each server has an independent lobby list.
-An improvement spot may be to use a shared, distributed database of lobbies, so that multiple servers can use the same lobby list.
+An improvement whould be using a shared, distributed database of lobbies, so that multiple servers can use the same lobby list.
 
 ### Availability
 
@@ -629,19 +629,28 @@ Clients are not authenticated by the system, since requirements do not specify i
 Authorization is optional and it is performed by the lobby server when a client tries to join a password protected lobby.
 Whenever a user sets a new lobby, it can decide to set a lobby password. 
 Whenever another user tries to join a protected lobby, it is required to send a password along with the join request.
-If the passwords match, the user is added to the lobby (if it's not full). Otherwise, the server sends an error back to the client.
+If the two passwords match, the user is added to the lobby (if it's not full). Otherwise, the server sends an error back to the client.
 These passwords are not encrypted and are handled by the systems as simple strings.
 
 ## Implementation
 
-The project uses **Transmission Control Protocol (TCP)** as its network protocol. We chose it instead of UDP since it fits best with our requirements: TCP provides reliable, ordered, and error-checked delivery of a stream of data between applications running on hosts communicating via an IP network, and since out use cases require more focus on *consistency* and *reliability* instead of fast delivery, this was the obvious choice.
+The project uses **Transmission Control Protocol (TCP)** as its network protocol, which was chosen it instead of UDP since it fits best with our requirements.
+TCP provides reliable, ordered, and error-checked delivery of a data stream between applications, and since out use cases focus on *consistency* and *reliability* instead of fast delivery, this was the obvious choice.
 
-The application data transmitted over the network is encoded using **JSON**. This was chosen both because of its maturity as a standard, which implies robust support from languages and libraries, and because of its ability to represent complex data without becoming too verbose.
+The application data transmitted over the network is encoded using **Json**. 
+This was chosen both because of its maturity as a standard, which implies robust support from languages and libraries, and because of its ability to represent complex data without becoming too verbose.
 We used the library **jackson** for serialization, because it had better support out of the box for handling inheritance of classes, which is used for the messages' representation.
 
-We have developed our **ad-hoc messaging protocol** in order to exchange data between users.
+We have developed our ad-hoc **messaging protocol** in order to exchange data between users.
 It is based on the `GameMessage` interface, which defines the message *sender* (the peer who sent the message on the network) and the *receipients* (an optional set of peers that will receive the message. If not provided, the message is considered a broadcast).
-```
+
+```java
+
+public interface GameMessage {
+    PeerId getSender();
+    Set<PeerId> getReceipients();
+}
+
 public abstract class GameMessageBase implements GameMessage {
     private final PeerId sender;
     private final Set<PeerId> receipients;
@@ -661,35 +670,15 @@ public abstract class GameMessageBase implements GameMessage {
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((sender == null) ? 0 : sender.hashCode());
-        result = prime * result + ((receipients == null) ? 0 : receipients.hashCode());
-        return result;
+        // Omitted for brevity
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        GameMessageBase other = (GameMessageBase) obj;
-        if (sender == null) {
-            if (other.sender != null)
-                return false;
-        } else if (!sender.equals(other.sender))
-            return false;
-        if (receipients == null) {
-            if (other.receipients != null)
-                return false;
-        } else if (!receipients.equals(other.receipients))
-            return false;
-        return true;
+        // Omitted for brevity
     }
 }
+
 ```
 
 *Abstract Class that implements `GameMessage`*
@@ -720,58 +709,47 @@ We used the following technologies and libraries:
 ## Validation
 
 ### Automatic Testing
+
 Components and important aspects of the project were unit-tested by creating simplified environment versions.
+
 Tests are mainly divided into these sections:
 - **Game Tests**
-   * These were made to check the correct execution of the main game loop and interaction between game entities and "offline" players;
+    * Tests made to check the correct execution of the main game loop and interaction between game entities and *offline* players;
 - **Utilities Tests**
-   * Since many utilities where created for the project, a series of tests were made to check if they would correctly work in their required scenarios;
-- **Message Tests**
-   * Test environments were developed to analyze the many custom messages that were created for the project, their structure and how to potentially fix/enhance them;
-   * Additional tests were created to see behaviour after sending or receiving a certain lobby or game message;
+    * Since many utilities where created for the project, a series of tests were made to check if they would correctly work in their required scenarios;
+- **Networking Tests**
+    * Being a core and complex part of the project, many tests were created to ensure all the networking components of the project were working correctly;
+    * This includes testing basic connection between two peers, the exchange of basic peer information and the management of a network of peers, along with many other test cases;
 - **Lobby Tests**
-   * These tests were focused on lobby's behaviour;
-   * The purpose is testing the communication and interaction between clients and server while creating and updating lobbies;
-   * Lobby connections are tested by ensuring the server has the correct amount of active players in the same lobby;
-   * Lobby disconnection is tested by disconnecting one client and making sure the number of lobby players decreased;
-- **Peer Tests**
-   * These were developed to check user's behaviour during game sessions, where each player would turn into a peer 
-   capable of communicating with other in-game players;
-   * Focus points of these tests would be whether a peer would exchange messages, how the peer network would handle
-   each update and making sure that each peer in the network would be UP-TO-DATE during their turn.
+    * Tests that ensure the correctness of communications and interactions between clients and server while creating and updating lobbies;
+    * Lobby connections are tested by ensuring the server has the correct amount of active players in the same lobby;
+    * Lobby disconnection is tested by disconnecting one client and making sure the number of lobby players decreased;
 
 ### Acceptance test
-Manual testing was performed in order to:
-- Analyze triggering of event messages due to player actions: since tons of actions are related
-  to player interaction, it was deemed to be more intuitive to perform these tests manually;
-- Check proper integration of lobby and game application: while not impossible to be automatically tested, we
-  decided to perform manual testing for this section to see if the whole project would be able to properly create
-  peer networks and functioning game sessions in a reasonable amount of time.
 
-These manual tests where perform both on single and multiple machines, using Windows 11. 
+Manual testing was performed in order to:
+- Analyze triggering of event messages due to player actions: since tons of actions are related to player interaction, it was deemed to be more intuitive to perform these tests manually;
+- Check proper integration of lobby and game application. While not impossible to be automatically tested, we decided to perform manual testing for this section to see if the whole project would be able to properly create peer networks and functioning game sessions in a reasonable amount of time.
+
+These manual tests where perform both on single and multiple machines, using Windows 10 and 11. 
 The original game was also tested on Linux.
 
 ## Release
 
-- how where components organized into _inter-dependant modules_ or just a single monolith?
-    * provide a _dependency graph_ if possible
+The solution was divided into three projects:
+- A `lib` project, that builds a `.jar` with the core libraries that the apps use;
+- A `lobbyServerHost` project, that builds the executable `.jar` for launching a lobby server;
+- A `gameApp` project, that builds the executable `.jar` for the user application;
 
-- were modules distributed as a _single archive_ or _multiple ones_?
-    * why?
-
-- how were archive versioned? 
-
-- were archive _released_ onto some archive repository (e.g. Maven, PyPI, npm, etc.)?
-    * how to _install_ them?
+The latter twos executables are the final output artifacts.
 
 ## Deployment
-Project deployment was done following these instructions:
-1. Build
-   *
-2. Start Server
-   *
-3. Start Game
-   *
+
+Project deployment is done following these instructions:
+1. Build: Create the `lobbyServerHost.jar` and `gameApp.jar` executables;
+2. Start Server: Launch the `lobbyServerHost.jar` executable
+
+The users can now launch the `gameApp.jar` executable and connect to the server.
 
 ## User Guide
 
@@ -807,6 +785,7 @@ Here we have provided all the necessaries steps to play the game:
 ## Self-evaluation
 
 ### Andrea Bianchi
+
 I was in charge of developing the main game app for the project. My main focus was developing
 the offline version (models, views, controllers) and focusing on the messaging system we've created together, generating new types of messages
 that would expand the game logic into the online `PeerGraphNetwork` that would be created for the players. We've also helped each other as best as we could
@@ -821,8 +800,24 @@ These strenghts came at quite the cost though: implementing our initial model de
 many issues and bugs caused by message serialization (especially regarding key bindings) and the initial setup of P2P network for users in a lobby when starting the game.
 
 Overall, i personally feel satisfied and i'm happy to have finally completed this long (but enjoyable) journey.
+
 ### Alberto Arduini
-- An individual section is required for each member of the group
-- Each member must self-evaluate their work, listing the strengths and weaknesses of the product
-- Each member must describe their role within the group as objectively as possible. 
-It should be noted that each student is only responsible for their own section
+
+I mainly focused on developing two systems:
+- The lobby and users management system, both on the client and server side;
+- The networking system.
+
+For the first point, I feel like the final code is pretty well organized, with good separation and abstraction between application layers.
+In particular, the `LobbyClient` and `LobbyServer` services abstractions (and their other counterparts `UserClient` and `UserServer`) over the messaging and networking layer and the data-persistence layer I feel is a good solution to limit dependencies between the application code and the core networking library.
+
+In regards to the networking system, I feel it was a good exercise to understand how a complex network architecture can be built and managed by an application.
+I'm especially satisfied with the use of interfaces for enabling the possibility of switching the underlying behavior of the network.
+As an example, we could pretty easily change the serialization method from Json to Xml, or we could use Udp or add encryption to the existing Tcp connections by implementing a new class or two.
+This also extends to the whole network management: we could switch from a client-server architecture to a peer-to-peer one without having to change the application code.
+
+This, however, came at the cost of complexity: correctly implementing the whole system took a lot of time and effort, and ensuring that all edge case were managed was not always easy.
+In this regard, unit tests were really helpful to ensure that the code was working correctly, and especially to find any regressions.
+
+I've also helped my colleague as much as he helped me, both for implementing features and for testing the app.
+
+In conclusion, I feel this project was really helpful in understanding how a distributed system works under the hood: manually implementing core features instead of using off-the-shelf solutions gave me a deeper understanding in how these systems work.
