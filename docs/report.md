@@ -531,6 +531,8 @@ Specifically:
 
 ```plantuml
 @startuml
+hide empty description 
+
 [*] --> Disconnected
 
 Disconnected --> ListingLobbies : Connect to Lobby Server
@@ -561,37 +563,35 @@ WaitingForPlayers -> InGame : All players ready
 ```plantuml
 
 @startuml
+hide empty description
 
-[*] --> PlayerTurn
+[*] --> TurnStart
 
-state PlayerTurn {
-	[*] --> MyTurn : Local player is owner and is alive
-	[*] --> OthersTurn : Local player is not owner or is dead
-	
-	MyTurn --> OthersTurn : Local player has thrown cards
-	MyTurn --> CallingLiar : Local player calls previous player liar
-	MyTurn --> RoundEnding : No one called liar and all cards have been played
-	
-	OthersTurn --> MyTurn : All other players have thrown cards
-	OthersTurn --> CallingLiar : Another player calls previous player liar
-	OthersTurn --> RoundEnding : No one called liar and all cards have been played
-}
+state TurnStart <<choice>>
+TurnStart --> MyTurn : Player is alive
+TurnStart --> TurnEnd : Player is dead
 
-state GameStateChanging {
-	state CallingLiar <<choice>>
-	CallingLiar --> RoundEnding : Previous player lied
-	CallingLiar --> RoundEnding : Previous player did not lie
-	
+MyTurn --> CallingLiar : Player calls previous player liar
+MyTurn --> TurnEnd : Player has thrown cards
+
+state CallingLiar <<choice>>
+CallingLiar --> TurnEnd : Previous player lied
+CallingLiar --> TurnEnd : Previous player did not lie
+
+state TurnEnd {
+    [*] --> RoundEnding
+
 	state RoundEnding <<choice>>
-	RoundEnding --> PlayerTurn : No one has won
+	RoundEnding --> StartNewRound : All players have empty hands
+    RoundEnding --> OthersTurn : Someone else is alive and has cards
 	RoundEnding --> GameOver : Someone has won
-	
-	GameOver --> [*]
 }
 
 @enduml
 
 ```
+
+*State Diagram for a player turn*
 
 ### Data and Consistency Issues
 
