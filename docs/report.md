@@ -1,7 +1,7 @@
 # Dubito Online
 
 - [Alberto Arduini](mailto:alberto.arduini3@studio.unibo.it)
-- [Andrea Bianchi](mailto:andrea.bianchi10@studio.unibo.it)
+- [Andrea Bianchi](mailto:andrea.bianchi24@studio.unibo.it)
 
 ### AI Disclaimer (if needed)
 
