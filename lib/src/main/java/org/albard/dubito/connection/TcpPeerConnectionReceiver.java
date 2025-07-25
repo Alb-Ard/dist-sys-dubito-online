@@ -1,27 +1,30 @@
 package org.albard.dubito.connection;
 
 import java.io.IOException;
-import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 import org.albard.dubito.messaging.MessengerFactory;
 import org.albard.dubito.network.PeerEndPoint;
+import org.albard.utils.Locked;
 import org.albard.utils.Logger;
 
 public final class TcpPeerConnectionReceiver implements PeerConnectionReceiver {
-    private static final int SERVER_BACKLOG_SIZE = 4;
-
     private final ServerSocket listeningSocket;
     private final Thread listeningThread;
     private final MessengerFactory messengerFactory;
     private final ExecutorService listenerExecutor = Executors.newSingleThreadExecutor();
+    private final Locked<List<PeerConnection>> peerConnections = Locked.of(new ArrayList<>());
 
     private Consumer<PeerConnection> peerConnectedListener;
+    private Consumer<PeerConnection> peerDisconnectedListener;
 
     private TcpPeerConnectionReceiver(final ServerSocket socket, final MessengerFactory messengerFactory) {
         this.listeningSocket = socket;
@@ -31,8 +34,10 @@ public final class TcpPeerConnectionReceiver implements PeerConnectionReceiver {
 
     public static TcpPeerConnectionReceiver createBound(final String bindAddress, final int bindPort,
             final MessengerFactory messengerFactory) throws UnknownHostException, IOException {
-        final TcpPeerConnectionReceiver receiver = new TcpPeerConnectionReceiver(
-                new ServerSocket(bindPort, SERVER_BACKLOG_SIZE, InetAddress.getByName(bindAddress)), messengerFactory);
+        final ServerSocket socket = new ServerSocket();
+        socket.setReuseAddress(true);
+        socket.bind(new InetSocketAddress(bindAddress, bindPort));
+        final TcpPeerConnectionReceiver receiver = new TcpPeerConnectionReceiver(socket, messengerFactory);
         receiver.start();
         return receiver;
     }
@@ -45,10 +50,17 @@ public final class TcpPeerConnectionReceiver implements PeerConnectionReceiver {
     @Override
     public void close() {
         try {
+            this.peerConnections.exchange(x -> {
+                for (final PeerConnection peerConnection : x) {
+                    this.closeConnection(peerConnection);
+                }
+                x.clear();
+                return x;
+            });
             this.listeningSocket.close();
             this.listeningThread.join();
-        } catch (final IOException | InterruptedException e) {
-            e.printStackTrace();
+        } catch (final Exception ex) {
+            Logger.logError(ex.getMessage());
         }
     }
 
@@ -62,6 +74,16 @@ public final class TcpPeerConnectionReceiver implements PeerConnectionReceiver {
         return PeerEndPoint.ofAddress(this.listeningSocket.getLocalSocketAddress());
     }
 
+    @Override
+    public void setPeerConnectedListener(final Consumer<PeerConnection> listener) {
+        this.peerConnectedListener = listener;
+    }
+
+    @Override
+    public void setPeerDisconnectedListener(final Consumer<PeerConnection> listener) {
+        this.peerDisconnectedListener = listener;
+    }
+
     private void start() throws IOException {
         this.listeningThread.start();
     }
@@ -71,20 +93,36 @@ public final class TcpPeerConnectionReceiver implements PeerConnectionReceiver {
             try {
                 final Socket userSocket = this.listeningSocket.accept();
                 this.listenerExecutor.submit(() -> {
-                    try {
-                        this.peerConnectedListener
-                                .accept(TcpPeerConnection.createConnected(userSocket, this.messengerFactory));
-                    } catch (final Exception ex) {
-                    }
+                    final TcpPeerConnection[] connection = new TcpPeerConnection[] { null };
+                    this.peerConnections.exchange(connections -> {
+                        try {
+                            connection[0] = TcpPeerConnection.createConnected(userSocket, this.messengerFactory);
+                            connection[0].addClosedListener(() -> this.closeConnection(connection[0]));
+                            connections.add(connection[0]);
+                            this.peerConnectedListener.accept(connection[0]);
+                        } catch (final Exception ex) {
+                            if (connection[0] != null) {
+                                this.closeConnection(connection[0]);
+                            }
+                        }
+                        return connections;
+                    });
                 });
-            } catch (final IOException ex) {
+            } catch (final Exception ex) {
                 Logger.logError(ex.getMessage());
             }
         }
     }
 
-    @Override
-    public void setPeerConnectedListener(final Consumer<PeerConnection> listener) {
-        this.peerConnectedListener = listener;
+    private void closeConnection(final PeerConnection peerConnection) {
+        this.peerConnections.exchange(x -> {
+            try {
+                peerConnection.close();
+            } catch (final Exception ex) {
+            }
+            x.remove(peerConnection);
+            return x;
+        });
+        this.peerDisconnectedListener.accept(peerConnection);
     }
 }

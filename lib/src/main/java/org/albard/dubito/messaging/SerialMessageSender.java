@@ -29,10 +29,10 @@ public final class SerialMessageSender implements MessageSender {
             executor.submit(() -> {
                 try {
                     final var data = this.serializer.apply(message);
-                    Logger.logTrace("Writing " + data.length + "b...");
+                    Logger.logTrace("Sending " + message.getClass().getSimpleName() + " of " + data.length + "b...");
                     this.stream.write(data);
                     this.stream.flush();
-                    Logger.logTrace("Written " + data.length + "b");
+                    Logger.logTrace("Sent " + message.getClass().getSimpleName() + " of " + data.length + "b");
                 } catch (final Exception ex) {
                     Logger.logError("Could not send message: " + ex.getMessage());
                 }

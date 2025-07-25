@@ -6,7 +6,7 @@ import org.albard.dubito.network.PeerEndPoint;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public final class UserEndPointTest {
+public final class PeerEndPointTest {
     @Test
     void testCreateValid() {
         final PeerEndPoint address = PeerEndPoint.ofValues("127.0.0.1", 1);

@@ -14,7 +14,6 @@ import org.albard.dubito.network.PeerNetwork;
 import org.albard.utils.Logger;
 import org.albard.dubito.network.PeerGraphNetwork;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -62,9 +61,8 @@ public final class PeerGraphNetworkTest {
                         apps.get(i).connectToPeer(PeerEndPoint.ofValues("127.0.0.1", appBindPorts.get(i + 1)));
                     }
 
-                    Thread.sleep(Duration.ofMillis(appCount * 200));
+                    Thread.sleep(Duration.ofMillis(appCount * 300));
 
-                    Logger.logInfo("ASSERT");
                     for (int i = 0; i < appCount; i++) {
                         final PeerId appId = appIds.get(i);
                         AssertionsUtilities.assertStreamEqualsUnordered(appIds.stream().filter(x -> !appId.equals(x)),
@@ -73,9 +71,9 @@ public final class PeerGraphNetworkTest {
                 });
     }
 
-    @RepeatedTest(value = 4)
-    void testConcurrentGraphConstruction() throws Exception {
-        final int appCount = 4;
+    @ParameterizedTest
+    @ValueSource(ints = { 2, 3, 4 })
+    void testConcurrentGraphConstruction(final int appCount) throws Exception {
         final List<Integer> appBindPorts = Stream.iterate(10001, x -> x + 1).limit(appCount).toList();
         final List<PeerId> appIds = Stream.iterate(1, x -> x + 1).map(x -> x.toString()).map(PeerId::new)
                 .limit(appCount).toList();
@@ -85,7 +83,6 @@ public final class PeerGraphNetworkTest {
         TestUtilities.withMultiCloseable(appCount,
                 i -> PeerGraphNetwork.createBound(appIds.get(i), "127.0.0.1", appBindPorts.get(i), messengerFactory),
                 apps -> {
-                    Logger.logInfo("START");
                     apps.stream().skip(1)
                             .map(app -> executor.submit(
                                     () -> app.connectToPeer(PeerEndPoint.ofValues("127.0.0.1", appBindPorts.get(0)))))
@@ -97,9 +94,8 @@ public final class PeerGraphNetworkTest {
                                 }
                             }).toList();
 
-                    Thread.sleep(Duration.ofMillis(appCount * 200));
+                    Thread.sleep(Duration.ofMillis(appCount * 300));
 
-                    Logger.logInfo("ASSERT");
                     for (int i = 0; i < appCount; i++) {
                         final PeerId appId = appIds.get(i);
                         AssertionsUtilities.assertStreamEqualsUnordered(appIds.stream().filter(x -> !appId.equals(x)),

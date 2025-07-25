@@ -46,6 +46,9 @@ public final class TcpPeerConnection implements PeerConnection {
 
     @Override
     public void close() throws IOException {
+        if (this.socket.isClosed()) {
+            return;
+        }
         this.socket.close();
         this.closedListeners.forEach(l -> {
             try {

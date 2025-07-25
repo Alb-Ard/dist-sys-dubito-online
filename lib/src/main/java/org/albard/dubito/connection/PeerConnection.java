@@ -14,6 +14,7 @@ public interface PeerConnection extends Closeable, ObservableCloseable, Messenge
     static PeerConnection createAndConnect(String bindAddress, int bindPort, String remoteAddress, int remotePort,
             final MessengerFactory messengerFactory) throws IOException {
         final Socket socket = new Socket();
+        socket.setReuseAddress(true);
         socket.bind(new InetSocketAddress(bindAddress, bindPort));
         socket.connect(new InetSocketAddress(remoteAddress, remotePort));
         return TcpPeerConnection.createConnected(socket, messengerFactory);

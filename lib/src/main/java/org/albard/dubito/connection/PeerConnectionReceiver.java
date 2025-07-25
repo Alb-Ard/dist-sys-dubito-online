@@ -18,6 +18,8 @@ public interface PeerConnectionReceiver extends Closeable {
 
     public void setPeerConnectedListener(Consumer<PeerConnection> listener);
 
+    public void setPeerDisconnectedListener(Consumer<PeerConnection> listener);
+
     public MessengerFactory getMessengerFactory();
 
     public PeerEndPoint getBindEndPoint();

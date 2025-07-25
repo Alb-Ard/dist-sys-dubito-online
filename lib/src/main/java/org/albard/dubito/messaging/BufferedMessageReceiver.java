@@ -33,9 +33,11 @@ public final class BufferedMessageReceiver implements MessageReceiver, Observabl
                     final boolean isSuccess = deserializer.apply(stream).map(message -> {
                         this.state.exchange(s -> {
                             if (s.handlers.isEmpty()) {
+                                Logger.logTrace("Buffered message " + message.getClass().getSimpleName());
                                 s.bufferedMessages.add(message);
                                 return s;
                             }
+                            Logger.logTrace("Received message " + message.getClass().getSimpleName());
                             MessageReceiver.handleMessageAndUpdateHandlers(message, s.handlers, s.handlersToRemove);
                             return s;
                         });
@@ -71,6 +73,7 @@ public final class BufferedMessageReceiver implements MessageReceiver, Observabl
             if (previousCount <= 0) {
                 while (!s.bufferedMessages.isEmpty()) {
                     final GameMessage message = s.bufferedMessages.remove();
+                    Logger.logTrace("Handling buffered message " + message.getClass().getSimpleName());
                     MessageReceiver.handleMessageAndUpdateHandlers(message, s.handlers, s.handlersToRemove);
                 }
             }

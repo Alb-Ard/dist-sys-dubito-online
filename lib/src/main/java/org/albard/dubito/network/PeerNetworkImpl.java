@@ -199,12 +199,17 @@ public final class PeerNetworkImpl implements PeerNetwork {
         Logger.logInfo(this.getLocalPeerId() + ": Closing...");
         final Set<PeerId> connectedPeers = Set.copyOf(this.connections.getValue().keySet());
         for (final PeerId connectionId : connectedPeers) {
-            this.disconnectFromPeer(connectionId);
+            try {
+                this.disconnectFromPeer(connectionId);
+            } catch (final Exception ex) {
+                Logger.logError(
+                        this.getLocalPeerId() + ": Error disconnecting from " + connectionId + ": " + ex.getMessage());
+            }
         }
         try {
             this.connectionReceiver.close();
-        } catch (final IOException ex) {
-            Logger.logError(ex.getMessage());
+        } catch (final Exception ex) {
+            Logger.logError(this.getLocalPeerId() + ": Error closing receiver: " + ex.getMessage());
         }
     }
 

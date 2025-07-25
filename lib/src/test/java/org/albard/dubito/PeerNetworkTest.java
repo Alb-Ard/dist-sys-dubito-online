@@ -1,6 +1,8 @@
 package org.albard.dubito;
 
-import java.io.IOException;
+import static org.albard.dubito.TestUtilities.withCloseable;
+import static org.albard.dubito.TestUtilities.withNetwork;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -19,28 +21,27 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 public final class PeerNetworkTest {
     @Test
-    void testCreate() throws IOException {
-        final MessengerFactory messengerFactory = TestUtilities.createMessengerFactory();
-        Assertions.assertDoesNotThrow(
-                () -> PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 9000, messengerFactory).close());
+    void testCreate() throws Exception {
+        Assertions.assertDoesNotThrow(() -> withCloseable(() -> PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1",
+                9000, TestUtilities.createMessengerFactory()), x -> {
+                }));
+        Thread.sleep(50);
     }
 
     @Test
-    void testCreateEmpty() throws IOException {
-        final MessengerFactory messengerFactory = TestUtilities.createMessengerFactory();
-        final PeerNetwork network = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 9000, messengerFactory);
-        Assertions.assertNotNull(network);
-        Assertions.assertEquals(0, network.getPeerCount());
-        network.close();
+    void testCreateEmpty() throws Exception {
+        withNetwork(PeerId.createNew(), "127.0.0.1", 9000, TestUtilities.createMessengerFactory(), network -> {
+            Assertions.assertNotNull(network);
+            Assertions.assertEquals(0, network.getPeerCount());
+        });
     }
 
     @Test
-    void testGetLocalPeerId() throws IOException {
-        final MessengerFactory messengerFactory = TestUtilities.createMessengerFactory();
+    void testGetLocalPeerId() throws Exception {
         final PeerId peerId = PeerId.createNew();
-        try (final PeerNetwork network = PeerNetwork.createBound(peerId, "127.0.0.1", 9000, messengerFactory)) {
+        withNetwork(peerId, "127.0.0.1", 9000, network -> {
             Assertions.assertEquals(peerId, network.getLocalPeerId());
-        }
+        });
     }
 
     @ParameterizedTest
@@ -60,8 +61,7 @@ public final class PeerNetworkTest {
                         connections.get(i).setPeerConnectedListener(t -> exchanger.exchangeIds(t));
                     }
 
-                    try (final PeerNetwork network = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 9000,
-                            messengerFactory)) {
+                    withNetwork(PeerId.createNew(), "127.0.0.1", 9000, messengerFactory, network -> {
                         for (int i = 0; i < connectionCount; i++) {
                             Assertions.assertTrue(
                                     network.connectToPeer(PeerEndPoint.ofValues("127.0.0.1", connectionPorts.get(i))));
@@ -72,70 +72,70 @@ public final class PeerNetworkTest {
                         AssertionsUtilities.assertStreamEqualsUnordered(
                                 connections.stream().map(x -> x.getBindEndPoint()),
                                 network.getPeers().values().stream().map(x -> x.getRemoteEndPoint()));
-                    }
+                    });
                 });
+        Thread.sleep(50);
     }
 
     @Test
-    void testConnectListener() throws IOException, InterruptedException {
-        final MessengerFactory messengerFactory = TestUtilities.createMessengerFactory();
+    void testConnectListener() throws Exception {
         final PeerId remotePeerId = PeerId.createNew();
-        try (final PeerConnectionReceiver receiver = PeerConnectionReceiver.createBound("127.0.0.1", 9001,
-                messengerFactory)) {
-            final PeerExchanger remotePeerExchanger = new PeerExchanger(remotePeerId, receiver.getBindEndPoint());
-            receiver.setPeerConnectedListener(t -> Assertions.assertNotNull(remotePeerExchanger.exchangeIds(t)));
-            try (final PeerNetwork network = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 9000,
-                    receiver.getMessengerFactory())) {
-                final List<PeerId> receivedIds = new ArrayList<>();
-                final List<PeerConnection> receivedConnections = new ArrayList<>();
-                final List<PeerEndPoint> receivedEndPoints = new ArrayList<>();
-                network.addPeerConnectedListener((id, connection, remoteEndPoint) -> {
-                    receivedIds.add(id);
-                    receivedConnections.add(connection);
-                    receivedEndPoints.add(remoteEndPoint);
+        withCloseable(
+                () -> PeerConnectionReceiver.createBound("127.0.0.1", 9001, TestUtilities.createMessengerFactory()),
+                receiver -> {
+                    final PeerExchanger remotePeerExchanger = new PeerExchanger(remotePeerId,
+                            receiver.getBindEndPoint());
+                    receiver.setPeerConnectedListener(
+                            t -> Assertions.assertNotNull(remotePeerExchanger.exchangeIds(t)));
+                    withNetwork(PeerId.createNew(), "127.0.0.1", 9000, receiver.getMessengerFactory(), network -> {
+                        final List<PeerId> receivedIds = new ArrayList<>();
+                        final List<PeerConnection> receivedConnections = new ArrayList<>();
+                        final List<PeerEndPoint> receivedEndPoints = new ArrayList<>();
+                        network.addPeerConnectedListener((id, connection, remoteEndPoint) -> {
+                            receivedIds.add(id);
+                            receivedConnections.add(connection);
+                            receivedEndPoints.add(remoteEndPoint);
+                        });
+                        network.connectToPeer(PeerEndPoint.ofValues("127.0.0.1", 9001));
+                        Thread.sleep(100);
+                        Assertions.assertEquals(1, receivedIds.size());
+                        Assertions.assertEquals(remotePeerId, receivedIds.getFirst());
+
+                        Assertions.assertEquals(1, receivedConnections.size());
+                        Assertions.assertEquals(PeerEndPoint.ofValues("127.0.0.1", 9001),
+                                receivedConnections.getFirst().getRemoteEndPoint());
+
+                        Assertions.assertEquals(1, receivedEndPoints.size());
+                        Assertions.assertEquals(PeerEndPoint.ofValues("127.0.0.1", 9001), receivedEndPoints.getFirst());
+                    });
                 });
-                network.connectToPeer(PeerEndPoint.ofValues("127.0.0.1", 9001));
-                Thread.sleep(100);
-                Assertions.assertEquals(1, receivedIds.size());
-                Assertions.assertEquals(remotePeerId, receivedIds.getFirst());
-
-                Assertions.assertEquals(1, receivedConnections.size());
-                Assertions.assertEquals(PeerEndPoint.ofValues("127.0.0.1", 9001),
-                        receivedConnections.getFirst().getRemoteEndPoint());
-
-                Assertions.assertEquals(1, receivedEndPoints.size());
-                Assertions.assertEquals(PeerEndPoint.ofValues("127.0.0.1", 9001), receivedEndPoints.getFirst());
-            }
-        }
+        Thread.sleep(50);
     }
 
     @Test
-    void testConnectToOfflinePeer() throws IOException {
-        final MessengerFactory messengerFactory = TestUtilities.createMessengerFactory();
-        try (final PeerNetwork network = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 9000,
-                messengerFactory)) {
-            Assertions.assertFalse(network.connectToPeer(PeerEndPoint.ofValues("127.0.0.1", 9001)));
+    void testConnectToOfflinePeer() throws Exception {
+        withNetwork(PeerId.createNew(), "127.0.0.1", 9001, network -> {
+            Assertions.assertFalse(network.connectToPeer(PeerEndPoint.ofValues("127.0.0.1", 9000)));
             Assertions.assertEquals(0, network.getPeerCount());
-        }
+        });
     }
 
     @Test
-    void testClearAfterClose() throws IOException {
+    void testClearAfterClose() throws Exception {
         final MessengerFactory messengerFactory = TestUtilities.createMessengerFactory();
-        try (final PeerConnectionReceiver receiver = PeerConnectionReceiver.createBound("127.0.0.1", 9001,
-                messengerFactory)) {
+        withCloseable(() -> PeerConnectionReceiver.createBound("127.0.0.1", 9000, messengerFactory), receiver -> {
             final PeerExchanger remotePeerExchanger = new PeerExchanger(PeerId.createNew(), receiver.getBindEndPoint());
             receiver.setPeerConnectedListener(t -> Assertions.assertNotNull(remotePeerExchanger.exchangeIds(t)));
-            PeerNetwork network = null;
+            final PeerNetwork network = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 9001,
+                    receiver.getMessengerFactory());
             try {
-                network = PeerNetwork.createBound(PeerId.createNew(), "127.0.0.1", 9000,
-                        receiver.getMessengerFactory());
+                network.connectToPeer(PeerEndPoint.ofValues("127.0.0.1", 9000));
+                Thread.sleep(50);
             } finally {
-                if (network != null) {
-                    network.close();
-                }
+                network.close();
             }
             Assertions.assertEquals(0, network.getPeerCount());
-        }
+        });
+        Thread.sleep(50);
     }
 }

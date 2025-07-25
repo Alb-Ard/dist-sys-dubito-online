@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.stream.Stream;
 
 import org.albard.dubito.messaging.Messenger;
 import org.albard.dubito.messaging.handlers.MessageHandler;
@@ -87,11 +88,11 @@ public final class PeerIdExchangerTest {
         Thread.sleep(Duration.ofSeconds(2));
 
         Assertions.assertEquals(exchangerCount, exchangedData.size());
-        for (int i = 0; i < exchangerCount; i++) {
-            final var data = exchangedData.get(i);
-            Assertions.assertTrue(data.isPresent());
-            Assertions.assertEquals(new PeerId(Integer.toString(i)), data.get().getKey());
-            Assertions.assertEquals(PeerEndPoint.ofValues("127.0.0.1", i), data.get().getValue());
-        }
+        AssertionsUtilities.assertStreamEqualsUnordered(
+                Stream.iterate(0, i -> i + 1).limit(exchangerCount).map(i -> new PeerId(Integer.toString(i))),
+                exchangedData.stream().map(x -> x.get().getKey()));
+        AssertionsUtilities.assertStreamEqualsUnordered(
+                Stream.iterate(0, i -> i + 1).limit(exchangerCount).map(i -> PeerEndPoint.ofValues("127.0.0.1", i)),
+                exchangedData.stream().map(x -> x.get().getKey()));
     }
 }

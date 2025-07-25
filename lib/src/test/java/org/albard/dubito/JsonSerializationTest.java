@@ -4,12 +4,13 @@ import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 import java.util.stream.Stream.Builder;
 
-import org.abianchi.dubito.app.gameSession.models.CardType;
-import org.abianchi.dubito.app.gameSession.models.CardValue;
-import org.abianchi.dubito.messages.RoundCardGeneratedMessage;
+import org.albard.dubito.lobby.messages.JoinLobbyMessage;
+import org.albard.dubito.lobby.messages.LobbyJoinedMessage;
+import org.albard.dubito.lobby.models.LobbyId;
 import org.albard.dubito.messaging.messages.GameMessage;
 import org.albard.dubito.network.PeerId;
 import org.albard.dubito.serialization.ObjectSerializer;
@@ -19,6 +20,21 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 public final class JsonSerializationTest {
+    private enum TestEnum {
+        VALUE_A(0), VALUE_B(1);
+
+        private final int testValue;
+
+        private TestEnum(int testValue) {
+            this.testValue = testValue;
+        }
+
+        @Override
+        public String toString() {
+            return "TestEnum(" + this.testValue + ")";
+        }
+    }
+
     private static final class JsonTest {
         private final Object object;
         private final Class<?> objectClass;
@@ -86,19 +102,16 @@ public final class JsonSerializationTest {
      * test values that will be serialized/deserialized as a single unit test.
      */
     private static Stream<List<JsonTest>> getSerializationTestCollections() {
-        final List<JsonTest> cardTypeTests = Arrays.stream(CardType.values()).map(x -> new JsonTest(x, CardType.class))
+        final List<JsonTest> enumTests = Arrays.stream(TestEnum.values()).map(x -> new JsonTest(x, TestEnum.class))
                 .toList();
 
-        final List<JsonTest> cardValueTests = Arrays.stream(CardValue.values())
-                .map(x -> new JsonTest(x, CardValue.class)).toList();
-
         final List<JsonTest> messageTests = List.of(
-                new JsonTest(new RoundCardGeneratedMessage(new PeerId("1"), null, CardValue.ACE), GameMessage.class),
-                new JsonTest(new RoundCardGeneratedMessage(new PeerId("2"), null, CardValue.JOKER), GameMessage.class));
+                new JsonTest(new JoinLobbyMessage(new PeerId("1"), null, new LobbyId("10"), ""), GameMessage.class),
+                new JsonTest(new LobbyJoinedMessage(new PeerId("2"), Set.of(new PeerId("1")), new LobbyId("10")),
+                        GameMessage.class));
 
         final Builder<List<JsonTest>> testsStream = Stream.builder();
-        cardTypeTests.forEach(x -> testsStream.add(List.of(x)));
-        cardValueTests.forEach(x -> testsStream.add(List.of(x)));
+        enumTests.forEach(x -> testsStream.add(List.of(x)));
         messageTests.forEach(x -> testsStream.add(List.of(x)));
         return testsStream.build();
     }

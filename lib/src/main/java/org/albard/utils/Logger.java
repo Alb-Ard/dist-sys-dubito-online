@@ -15,7 +15,7 @@ public final class Logger {
         }
     };
 
-    private static final Level MINIMUM_LEVEL = Level.INFO;
+    private static final Level MINIMUM_LEVEL = Level.TRACE;
     private static final DateFormat DATE_FORMATTER = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.LONG);
 
     private Logger() {
