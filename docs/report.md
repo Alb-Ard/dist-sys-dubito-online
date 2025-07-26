@@ -54,19 +54,19 @@ Each requirement will be followed by its own acceptance criteria(s).
 
 #### 1.1 Lobby Management
 
-- 1.1.1: The app must let an user see available lobbies created by other users.
+- 1.1.1: The app must let a user see available lobbies created by other users.
     - The user must be able to see a list of all lobbies with their name, an indicator if the lobby is password protected and the number of users in the lobby.
-- 1.1.2: The app must let an user join an existing lobby, even if password-protected, while it is not in a lobby.
+- 1.1.2: The app must let a user join an existing lobby, even if password-protected, while it is not in a lobby.
     - The user must be able to join a lobby from the list (see Req. 1.1.1) if the lobby has not reached the maximum number of participants.
     - If the lobby is password protected the app must prompt the user for the password. 
-    - When an user successfully joins a lobby, all other users should be notified of the updated participant count for the lobby.
+    - When a user successfully joins a lobby, all other users should be notified of the updated participant count for the lobby.
     - The functionality must be available only when the user is not in a lobby already.
     - The user must not be able to join multiple lobbies concurrently.
 - 1.1.3: The app must let a user create a new lobby, while the user is not in a lobby.
     - The user must be able to create a new lobby that other users will be able to see and join.
     - The functionality must be available only when the user is not in a lobby already.
     - When a user creates a lobby, it becomes also it's owner.
-    - The user can't be whe owner of multiple lobbies concurrently.
+    - The user can't be the owner of multiple lobbies concurrently.
 - 1.1.4: The app must let a lobby owner set the lobby name and password.
     - The lobby owner must be able to insert or change the lobby name and the password.
     - The name must not be empty, while the password *may* be empty.
@@ -79,7 +79,7 @@ Each requirement will be followed by its own acceptance criteria(s).
 - 1.1.7: The app must let the lobby owner start the game with all the lobby users as participants.
     - The app must let the lobby owner start a game match where the users that are in the lobby become players in the game.
     - Also, no more players must be able to join the lobby.
-- 1.1.8: The app must show, when an user is in a lobby, the other participants.
+- 1.1.8: The app must show, when a user is in a lobby, the other participants.
     - The user must be able to see a list of all the participants in the lobby it is currently in, with their name.
     - The app *may* emphasize who is the local user and who is the lobby owner.
 
@@ -95,7 +95,7 @@ Each requirement will be followed by its own acceptance criteria(s).
     - During their turn, if a previous player has discarded some cards, the player may press a button or key to call the previous player a liar.
     - The app must then notify every player if the player has made a bluff (lied) or not, removing 1 life from the lying player or the one who called the bluff if he was wrong.
     - The app must start a new round after this event, giving a new random hand to each player and declaring a new card type for the new round.
-- 1.2.4: The game must start a new round if no players calls for a lie.
+- 1.2.4: The game must start a new round if no one calls for a lie.
     - If every player decides to only discard cards without anyone calling for a possible lie, the app must then start a new round.
 - 1.2.4: The game can only be considered completed if only one player remains.
     - When a player loses all their lives, they are out of the game and will not receive new cards or be part of the turn order for the next rounds.
@@ -125,8 +125,8 @@ Each requirement will be followed by its own acceptance criteria(s).
 
 ### 3. Implementation
 
-- 3.1: The application(s) will be developed using the Java language and the Swing framework, since they are what the development team are most familiar with.
-- 3.2: The network management will be implemented from scratch, so that the behaviour of the applications can be controlled more precisely.
+- 3.1: The applications will be developed using the Java language and the Swing framework, since they are what the development team are most familiar with.
+- 3.2: The network management will be implemented from scratch, so that the behavior of the applications can be controlled more precisely.
 
 ## Design
 
@@ -134,7 +134,7 @@ This chapter explains the strategies used to meet the requirements identified in
 
 ### Architecture
 
-The project follows the MVC architecture to develop its main logic and program.
+The project follows the Mvc architecture to develop its main logic and program.
 
 Focusing on the distributed part, the project is divided into 2 main different parts, each focusing on one specific aspect of the previously established requirements:
 - The lobby system was developed following the **client-server** architecture, one of the most typical distributed application structure. This allowed us to partition tasks/workloads between the providers of a resource or service (the server lobby) and the service requesters (the user clients). Clients can request resources or operations to the server, and the server will respond with the required data. The server can also send unsolicited data to the clients, to notify when a change in the system has happened;
@@ -596,7 +596,7 @@ state TurnEnd {
 ### Data and Consistency Issues
 
 All data in the system is *volatile*, meaning it does not need to be stored on disk or in a database.
-For this reason all information is kept in memory by the lobby server(s), and it is lost when they are closed.
+For this reason all information is kept in memory by the lobby servers, and it is lost when they are closed.
 A representation of this data is sent to the clients, based on their status:
 - Clients not in a lobby receive the lobby list, with only a subset of their information available;
 - Clients in a lobby receive the full lobby information;
@@ -605,7 +605,7 @@ A representation of this data is sent to the clients, based on their status:
 ### Fault-Tolerance
 
 The system does not implement any fault-tolerance at the application layer, instead it offloads it to the underlying network protocol. 
-This was chosen since the requirements do not specify any kind of auto-reconnection or retry mechanisms.
+This was chosen since the requirements do not specify any kind of auto-reconnect or retry mechanisms.
 
 A partial fault-tolerance strategy may be to host multiple lobby servers on different machines.
 This gives the user the choice of connecting to a different server in case the one they wanted is not available.
@@ -687,7 +687,7 @@ The `GameMessageBase` shown here is then extended by multiple different types of
 
 -  *Connection Messages*, used to handle connections between users (used to create the P2P network used during game sessions);
 -  *Lobby Messages*, created to manage lobbies (creation, join, disconnect, failures, start of game);
--  *Game Session Messages*, developed to treat game interactions (player order, new hand for players, new round card, liar and throw actions);
+-  *Game Session Messages*, developed to treat game interactions (player order, new hand for players, new round card, call liar and throw actions);
 -  *User Management Messages*, just a couple of messages to update user list to each connected user (new user connected, username updated);
 
 
@@ -765,7 +765,7 @@ Here we have provided all the necessaries steps to play the game:
    ![EmptyLobbyListScreen](report_images/lobbyEmptyScreen.png "No Lobbies found Screen")
    ![CreateLobbyScreen](report_images/createLobbyScreen.png "Connect to server Screen")
 5. **Lobby Join**: users will see at the top of their view all currently available lobbies. Pressing the *Join* button near one of them to enter;
-6. (Optional) If the lobby is password protected, users must first input the correct password in order to enter said lobby;
+6. (Optional) If the lobby is password protected, the user must first input the correct password in order to enter said lobby;
    ![LobbyScreen](report_images/lobbyScreen.png "Lobbies list updated Screen")
    ![PasswordScreen](report_images/insertPasswordScreen.png "insert password Screen")
    ![LobbyWithPlayersScreen](report_images/lobbyWithPlayers.png "Connect to server Screen")
